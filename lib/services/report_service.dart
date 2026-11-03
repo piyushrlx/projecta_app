@@ -1,0 +1,105 @@
+import '../core/api_client.dart';
+import '../models/report_model.dart';
+
+class ReportService {
+  final ApiClient _client = ApiClient();
+
+  Future<TodayReportContextModel> getTodayContext() async {
+    final response = await _client.get('/reports/today-context');
+    final dynamic data = _client.decodeJson(response);
+
+    if (data is Map<String, dynamic>) {
+      return TodayReportContextModel.fromJson(data);
+    }
+    throw ApiException(
+      statusCode: 500,
+      message: 'Invalid today context response format.',
+    );
+  }
+
+  Future<Map<String, dynamic>> submitReport(Map<String, dynamic> payload) async {
+    final response = await _client.post('/reports', body: payload);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> getReports({
+    String? status,
+    String? date,
+    int? projectId,
+    int? userId,
+    int page = 1,
+    int limit = 30,
+  }) async {
+    final query = <String, dynamic>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    if (status != null && status.isNotEmpty && status != 'ALL') {
+      query['status'] = status.toLowerCase();
+    }
+    if (date != null && date.isNotEmpty) {
+      query['date'] = date;
+    }
+    if (projectId != null) {
+      query['project_id'] = projectId.toString();
+    }
+    if (userId != null) {
+      query['user_id'] = userId.toString();
+    }
+
+    final response = await _client.get('/reports', queryParameters: query);
+    final dynamic data = _client.decodeJson(response);
+
+    if (data is Map<String, dynamic>) {
+      final list = (data['reports'] as List<dynamic>?) ?? [];
+      final reports = list
+          .map((item) => ReportModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+      return {
+        'reports': reports,
+        'total': (data['total'] as num?)?.toInt() ?? 0,
+        'page': (data['page'] as num?)?.toInt() ?? page,
+      };
+    }
+
+    return {
+      'reports': <ReportModel>[],
+      'total': 0,
+      'page': page,
+    };
+  }
+
+  Future<ReportModel> getReportDetails(int id) async {
+    final response = await _client.get('/reports/$id');
+    final dynamic data = _client.decodeJson(response);
+
+    if (data is Map<String, dynamic> && data['report'] is Map<String, dynamic>) {
+      return ReportModel.fromJson(data['report'] as Map<String, dynamic>);
+    }
+    throw ApiException(
+      statusCode: 500,
+      message: 'Invalid report details response format.',
+    );
+  }
+
+  Future<void> reviewReport(
+    int id, {
+    required String decision, // 'approve', 'reject', 'clarify'
+    String? comment,
+  }) async {
+    final body = <String, dynamic>{
+      'decision': decision,
+    };
+    if (comment != null && comment.trim().isNotEmpty) {
+      body['review_comment'] = comment.trim();
+      body['comment'] = comment.trim();
+    }
+
+    await _client.post('/reports/$id/review', body: body);
+  }
+}
+
