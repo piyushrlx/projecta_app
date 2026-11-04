@@ -2,88 +2,160 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Neo-Brutalist Minimalism Palette
-  static const Color pitchBlack = Color(0xFF0A0A0A);
-  static const Color pureWhite = Color(0xFFFFFFFF);
-  static const Color violentRed = Color(0xFFFF0033);
-  static const Color neutralGrey = Color(0xFF737373);
+  // Enterprise Navy & Slate Color Palette
+  static const Color scaffoldBg = Color(0xFFF8FAFC);
   static const Color cardSurface = Color(0xFFFFFFFF);
-  static const Color darkSurface = Color(0xFF141414);
+  static const Color pureWhite = Color(0xFFFFFFFF);
+
+  // Brand & Accent Colors
+  static const Color navyBlue = Color(0xFF1E3A8A); // Executive Navy Blue
+  static const Color royalBlue = Color(
+    0xFF2563EB,
+  ); // Interactive Accent Royal Blue
+  static const Color borderSubtle = Color(0xFFE2E8F0); // Subtle 1px Border
+  static const Color dividerColor = Color(0xFFE2E8F0);
+
+  // Text Hierarchy
+  static const Color deepSlate = Color(0xFF0F172A); // Headings / Titles
+  static const Color mutedSlate = Color(0xFF475569); // Labels / Subtitles
+  static const Color lightSlate = Color(0xFF94A3B8); // Hints / Placeholders
+
+  // Semantic Status Badges & Alerts
+  static const Color successBg = Color(0xFFDCFCE7);
+  static const Color successText = Color(0xFF15803D);
+
+  static const Color infoBg = Color(0xFFDBEAFE);
+  static const Color infoText = Color(0xFF1D4ED8);
+
+  static const Color warningBg = Color(0xFFFEF3C7);
+  static const Color warningText = Color(0xFFB45309);
+
+  static const Color dangerBg = Color(0xFFFEE2E2);
+  static const Color dangerText = Color(0xFFB91C1C);
+
+  // Backward compatibility aliases mapped to new palette
+  static const Color pitchBlack = deepSlate;
+  static const Color violentRed = dangerText;
+  static const Color neutralGrey = mutedSlate;
+  static const Color mutedGrey = lightSlate;
+  static const Color offWhite = scaffoldBg;
+  static const Color darkSurface = deepSlate;
 
   // Borders & Outlines
-  static const double borderWidth = 2.0;
-  static const BorderSide blackBorder = BorderSide(
-    color: pitchBlack,
-    width: borderWidth,
+  static const double borderWidth = 1.0;
+  static const BorderSide subtleBorder = BorderSide(
+    color: borderSubtle,
+    width: 1.0,
   );
+  static const BorderSide blackBorder = subtleBorder;
   static const BorderSide whiteBorder = BorderSide(
     color: pureWhite,
-    width: borderWidth,
+    width: 1.0,
   );
-  static const BorderSide redBorder = BorderSide(
-    color: violentRed,
-    width: borderWidth,
+  static const BorderSide redBorder = BorderSide(color: dangerText, width: 1.0);
+
+  // Soft diffused elevation shadow
+  static const BoxShadow softShadow = BoxShadow(
+    color: Color(0x0A0F172A),
+    blurRadius: 12,
+    offset: Offset(0, 4),
   );
 
-  // Neo-Brutalist Container Decoration (White card with crisp 2px border and hard shadow)
-  static BoxDecoration neoCardDecoration({
+  // Enterprise Card Decoration (Pure White, 12px rounded corners, 1px #E2E8F0 border, soft shadow)
+  static BoxDecoration cardDecoration({
     Color backgroundColor = pureWhite,
-    Color borderColor = pitchBlack,
-    double shadowOffset = 4.0,
-    Color shadowColor = pitchBlack,
+    Color borderColor = borderSubtle,
+    double borderRadius = 12.0,
+    bool hasShadow = true,
   }) {
     return BoxDecoration(
       color: backgroundColor,
-      border: Border.all(color: borderColor, width: borderWidth),
-      boxShadow: shadowOffset > 0
-          ? [
-              BoxShadow(
-                color: shadowColor,
-                offset: Offset(shadowOffset, shadowOffset),
-                blurRadius: 0,
-              ),
-            ]
-          : null,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: Border.all(color: borderColor, width: 1.0),
+      boxShadow: hasShadow ? [softShadow] : null,
     );
   }
 
-  // Neo-Brutalist Active/Urgent Badge Decoration
-  static BoxDecoration urgentBadgeDecoration() {
+  // Alias for backward compatibility with existing screen references
+  static BoxDecoration neoCardDecoration({
+    Color backgroundColor = pureWhite,
+    Color borderColor = borderSubtle,
+    double shadowOffset = 4.0,
+    Color shadowColor = const Color(0x0A0F172A),
+    double borderRadius = 12.0,
+  }) {
     return BoxDecoration(
-      color: violentRed,
-      border: Border.all(color: pitchBlack, width: borderWidth),
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: Border.all(color: borderColor, width: 1.0),
+      boxShadow: shadowOffset > 0 ? const [softShadow] : null,
+    );
+  }
+
+  // Semantic Status Badge Decoration (Soft pastel pill, 6px corners)
+  static BoxDecoration statusBadgeDecoration({
+    required Color backgroundColor,
+    double borderRadius = 6.0,
+    Border? border,
+  }) {
+    return BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(borderRadius),
+      border: border,
+    );
+  }
+
+  // Urgent Badge Decoration (Pastel Danger pill)
+  static BoxDecoration urgentBadgeDecoration({
+    Color color = dangerBg,
+    double borderRadius = 6.0,
+  }) {
+    return BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(borderRadius),
     );
   }
 
   // Typography Getters
+  // Headings & Titles: Plus Jakarta Sans (600 / 700)
   static TextStyle heading({
     double fontSize = 20,
-    FontWeight fontWeight = FontWeight.w800,
-    Color color = pureWhite,
+    FontWeight fontWeight = FontWeight.w700,
+    Color color = deepSlate,
+    double? letterSpacing,
+    double? height,
   }) {
-    return GoogleFonts.spaceGrotesk(
+    return GoogleFonts.plusJakartaSans(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
+      letterSpacing: letterSpacing ?? -0.3,
+      height: height,
     );
   }
 
+  // Body & Descriptions: Inter (400 / 500)
   static TextStyle body({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w400,
-    Color color = pitchBlack,
+    Color color = deepSlate,
+    double? letterSpacing,
+    double? height,
   }) {
     return GoogleFonts.inter(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
+      letterSpacing: letterSpacing,
+      height: height,
     );
   }
 
+  // Entity / Task / Project Codes: JetBrains Mono
   static TextStyle mono({
-    double fontSize = 14,
-    FontWeight fontWeight = FontWeight.w700,
-    Color color = pitchBlack,
+    double fontSize = 13,
+    FontWeight fontWeight = FontWeight.w600,
+    Color color = deepSlate,
   }) {
     return GoogleFonts.jetBrainsMono(
       fontSize: fontSize,
@@ -92,217 +164,217 @@ class AppTheme {
     );
   }
 
-  // Global Neo-Brutalist ThemeData
+  // Global Enterprise ThemeData
   static ThemeData get themeData {
     final textTheme = TextTheme(
-      displayLarge: GoogleFonts.spaceGrotesk(
+      displayLarge: GoogleFonts.plusJakartaSans(
         fontSize: 32,
-        fontWeight: FontWeight.w800,
-        color: pureWhite,
+        fontWeight: FontWeight.w700,
+        color: deepSlate,
+        letterSpacing: -0.8,
       ),
-      displayMedium: GoogleFonts.spaceGrotesk(
-        fontSize: 28,
-        fontWeight: FontWeight.w800,
-        color: pureWhite,
+      displayMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 26,
+        fontWeight: FontWeight.w700,
+        color: deepSlate,
+        letterSpacing: -0.5,
       ),
-      displaySmall: GoogleFonts.spaceGrotesk(
-        fontSize: 24,
-        fontWeight: FontWeight.w800,
-        color: pureWhite,
+      displaySmall: GoogleFonts.plusJakartaSans(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: deepSlate,
+        letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.spaceGrotesk(
+      headlineMedium: GoogleFonts.plusJakartaSans(
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        color: pureWhite,
+        color: deepSlate,
+        letterSpacing: -0.3,
       ),
-      headlineSmall: GoogleFonts.spaceGrotesk(
+      headlineSmall: GoogleFonts.plusJakartaSans(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: deepSlate,
+      ),
+      titleLarge: GoogleFonts.plusJakartaSans(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: pureWhite,
+        color: deepSlate,
       ),
-      titleLarge: GoogleFonts.spaceGrotesk(
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        color: pureWhite,
-      ),
-      titleMedium: GoogleFonts.spaceGrotesk(
+      titleMedium: GoogleFonts.plusJakartaSans(
         fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: pureWhite,
+        fontWeight: FontWeight.w600,
+        color: deepSlate,
       ),
       bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w500,
-        color: pureWhite,
+        color: deepSlate,
       ),
       bodyMedium: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: pureWhite,
+        color: deepSlate,
       ),
       bodySmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: const Color(0xCCFFFFFF),
+        color: mutedSlate,
       ),
-      labelLarge: GoogleFonts.jetBrainsMono(
+      labelLarge: GoogleFonts.plusJakartaSans(
         fontSize: 14,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
-        color: pureWhite,
-      ),
-      labelMedium: GoogleFonts.jetBrainsMono(
-        fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: pureWhite,
+        color: deepSlate,
+      ),
+      labelMedium: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: mutedSlate,
       ),
       labelSmall: GoogleFonts.jetBrainsMono(
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: neutralGrey,
+        color: mutedSlate,
       ),
     );
 
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: pitchBlack,
-      canvasColor: pitchBlack,
+      scaffoldBackgroundColor: scaffoldBg,
+      canvasColor: pureWhite,
       colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: violentRed,
+        brightness: Brightness.light,
+        primary: navyBlue,
         onPrimary: pureWhite,
-        secondary: pureWhite,
-        onSecondary: pitchBlack,
-        error: violentRed,
+        secondary: royalBlue,
+        onSecondary: pureWhite,
+        error: dangerText,
         onError: pureWhite,
-        surface: pitchBlack,
-        onSurface: pureWhite,
+        surface: cardSurface,
+        onSurface: deepSlate,
       ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: pitchBlack,
-        foregroundColor: pureWhite,
+        backgroundColor: pureWhite,
+        foregroundColor: deepSlate,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.spaceGrotesk(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: pureWhite,
-          letterSpacing: -0.5,
+        toolbarHeight: 64,
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: deepSlate,
         ),
         shape: const Border(
-          bottom: BorderSide(color: pureWhite, width: borderWidth),
+          bottom: BorderSide(color: borderSubtle, width: 1.0),
         ),
-        iconTheme: const IconThemeData(color: pureWhite),
+        iconTheme: const IconThemeData(color: deepSlate),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         color: pureWhite,
         elevation: 0,
-        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+        margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 0.0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: pitchBlack, width: borderWidth),
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: borderSubtle, width: 1.0),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: violentRed,
+          backgroundColor: navyBlue,
           foregroundColor: pureWhite,
           elevation: 0,
           shadowColor: Colors.transparent,
-          textStyle: GoogleFonts.spaceGrotesk(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: BorderSide(color: pitchBlack, width: borderWidth),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: pureWhite,
+          foregroundColor: deepSlate,
+          backgroundColor: pureWhite,
           elevation: 0,
-          textStyle: GoogleFonts.spaceGrotesk(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          side: const BorderSide(color: pureWhite, width: borderWidth),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          side: const BorderSide(color: borderSubtle, width: 1.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: violentRed,
-          textStyle: GoogleFonts.spaceGrotesk(
+          foregroundColor: royalBlue,
+          textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: pureWhite,
+        fillColor: scaffoldBg,
         labelStyle: GoogleFonts.inter(
-          color: pitchBlack,
-          fontWeight: FontWeight.w600,
+          color: mutedSlate,
+          fontWeight: FontWeight.w500,
         ),
         hintStyle: GoogleFonts.inter(
-          color: neutralGrey,
+          color: lightSlate,
           fontWeight: FontWeight.w400,
         ),
-        prefixIconColor: pitchBlack,
-        suffixIconColor: pitchBlack,
+        prefixIconColor: mutedSlate,
+        suffixIconColor: mutedSlate,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 16,
+          vertical: 14,
         ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: pitchBlack, width: borderWidth),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: borderSubtle, width: 1.0),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: violentRed, width: 2.5),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: royalBlue, width: 1.5),
         ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: violentRed, width: borderWidth),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: dangerText, width: 1.0),
         ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: violentRed, width: 2.5),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: dangerText, width: 1.5),
         ),
         errorStyle: GoogleFonts.inter(
-          color: violentRed,
-          fontWeight: FontWeight.w600,
+          color: dangerText,
+          fontWeight: FontWeight.w500,
           fontSize: 12,
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: pitchBlack,
-        thickness: borderWidth,
-        space: borderWidth,
+        color: borderSubtle,
+        thickness: 1.0,
+        space: 1.0,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: pitchBlack,
+        backgroundColor: deepSlate,
         contentTextStyle: GoogleFonts.inter(
           color: pureWhite,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: violentRed, width: borderWidth),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 }
-

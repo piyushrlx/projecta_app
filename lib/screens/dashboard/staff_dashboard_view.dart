@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
 import '../reports/report_submission_screen.dart';
 import '../tasks/task_detail_screen.dart';
@@ -26,6 +27,12 @@ class StaffDashboardView extends StatelessWidget {
     final recentFeedback = (data['recent_feedback'] as List<dynamic>?) ?? [];
 
     final overdueCount = (kpis['overdue'] ?? 0) as int;
+    final heroTask = nextTasks.isNotEmpty
+        ? nextTasks.first as Map<String, dynamic>
+        : null;
+    final remainingTasks = nextTasks.length > 1
+        ? nextTasks.sublist(1)
+        : <dynamic>[];
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
@@ -50,23 +57,20 @@ class StaffDashboardView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'MY METRICS',
-              style: AppTheme.mono(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.pureWhite,
+              'My Metrics',
+              style: AppTheme.heading(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.deepSlate,
               ),
             ),
             Text(
               data['date']?.toString() ?? '',
-              style: AppTheme.mono(
-                fontSize: 12,
-                color: const Color(0xFF888888),
-              ),
+              style: AppTheme.mono(fontSize: 11, color: AppTheme.mutedSlate),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
         // 2-Column KPI Grid
         Row(
@@ -106,218 +110,107 @@ class StaffDashboardView extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
 
-        // 3. Section: "What should I work on next?"
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: AppTheme.violentRed,
-          child: Row(
-            children: [
-              const Icon(Icons.flash_on, color: AppTheme.pureWhite, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'WHAT SHOULD I WORK ON NEXT?',
-                style: AppTheme.mono(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.pureWhite,
-                ),
+        // 3. Section: "What should I work on next?" Hero & Queue
+        Row(
+          children: [
+            const Icon(Icons.bolt_rounded, color: AppTheme.royalBlue, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'What should I work on next?',
+              style: AppTheme.heading(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.deepSlate,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
 
-        if (nextTasks.isEmpty)
+        if (heroTask == null)
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: AppTheme.neoCardDecoration(
-              backgroundColor: AppTheme.pureWhite,
-              borderColor: AppTheme.pitchBlack,
-              shadowOffset: 4.0,
+            decoration: BoxDecoration(
+              color: AppTheme.pureWhite,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderSubtle),
+              boxShadow: const [AppTheme.softShadow],
             ),
             child: Column(
               children: [
-                const Icon(Icons.task_alt, color: Colors.green, size: 36),
-                const SizedBox(height: 8),
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: AppTheme.successText,
+                  size: 36,
+                ),
+                const SizedBox(height: 10),
                 Text(
-                  'ALL CAUGHT UP!',
+                  'All Caught Up!',
                   style: AppTheme.heading(
-                    fontSize: 16,
-                    color: AppTheme.pitchBlack,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'You have no pending high-priority tasks assigned.',
                   textAlign: TextAlign.center,
-                  style: AppTheme.body(fontSize: 12),
+                  style: AppTheme.body(
+                    fontSize: 13,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
               ],
             ),
           )
-        else
-          ...nextTasks.map((item) {
-            final task = item as Map<String, dynamic>;
-            final progress = (task['progress'] ?? 0) as int;
-            final isOverdue =
-                task['is_overdue'] == true ||
-                task['reason'].toString().toLowerCase().contains('overdue');
+        else ...[
+          // #1 HERO TASK CARD
+          _buildHeroTaskCard(context, heroTask),
+          const SizedBox(height: 20),
 
-            return GestureDetector(
-              onTap: () {
-                final id = (task['id'] as num?)?.toInt();
-                if (id != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TaskDetailScreen(taskId: id),
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12.0),
-                padding: const EdgeInsets.all(16.0),
-                decoration: AppTheme.neoCardDecoration(
-                  backgroundColor: AppTheme.pureWhite,
-                  borderColor: isOverdue
-                      ? AppTheme.violentRed
-                      : AppTheme.pitchBlack,
-                  shadowOffset: 4.0,
-                  shadowColor: isOverdue
-                      ? AppTheme.violentRed
-                      : AppTheme.pureWhite,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            task['title']?.toString() ?? 'Untitled Task',
-                            style: AppTheme.heading(
-                              fontSize: 16,
-                              color: AppTheme.pitchBlack,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          color: isOverdue
-                              ? AppTheme.violentRed
-                              : AppTheme.pitchBlack,
-                          child: Text(
-                            '$progress%',
-                            style: AppTheme.mono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.pureWhite,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      task['project_name']?.toString() ?? '',
-                      style: AppTheme.body(
-                        fontSize: 13,
-                        color: const Color(0xFF555555),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    // Progress bar
-                    ClipRRect(
-                      borderRadius: BorderRadius.zero,
-                      child: LinearProgressIndicator(
-                        value: (progress / 100).clamp(0.0, 1.0),
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFE5E5E5),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isOverdue ? AppTheme.violentRed : AppTheme.pitchBlack,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (task['reason'] != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isOverdue
-                                  ? const Color(0xFFFFEEEE)
-                                  : const Color(0xFFF0F0F0),
-                              border: Border.all(
-                                color: isOverdue
-                                    ? AppTheme.violentRed
-                                    : const Color(0xFFCCCCCC),
-                              ),
-                            ),
-                            child: Text(
-                              task['reason'].toString().toUpperCase(),
-                              style: AppTheme.mono(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: isOverdue
-                                    ? AppTheme.violentRed
-                                    : AppTheme.pitchBlack,
-                              ),
-                            ),
-                          ),
-                        if (task['deadline'] != null)
-                          Text(
-                            'DEADLINE: ${task['deadline']}',
-                            style: AppTheme.mono(
-                              fontSize: 11,
-                              color: isOverdue
-                                  ? AppTheme.violentRed
-                                  : const Color(0xFF666666),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+          // Remaining Tasks in Priority Queue
+          if (remainingTasks.isNotEmpty) ...[
+            Text(
+              'Upcoming in Queue',
+              style: AppTheme.heading(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.mutedSlate,
               ),
-            );
-          }),
+            ),
+            const SizedBox(height: 10),
+            ...remainingTasks.map((item) {
+              final task = item as Map<String, dynamic>;
+              return _buildQueueTaskCard(context, task);
+            }),
+          ],
+        ],
 
         // 4. Section: Recent Supervisor Feedback
         if (recentFeedback.isNotEmpty) ...[
           const SizedBox(height: 24),
           Text(
-            'SUPERVISOR FEEDBACK',
-            style: AppTheme.mono(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.pureWhite,
+            'Supervisor Feedback',
+            style: AppTheme.heading(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ...recentFeedback.map((fb) {
             final f = fb as Map<String, dynamic>;
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: AppTheme.neoCardDecoration(
-                backgroundColor: AppTheme.pureWhite,
-                borderColor: AppTheme.pitchBlack,
-                shadowOffset: 3.0,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderSubtle),
+                boxShadow: const [AppTheme.softShadow],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,14 +222,15 @@ class StaffDashboardView extends StatelessWidget {
                         f['reviewer_name']?.toString() ?? 'Supervisor',
                         style: AppTheme.heading(
                           fontSize: 14,
-                          color: AppTheme.pitchBlack,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
                       Text(
                         f['report_date']?.toString() ?? '',
                         style: AppTheme.mono(
                           fontSize: 11,
-                          color: const Color(0xFF777777),
+                          color: AppTheme.mutedSlate,
                         ),
                       ),
                     ],
@@ -345,7 +239,10 @@ class StaffDashboardView extends StatelessWidget {
                   Text(
                     f['review_comment']?.toString() ??
                         'No review notes provided.',
-                    style: AppTheme.body(fontSize: 13),
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                 ],
               ),
@@ -353,6 +250,291 @@ class StaffDashboardView extends StatelessWidget {
           }),
         ],
       ],
+    );
+  }
+
+  Widget _buildHeroTaskCard(BuildContext context, Map<String, dynamic> task) {
+    final progress = (task['progress'] ?? 0) as int;
+    final isOverdue =
+        task['is_overdue'] == true ||
+        task['reason'].toString().toLowerCase().contains('overdue');
+    final taskId = (task['id'] as num?)?.toInt();
+
+    return BrutalistPressable(
+      onTap: taskId != null
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TaskDetailScreen(taskId: taskId),
+                ),
+              );
+            }
+          : null,
+      backgroundColor: AppTheme.pureWhite,
+      borderColor: isOverdue
+          ? const Color(0xFFFECACA)
+          : const Color(0xFFBFDBFE),
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(18.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isOverdue ? AppTheme.dangerBg : AppTheme.infoBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      color: isOverdue
+                          ? AppTheme.dangerText
+                          : AppTheme.infoText,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Next Up (#1 Hero)',
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isOverdue
+                            ? AppTheme.dangerText
+                            : AppTheme.infoText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.borderSubtle),
+                ),
+                child: Text(
+                  '$progress%',
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            task['title']?.toString() ?? 'Untitled Task',
+            style: AppTheme.heading(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            task['project_name']?.toString() ?? '',
+            style: AppTheme.body(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.mutedSlate,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (progress / 100).clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isOverdue ? AppTheme.dangerText : AppTheme.royalBlue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (task['reason'] != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isOverdue ? AppTheme.dangerBg : AppTheme.scaffoldBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    task['reason'].toString(),
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isOverdue
+                          ? AppTheme.dangerText
+                          : AppTheme.mutedSlate,
+                    ),
+                  ),
+                ),
+              if (task['deadline'] != null)
+                Text(
+                  'Deadline: ${task['deadline']}',
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    color: isOverdue
+                        ? AppTheme.dangerText
+                        : AppTheme.mutedSlate,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Update Status button
+          SizedBox(
+            height: 42,
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: taskId != null
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TaskDetailScreen(taskId: taskId),
+                        ),
+                      );
+                    }
+                  : null,
+              icon: const Icon(Icons.edit_note, size: 18),
+              label: const Text('Update Status'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.navyBlue,
+                foregroundColor: AppTheme.pureWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQueueTaskCard(BuildContext context, Map<String, dynamic> task) {
+    final progress = (task['progress'] ?? 0) as int;
+    final isOverdue =
+        task['is_overdue'] == true ||
+        task['reason'].toString().toLowerCase().contains('overdue');
+    final taskId = (task['id'] as num?)?.toInt();
+
+    return BrutalistPressable(
+      onTap: taskId != null
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TaskDetailScreen(taskId: taskId),
+                ),
+              );
+            }
+          : null,
+      backgroundColor: AppTheme.pureWhite,
+      borderColor: isOverdue ? const Color(0xFFFECACA) : AppTheme.borderSubtle,
+      borderRadius: BorderRadius.circular(12),
+      margin: const EdgeInsets.only(bottom: 10.0),
+      padding: const EdgeInsets.all(14.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  task['title']?.toString() ?? 'Untitled Task',
+                  style: AppTheme.heading(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.deepSlate,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isOverdue ? AppTheme.dangerBg : AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '$progress%',
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isOverdue ? AppTheme.dangerText : AppTheme.deepSlate,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            task['project_name']?.toString() ?? '',
+            style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (progress / 100).clamp(0.0, 1.0),
+              minHeight: 5,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isOverdue ? AppTheme.dangerText : AppTheme.royalBlue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (task['reason'] != null)
+                Text(
+                  task['reason'].toString(),
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: isOverdue
+                        ? AppTheme.dangerText
+                        : AppTheme.mutedSlate,
+                  ),
+                ),
+              if (task['deadline'] != null)
+                Text(
+                  'Due: ${task['deadline']}',
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    color: isOverdue
+                        ? AppTheme.dangerText
+                        : AppTheme.mutedSlate,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

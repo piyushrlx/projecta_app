@@ -60,13 +60,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppTheme.pureWhite,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: BorderSide(color: AppTheme.pitchBlack, width: 2),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppTheme.borderSubtle, width: 1.0),
           ),
           title: Text(
-            '${newStatus.toUpperCase()} NOTES REQUIRED',
-            style: AppTheme.heading(fontSize: 15, color: AppTheme.pitchBlack),
+            '${newStatus[0].toUpperCase()}${newStatus.substring(1)} Notes Required',
+            style: AppTheme.heading(fontSize: 16, color: AppTheme.deepSlate),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -74,16 +75,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Text(
                 'Please provide reasoning or completion notes for this transition:',
-                style: AppTheme.body(fontSize: 13),
+                style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               TextField(
                 controller: noteController,
                 maxLines: 3,
-                style: AppTheme.body(color: AppTheme.pitchBlack),
+                style: AppTheme.body(color: AppTheme.deepSlate),
                 decoration: const InputDecoration(
                   hintText: 'Enter details here...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                 ),
               ),
             ],
@@ -92,16 +92,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(
-                'CANCEL',
-                style: AppTheme.mono(color: AppTheme.pitchBlack),
+                'Cancel',
+                style: AppTheme.heading(
+                  fontSize: 14,
+                  color: AppTheme.mutedSlate,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.pitchBlack,
+                backgroundColor: AppTheme.navyBlue,
               ),
-              child: const Text('CONFIRM'),
+              child: const Text('Confirm'),
             ),
           ],
         ),
@@ -125,10 +128,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Status updated to ${newStatus.replaceAll('_', ' ').toUpperCase()}',
-          ),
-          backgroundColor: AppTheme.pitchBlack,
+          content: Text('Status updated to ${newStatus.replaceAll('_', ' ')}'),
         ),
       );
       await _loadTaskDetail();
@@ -137,7 +137,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('ApiException', '').trim()),
-          backgroundColor: AppTheme.violentRed,
+          backgroundColor: AppTheme.dangerText,
         ),
       );
     } finally {
@@ -160,7 +160,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('ApiException', '').trim()),
-          backgroundColor: AppTheme.violentRed,
+          backgroundColor: AppTheme.dangerText,
         ),
       );
     }
@@ -175,8 +175,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       isScrollControlled: true,
       backgroundColor: AppTheme.pureWhite,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-        side: BorderSide(color: AppTheme.pitchBlack, width: 2),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
@@ -191,19 +190,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'REQUEST DEADLINE EXTENSION',
+                'Request Deadline Extension',
                 style: AppTheme.heading(
-                  fontSize: 16,
-                  color: AppTheme.pitchBlack,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Text(
-                'REQUESTED NEW DEADLINE',
-                style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w800),
+                'Requested New Deadline',
+                style: AppTheme.heading(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
               ),
-              const SizedBox(height: 6),
-              GestureDetector(
+              const SizedBox(height: 8),
+              InkWell(
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: ctx,
@@ -217,10 +221,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     });
                   }
                 },
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppTheme.pitchBlack, width: 2),
+                    color: AppTheme.scaffoldBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.borderSubtle),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -231,35 +238,40 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             : 'Select Date',
                         style: AppTheme.mono(
                           fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Icon(
-                        Icons.calendar_month,
-                        color: AppTheme.pitchBlack,
+                        Icons.calendar_month_outlined,
+                        color: AppTheme.mutedSlate,
+                        size: 20,
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Text(
-                'REASON FOR EXTENSION (REQUIRED)',
-                style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w800),
+                'Reason for Extension (Required)',
+                style: AppTheme.heading(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               TextField(
                 controller: reasonController,
                 maxLines: 3,
-                style: AppTheme.body(color: AppTheme.pitchBlack),
+                style: AppTheme.body(color: AppTheme.deepSlate),
                 decoration: const InputDecoration(
                   hintText: 'Explain why extension is needed...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   onPressed: () {
                     if (reasonController.text.trim().isEmpty) {
@@ -271,9 +283,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     Navigator.pop(ctx, true);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.violentRed,
+                    backgroundColor: AppTheme.navyBlue,
+                    foregroundColor: AppTheme.pureWhite,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text('SUBMIT EXTENSION REQUEST'),
+                  child: const Text('Submit Extension Request'),
                 ),
               ),
             ],
@@ -296,7 +312,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Extension request submitted to manager.'),
-            backgroundColor: AppTheme.pitchBlack,
           ),
         );
         await _loadTaskDetail();
@@ -305,7 +320,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceAll('ApiException', '').trim()),
-            backgroundColor: AppTheme.violentRed,
+            backgroundColor: AppTheme.dangerText,
           ),
         );
       }
@@ -319,37 +334,40 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppTheme.pureWhite,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: BorderSide(color: AppTheme.pitchBlack, width: 2),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppTheme.borderSubtle, width: 1.0),
           ),
           title: Text(
-            'REJECTION REASON REQUIRED',
-            style: AppTheme.heading(fontSize: 15, color: AppTheme.pitchBlack),
+            'Rejection Reason Required',
+            style: AppTheme.heading(fontSize: 16, color: AppTheme.deepSlate),
           ),
           content: TextField(
             controller: noteController,
             maxLines: 2,
-            style: AppTheme.body(color: AppTheme.pitchBlack),
+            style: AppTheme.body(color: AppTheme.deepSlate),
             decoration: const InputDecoration(
               hintText: 'Enter rejection reason...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.zero),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(
-                'CANCEL',
-                style: AppTheme.mono(color: AppTheme.pitchBlack),
+                'Cancel',
+                style: AppTheme.heading(
+                  fontSize: 14,
+                  color: AppTheme.mutedSlate,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.violentRed,
+                backgroundColor: AppTheme.dangerText,
               ),
-              child: const Text('CONFIRM REJECT'),
+              child: const Text('Confirm Reject'),
             ),
           ],
         ),
@@ -367,10 +385,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       _hasChanges = true;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Extension request ${decision}d.'),
-          backgroundColor: AppTheme.pitchBlack,
-        ),
+        SnackBar(content: Text('Extension request ${decision}d.')),
       );
       await _loadTaskDetail();
     } catch (e) {
@@ -378,7 +393,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('ApiException', '').trim()),
-          backgroundColor: AppTheme.violentRed,
+          backgroundColor: AppTheme.dangerText,
         ),
       );
     }
@@ -388,25 +403,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop && _hasChanges) {
-          // Handled via returning result in Navigator
-        }
-      },
+      onPopInvokedWithResult: (didPop, _) {},
       child: Scaffold(
-        backgroundColor: AppTheme.pitchBlack,
+        backgroundColor: AppTheme.scaffoldBg,
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
             onPressed: () => Navigator.pop(context, _hasChanges),
           ),
           title: Text(
-            _detail != null ? _detail!.task.taskCode : 'TASK DETAILS',
-            style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w800),
+            _detail != null ? _detail!.task.taskCode : 'Task Details',
+            style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
               tooltip: 'Refresh',
               onPressed: _loadTaskDetail,
             ),
@@ -415,8 +426,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         body: _isLoading
             ? const Center(
                 child: CircularProgressIndicator(
-                  color: AppTheme.violentRed,
-                  strokeWidth: 3,
+                  color: AppTheme.royalBlue,
+                  strokeWidth: 2.5,
                 ),
               )
             : _errorMessage != null
@@ -434,40 +445,47 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadTaskDetail,
-      color: AppTheme.violentRed,
+      color: AppTheme.royalBlue,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 1. Dependency Lock Banner (if blocked by predecessor tasks)
+          // 1. Dependency Lock Alert
           if (task.isLocked) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F0),
-                border: Border.all(color: AppTheme.violentRed, width: 2.0),
+                color: AppTheme.dangerBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.dangerText.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock, color: AppTheme.violentRed, size: 24),
+                  const Icon(
+                    Icons.lock_outline,
+                    color: AppTheme.dangerText,
+                    size: 22,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'BLOCKED BY PREDECESSORS',
-                          style: AppTheme.mono(
+                          'Locked: Complete Predecessor Tasks First',
+                          style: AppTheme.heading(
                             fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.violentRed,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.dangerText,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
-                          'This task has ${task.openDependenciesCount} unfinished dependency. You cannot mark it complete until preceding tasks are resolved.',
+                          'This task has ${task.openDependenciesCount} unfinished predecessor dependency. You cannot mark it complete until preceding tasks are resolved.',
                           style: AppTheme.body(
                             fontSize: 12,
-                            color: AppTheme.pitchBlack,
+                            color: AppTheme.deepSlate,
                           ),
                         ),
                       ],
@@ -483,17 +501,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           _buildOverviewCard(task, detail),
           const SizedBox(height: 16),
 
-          // 3. Status State-Machine Bar (Allowed Transitions)
+          // 3. Status State-Machine Bar
           _buildStatusTransitionSection(detail),
           const SizedBox(height: 16),
 
-          // 4. Progress Slider (if staff can work)
+          // 4. Progress Slider
           if (detail.canWork && !task.isCompleted) ...[
             _buildProgressSlider(task),
             const SizedBox(height: 16),
           ],
 
-          // 5. Pending Extension Requests (Staff request or Admin decision)
+          // 5. Pending Extension Requests
           _buildExtensionSection(detail),
           const SizedBox(height: 16),
 
@@ -526,12 +544,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   Widget _buildOverviewCard(TaskModel task, TaskDetailModel detail) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.neoCardDecoration(
-        backgroundColor: AppTheme.pureWhite,
-        borderColor: AppTheme.pitchBlack,
-        shadowOffset: 4,
-        shadowColor: AppTheme.pureWhite,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
+        boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,61 +559,64 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                color: AppTheme.pitchBlack,
+                decoration: BoxDecoration(
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.borderSubtle),
+                ),
                 child: Text(
                   task.taskCode,
                   style: AppTheme.mono(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.pureWhite,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
                   ),
                 ),
               ),
               _buildPriorityBadge(task.priority),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             task.title,
-            style: AppTheme.heading(fontSize: 18, color: AppTheme.pitchBlack),
+            style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
           ),
           if (task.projectName != null) ...[
             const SizedBox(height: 4),
             Text(
-              'PROJECT: ${task.projectName!.toUpperCase()}',
-              style: AppTheme.mono(
-                fontSize: 11,
-                color: const Color(0xFF666666),
-              ),
+              'Project: ${task.projectName}',
+              style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
             ),
           ],
           if (detail.description != null && detail.description!.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               detail.description!,
-              style: AppTheme.body(
-                fontSize: 13,
-                color: const Color(0xFF333333),
-              ),
+              style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
             ),
           ],
           if (detail.instructions != null &&
               detail.instructions!.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(10),
-              color: const Color(0xFFF9F9F9),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.scaffoldBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'INSTRUCTIONS',
-                    style: AppTheme.mono(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                    'Instructions',
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mutedSlate,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     detail.instructions!,
                     style: AppTheme.body(fontSize: 12),
@@ -604,9 +625,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 14),
-          const Divider(color: AppTheme.pitchBlack, thickness: 1.5),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          const Divider(color: AppTheme.borderSubtle, thickness: 1.0),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -614,20 +635,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'DEADLINE',
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        color: const Color(0xFF777777),
+                      'Deadline',
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       task.deadline ?? 'None',
                       style: AppTheme.mono(
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: task.isOverdue
-                            ? AppTheme.violentRed
-                            : AppTheme.pitchBlack,
+                            ? AppTheme.dangerText
+                            : AppTheme.deepSlate,
                       ),
                     ),
                   ],
@@ -638,19 +660,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ESTIMATED',
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        color: const Color(0xFF777777),
+                      'Estimated',
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       task.estimatedHours != null
                           ? '${task.estimatedHours} hrs'
                           : 'None',
                       style: AppTheme.mono(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -661,17 +684,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ACTUAL SPENT',
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        color: const Color(0xFF777777),
+                      'Actual Spent',
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       '${(task.actualMinutes / 60).toStringAsFixed(1)} hrs',
                       style: AppTheme.mono(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -689,10 +713,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     if (allowed.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161616),
-        border: Border.all(color: AppTheme.pureWhite, width: 2),
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
+        boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,33 +727,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'UPDATE STATUS',
-                style: AppTheme.mono(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.pureWhite,
+                'Update Status',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
                 ),
               ),
               Text(
-                'CURRENT: ${detail.task.status.replaceAll('_', ' ').toUpperCase()}',
-                style: AppTheme.mono(
-                  fontSize: 10,
-                  color: AppTheme.violentRed,
-                  fontWeight: FontWeight.w800,
+                'Current: ${detail.task.status.replaceAll('_', ' ')}',
+                style: AppTheme.body(
+                  fontSize: 11,
+                  color: AppTheme.mutedSlate,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: allowed.map((status) {
               final isCurrent = detail.task.status == status;
-              return GestureDetector(
+              final isBlocked = status == 'blocked';
+              final label = status.replaceAll('_', ' ');
+
+              return InkWell(
                 onTap: isCurrent || _isActionInProgress
                     ? null
                     : () => _handleStatusChange(status),
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -735,27 +765,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isCurrent
-                        ? AppTheme.pureWhite
-                        : status == 'blocked'
-                        ? const Color(0xFF4A1010)
-                        : AppTheme.pitchBlack,
+                        ? AppTheme.navyBlue
+                        : isBlocked
+                        ? AppTheme.dangerBg
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isCurrent
-                          ? AppTheme.pureWhite
-                          : status == 'blocked'
-                          ? AppTheme.violentRed
-                          : AppTheme.pureWhite,
-                      width: 1.5,
+                          ? AppTheme.navyBlue
+                          : isBlocked
+                          ? const Color(0xFFFECACA)
+                          : AppTheme.borderSubtle,
                     ),
                   ),
                   child: Text(
-                    status.replaceAll('_', ' ').toUpperCase(),
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
+                    label[0].toUpperCase() + label.substring(1),
+                    style: AppTheme.heading(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                       color: isCurrent
-                          ? AppTheme.pitchBlack
-                          : AppTheme.pureWhite,
+                          ? AppTheme.pureWhite
+                          : isBlocked
+                          ? AppTheme.dangerText
+                          : AppTheme.deepSlate,
                     ),
                   ),
                 ),
@@ -769,10 +801,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   Widget _buildProgressSlider(TaskModel task) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        border: Border.all(color: AppTheme.pureWhite, width: 1.5),
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
+        boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,19 +815,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'TASK PROGRESS SLIDER',
-                style: AppTheme.mono(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.pureWhite,
+                'Task Progress',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
                 ),
               ),
               Text(
                 '${task.progress}%',
                 style: AppTheme.mono(
                   fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.pureWhite,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
                 ),
               ),
             ],
@@ -804,9 +838,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             max: 100,
             divisions: 20,
             activeColor: task.isLocked
-                ? AppTheme.violentRed
-                : AppTheme.pureWhite,
-            inactiveColor: const Color(0xFF333333),
+                ? AppTheme.dangerText
+                : AppTheme.royalBlue,
+            inactiveColor: const Color(0xFFE2E8F0),
             onChanged: (val) {
               _handleProgressUpdate(val);
             },
@@ -822,10 +856,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         .toList();
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        border: Border.all(color: AppTheme.pureWhite, width: 1.5),
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
+        boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -834,28 +870,32 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'DEADLINE EXTENSION',
-                style: AppTheme.mono(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.pureWhite,
+                'Deadline Extension',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
                 ),
               ),
               if (detail.canWork && !detail.task.isCompleted)
-                GestureDetector(
+                InkWell(
                   onTap: _showExtensionDialog,
+                  borderRadius: BorderRadius.circular(6),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
-                    color: AppTheme.violentRed,
+                    decoration: BoxDecoration(
+                      color: AppTheme.infoBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                     child: Text(
-                      'REQUEST EXTENSION',
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.pureWhite,
+                      'Request Extension',
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.infoText,
                       ),
                     ),
                   ),
@@ -863,69 +903,73 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ],
           ),
           if (pendingRequests.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             ...pendingRequests.map((req) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF221414),
-                  border: Border.all(color: AppTheme.violentRed, width: 1.5),
+                  color: AppTheme.warningBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'PENDING EXTENSION REQUEST',
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.violentRed,
+                      'Pending Extension Request',
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.warningText,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       'Requested Date: ${req.requestedDeadline} by ${req.requesterName}',
                       style: AppTheme.body(
                         fontSize: 12,
-                        color: AppTheme.pureWhite,
+                        color: AppTheme.deepSlate,
                       ),
                     ),
                     Text(
                       'Reason: ${req.reason}',
                       style: AppTheme.body(
                         fontSize: 12,
-                        color: const Color(0xFFAAAAAA),
+                        color: AppTheme.mutedSlate,
                       ),
                     ),
                     if (detail.canManage) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           ElevatedButton(
                             onPressed: () =>
                                 _handleDecideExtension(req.id, 'approve'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E7D32),
+                              backgroundColor: AppTheme.navyBlue,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                                 vertical: 6,
                               ),
                             ),
-                            child: const Text('APPROVE'),
+                            child: const Text('Approve'),
                           ),
                           const SizedBox(width: 8),
-                          ElevatedButton(
+                          OutlinedButton(
                             onPressed: () =>
                                 _handleDecideExtension(req.id, 'reject'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.violentRed,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.dangerText,
+                              side: const BorderSide(
+                                color: AppTheme.dangerText,
+                              ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
                                 vertical: 6,
                               ),
                             ),
-                            child: const Text('REJECT'),
+                            child: const Text('Reject'),
                           ),
                         ],
                       ),
@@ -938,10 +982,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 6),
             Text(
               'No pending extension requests.',
-              style: AppTheme.body(
-                fontSize: 12,
-                color: const Color(0xFF777777),
-              ),
+              style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
             ),
           ],
         ],
@@ -954,10 +995,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ASSIGNEES (${assignees.length})',
-          style: AppTheme.heading(fontSize: 14),
+          'Assignees (${assignees.length})',
+          style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -966,35 +1007,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: AppTheme.pureWhite,
-                border: Border.all(color: AppTheme.pitchBlack, width: 1.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.borderSubtle),
+                boxShadow: const [AppTheme.softShadow],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     a.fullName,
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.pitchBlack,
+                    style: AppTheme.heading(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.deepSlate,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 1,
+                      horizontal: 5,
+                      vertical: 2,
                     ),
-                    color: a.isOwner
-                        ? AppTheme.pitchBlack
-                        : const Color(0xFFEEEEEE),
+                    decoration: BoxDecoration(
+                      color: a.isOwner
+                          ? AppTheme.infoBg
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                     child: Text(
-                      a.responsibility.toUpperCase(),
-                      style: AppTheme.mono(
+                      a.responsibility,
+                      style: AppTheme.heading(
                         fontSize: 9,
+                        fontWeight: FontWeight.w600,
                         color: a.isOwner
-                            ? AppTheme.pureWhite
-                            : AppTheme.pitchBlack,
+                            ? AppTheme.infoText
+                            : AppTheme.mutedSlate,
                       ),
                     ),
                   ),
@@ -1011,43 +1058,45 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('DEPENDENCY NETWORK', style: AppTheme.heading(fontSize: 14)),
-        const SizedBox(height: 8),
+        Text(
+          'Dependencies',
+          style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 10),
         if (detail.dependsOn.isNotEmpty) ...[
           Text(
-            'PREDECESSORS (THIS TASK DEPENDS ON):',
-            style: AppTheme.mono(fontSize: 10, color: const Color(0xFF999999)),
+            'Predecessors (this task depends on):',
+            style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ...detail.dependsOn.map((d) {
             return Container(
               margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: d.isFinished
-                    ? const Color(0xFF0F1E12)
-                    : const Color(0xFF1E1414),
-                border: Border.all(
-                  color: d.isFinished
-                      ? const Color(0xFF4CAF50)
-                      : AppTheme.violentRed,
-                ),
+                color: d.isFinished ? AppTheme.successBg : AppTheme.dangerBg,
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
-                    d.isFinished ? Icons.check : Icons.lock,
-                    size: 14,
+                    d.isFinished
+                        ? Icons.check_circle_outline
+                        : Icons.lock_outline,
+                    size: 16,
                     color: d.isFinished
-                        ? const Color(0xFF4CAF50)
-                        : AppTheme.violentRed,
+                        ? AppTheme.successText
+                        : AppTheme.dangerText,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${d.taskCode}: ${d.title}',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      color: AppTheme.pureWhite,
+                    style: AppTheme.body(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: d.isFinished
+                          ? AppTheme.successText
+                          : AppTheme.dangerText,
                     ),
                   ),
                 ],
@@ -1064,24 +1113,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'SUBTASKS (${subtasks.length})',
-          style: AppTheme.heading(fontSize: 14),
+          'Subtasks (${subtasks.length})',
+          style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         ...subtasks.map((s) {
           return Container(
             margin: const EdgeInsets.only(bottom: 6),
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF333333)),
+              color: AppTheme.pureWhite,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.borderSubtle),
             ),
             child: Row(
               children: [
                 Icon(
                   s.isCompleted
-                      ? Icons.check_box
-                      : Icons.check_box_outline_blank,
-                  color: AppTheme.pureWhite,
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: s.isCompleted
+                      ? AppTheme.royalBlue
+                      : AppTheme.lightSlate,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -1089,8 +1142,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   child: Text(
                     '${s.taskCode} · ${s.title}',
                     style: AppTheme.body(
-                      fontSize: 12,
-                      color: AppTheme.pureWhite,
+                      fontSize: 13,
+                      color: AppTheme.deepSlate,
                     ),
                   ),
                 ),
@@ -1106,39 +1159,53 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('STATUS AUDIT TRAIL', style: AppTheme.heading(fontSize: 14)),
-        const SizedBox(height: 8),
+        Text(
+          'Status Audit Trail',
+          style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 10),
         ...history.take(6).map((h) {
           return Container(
             margin: const EdgeInsets.only(bottom: 6),
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFF222222)),
+              color: AppTheme.pureWhite,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.borderSubtle),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.history, size: 14, color: Color(0xFF777777)),
+                const Icon(Icons.history, size: 16, color: AppTheme.mutedSlate),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Status -> ${h.newStatus.toUpperCase()}${h.note != null && h.note!.isNotEmpty ? ' (${h.note})' : ''}',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          color: AppTheme.pureWhite,
-                        ),
-                      ),
-                      Text(
-                        '${h.changedByName ?? 'System'} · ${h.createdAt}',
+                        '${h.oldStatus} → ${h.newStatus} by ${h.changedByName}',
                         style: AppTheme.body(
-                          fontSize: 10,
-                          color: const Color(0xFF777777),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
+                      if (h.note != null && h.note!.isNotEmpty)
+                        Text(
+                          h.note!,
+                          style: AppTheme.body(
+                            fontSize: 11,
+                            color: AppTheme.mutedSlate,
+                          ),
+                        ),
                     ],
+                  ),
+                ),
+                Text(
+                  h.createdAt,
+                  style: AppTheme.mono(
+                    fontSize: 10,
+                    color: AppTheme.lightSlate,
                   ),
                 ),
               ],
@@ -1150,25 +1217,32 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Widget _buildPriorityBadge(String priority) {
-    Color bg = const Color(0xFFE0E0E0);
-    Color fg = AppTheme.pitchBlack;
+    Color bg = const Color(0xFFF1F5F9);
+    Color fg = AppTheme.mutedSlate;
 
-    if (priority == 'critical' || priority == 'high') {
-      bg = AppTheme.violentRed;
-      fg = AppTheme.pureWhite;
+    final p = priority.toLowerCase();
+    if (p == 'critical' || p == 'urgent') {
+      bg = AppTheme.dangerBg;
+      fg = AppTheme.dangerText;
+    } else if (p == 'high') {
+      bg = AppTheme.warningBg;
+      fg = AppTheme.warningText;
+    } else if (p == 'medium') {
+      bg = AppTheme.infoBg;
+      fg = AppTheme.infoText;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: AppTheme.pitchBlack, width: 1),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        priority.toUpperCase(),
-        style: AppTheme.mono(
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
+        priority[0].toUpperCase() + priority.substring(1).toLowerCase(),
+        style: AppTheme.heading(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
           color: fg,
         ),
       ),
@@ -1182,33 +1256,33 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1414),
-            border: Border.all(color: AppTheme.violentRed, width: 2),
+            color: AppTheme.dangerBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.dangerText.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'FAILED TO LOAD TASK',
-                style: AppTheme.mono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.violentRed,
+                'Failed to load task',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.dangerText,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 _errorMessage ?? 'Unknown error occurred.',
-                style: AppTheme.body(color: AppTheme.pureWhite, fontSize: 13),
+                style: AppTheme.body(color: AppTheme.deepSlate, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
               ElevatedButton(
                 onPressed: _loadTaskDetail,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.violentRed,
-                ),
-                child: const Text('RETRY'),
+                child: const Text('Retry'),
               ),
             ],
           ),

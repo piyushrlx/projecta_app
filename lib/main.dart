@@ -15,7 +15,7 @@ class ProjeqtaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Projecta',
+      title: 'projeqta',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.themeData,
       home: const SplashScreen(),

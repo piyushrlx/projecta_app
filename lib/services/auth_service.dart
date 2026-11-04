@@ -102,6 +102,58 @@ class AuthService {
     }
   }
 
+  /// Registers a new Admin (manager) account via POST /auth/register.
+  /// Returns a map with 'message', 'auto_approved', and optionally 'token' / 'user'.
+  Future<Map<String, dynamic>> register({
+    required String fullName,
+    required String email,
+    required String password,
+    String? deviceName,
+  }) async {
+    final payload = {
+      'full_name': fullName.trim(),
+      'email': email.trim().toLowerCase(),
+      'password': password,
+      'device_name': deviceName ?? 'projeqta Mobile Flutter App',
+    };
+
+    final response = await _apiClient.post('/auth/register', body: payload);
+    final dynamic decoded = _apiClient.decodeJson(response);
+
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Invalid response format from server.',
+      );
+    }
+
+    final bool isSuccess =
+        decoded['success'] == true || decoded['ok'] == true;
+    if (!isSuccess) {
+      final errorMsg =
+          decoded['error'] ?? decoded['message'] ?? 'Registration failed.';
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: errorMsg.toString(),
+      );
+    }
+
+    final String? token = decoded['token']?.toString();
+    if (token != null && token.isNotEmpty) {
+      await _apiClient.saveToken(token);
+      if (decoded['user'] is Map<String, dynamic>) {
+        final user = UserModel.fromJson(
+          decoded['user'] as Map<String, dynamic>,
+          token: token,
+        );
+        _currentUser = user;
+        await _saveUserLocally(user);
+      }
+    }
+
+    return decoded;
+  }
+
   /// Changes the user's password via POST /auth/change-password.
   Future<void> changePassword({
     required String currentPassword,
@@ -241,5 +293,35 @@ class AuthService {
       await prefs.remove(_tokenStorageKey);
     }
   }
+
+  /// Sends a request to send a password reset link to the given email address.
+  Future<Map<String, dynamic>> requestPasswordReset(String email) async {
+    final response = await _apiClient.post(
+      '/forgot-password.php',
+      body: {'email': email.trim()},
+    );
+
+    final dynamic decoded = _apiClient.decodeJson(response);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Invalid response format from server.',
+      );
+    }
+
+    final bool isSuccess =
+        decoded['success'] == true || decoded['ok'] == true;
+    if (!isSuccess) {
+      final errorMsg =
+          decoded['error'] ?? decoded['message'] ?? 'Failed to request password reset.';
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: errorMsg.toString(),
+      );
+    }
+
+    return decoded;
+  }
 }
+
 

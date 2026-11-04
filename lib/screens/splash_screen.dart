@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/projeqta_logo.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import 'auth/login_screen.dart';
@@ -47,9 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => DashboardScreen(user: user),
-          ),
+          MaterialPageRoute(builder: (_) => DashboardScreen(user: user)),
         );
         return;
       }
@@ -68,67 +67,57 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Neo-Brutalist Logo Box
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-              decoration: BoxDecoration(
-                color: AppTheme.pitchBlack,
-                border: Border.all(color: AppTheme.pureWhite, width: 3.0),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppTheme.violentRed,
-                    offset: Offset(6, 6),
-                    blurRadius: 0,
+      backgroundColor: const Color(0xFF0F172A), // Brand dark background
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Official projeqta brand logo
+                const ProjeqtaLogo(
+                  iconSize: 52,
+                  fontSize: 34,
+                  isDark: true,
+                  spacing: 14,
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Know what your team did today.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.heading(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.4,
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'PROJECTA',
-                    style: AppTheme.heading(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.pureWhite,
-                    ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Projects, tasks and a one-minute daily report from every employee — reviewed by you, in one place.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.body(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF94A3B8),
+                    height: 1.45,
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    color: AppTheme.violentRed,
-                    child: Text(
-                      'WORKDESK',
-                      style: AppTheme.mono(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.pureWhite,
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 48),
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Color(0xFF3B82F6),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 36),
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppTheme.violentRed,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-

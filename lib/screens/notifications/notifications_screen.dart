@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/notification_model.dart';
 import '../../services/notification_service.dart';
 
@@ -34,7 +35,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final res = await _notificationService.getNotifications();
       if (mounted) {
         setState(() {
-          _notifications = (res['notifications'] as List<NotificationModel>?) ?? [];
+          _notifications =
+              (res['notifications'] as List<NotificationModel>?) ?? [];
           _unreadCount = (res['unread_count'] as num?)?.toInt() ?? 0;
           _isLoading = false;
         });
@@ -67,27 +69,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: Text(
-          'NOTIFICATIONS',
-          style: AppTheme.heading(fontSize: 16),
-        ),
+        title: Text('Notifications', style: AppTheme.heading(fontSize: 18)),
         actions: [
           if (_unreadCount > 0)
             TextButton(
               onPressed: _handleMarkAllRead,
               child: Text(
-                'MARK ALL READ',
-                style: AppTheme.mono(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.pureWhite,
+                'Mark all read',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.royalBlue,
                 ),
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
             tooltip: 'Refresh',
             onPressed: _loadNotifications,
           ),
@@ -95,111 +94,132 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.violentRed, strokeWidth: 3),
+              child: CircularProgressIndicator(
+                color: AppTheme.royalBlue,
+                strokeWidth: 2.5,
+              ),
             )
           : _errorMessage != null
-              ? _buildErrorView()
-              : _notifications.isEmpty
-                  ? _buildEmptyView()
-                  : RefreshIndicator(
-                      onRefresh: _loadNotifications,
-                      color: AppTheme.violentRed,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _notifications.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (ctx, idx) => _buildNotificationCard(_notifications[idx]),
-                      ),
-                    ),
+          ? _buildErrorView()
+          : _notifications.isEmpty
+          ? _buildEmptyView()
+          : RefreshIndicator(
+              onRefresh: _loadNotifications,
+              color: AppTheme.royalBlue,
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: _notifications.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (ctx, idx) =>
+                    _buildNotificationCard(_notifications[idx]),
+              ),
+            ),
     );
   }
 
   Widget _buildNotificationCard(NotificationModel n) {
-    return GestureDetector(
+    return BrutalistPressable(
       onTap: () => _handleMarkSingleRead(n),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: n.isRead ? const Color(0xFF141414) : AppTheme.pureWhite,
-          border: Border.all(
-            color: n.isRead ? const Color(0xFF333333) : AppTheme.pitchBlack,
-            width: 2,
+      backgroundColor: n.isRead ? AppTheme.pureWhite : const Color(0xFFF0F7FF),
+      borderColor: n.isRead ? AppTheme.borderSubtle : const Color(0xFFBFDBFE),
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: n.isRead ? const Color(0xFFF1F5F9) : AppTheme.infoBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              _getIconForType(n.type),
+              size: 18,
+              color: n.isRead ? AppTheme.mutedSlate : AppTheme.infoText,
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: n.isRead ? Colors.transparent : AppTheme.violentRed,
-              offset: const Offset(3, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              color: n.isRead ? const Color(0xFF222222) : AppTheme.pitchBlack,
-              child: Icon(
-                _getIconForType(n.type),
-                size: 16,
-                color: n.isRead ? const Color(0xFF888888) : AppTheme.pureWhite,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          n.title,
-                          style: AppTheme.heading(
-                            fontSize: 14,
-                            color: n.isRead ? AppTheme.pureWhite : AppTheme.pitchBlack,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        n.title,
+                        style: AppTheme.heading(
+                          fontSize: 14,
+                          fontWeight: n.isRead
+                              ? FontWeight.w600
+                              : FontWeight.w700,
+                          color: AppTheme.deepSlate,
+                        ),
+                      ),
+                    ),
+                    if (!n.isRead)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.royalBlue,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'New',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.pureWhite,
                           ),
                         ),
                       ),
-                      if (!n.isRead)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          color: AppTheme.violentRed,
-                        ),
-                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  n.message,
+                  style: AppTheme.body(
+                    fontSize: 13,
+                    color: n.isRead ? AppTheme.mutedSlate : AppTheme.deepSlate,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    n.message,
-                    style: AppTheme.body(
-                      fontSize: 12,
-                      color: n.isRead ? const Color(0xFFAAAAAA) : const Color(0xFF333333),
-                    ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  n.createdAt,
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.lightSlate,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    n.createdAt,
-                    style: AppTheme.mono(
-                      fontSize: 10,
-                      color: n.isRead ? const Color(0xFF666666) : const Color(0xFF888888),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   IconData _getIconForType(String type) {
-    if (type.contains('task')) return Icons.task_alt;
-    if (type.contains('report')) return Icons.assignment;
-    if (type.contains('extension')) return Icons.access_time;
-    if (type.contains('deadline')) return Icons.warning_amber;
-    return Icons.notifications;
+    switch (type) {
+      case 'task_assigned':
+      case 'task_status_changed':
+        return Icons.task_alt_outlined;
+      case 'extension_requested':
+      case 'extension_decided':
+        return Icons.more_time_outlined;
+      case 'report_submitted':
+      case 'report_reviewed':
+        return Icons.assignment_outlined;
+      case 'compliance_alert':
+        return Icons.warning_amber_rounded;
+      default:
+        return Icons.notifications_outlined;
+    }
   }
 
   Widget _buildEmptyView() {
@@ -207,13 +227,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.notifications_off_outlined, size: 48, color: AppTheme.pureWhite),
+          const Icon(
+            Icons.notifications_none_outlined,
+            size: 48,
+            color: AppTheme.mutedSlate,
+          ),
           const SizedBox(height: 12),
-          Text('NO NOTIFICATIONS', style: AppTheme.heading(fontSize: 16)),
-          const SizedBox(height: 6),
+          Text('All Caught Up', style: AppTheme.heading(fontSize: 16)),
+          const SizedBox(height: 4),
           Text(
-            'You are all caught up!',
-            style: AppTheme.body(fontSize: 13, color: const Color(0xFFAAAAAA)),
+            'You have no new alerts or notifications.',
+            style: AppTheme.body(color: AppTheme.mutedSlate),
           ),
         ],
       ),
@@ -227,20 +251,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1414),
-            border: Border.all(color: AppTheme.violentRed, width: 2),
+            color: AppTheme.dangerBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.dangerText.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('FAILED TO LOAD NOTIFICATIONS', style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.violentRed)),
+              Text(
+                'Failed to load notifications',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.dangerText,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text(_errorMessage ?? 'Unknown error occurred.', style: AppTheme.body(color: AppTheme.pureWhite, fontSize: 13), textAlign: TextAlign.center),
+              Text(
+                _errorMessage ?? 'Unknown error occurred.',
+                style: AppTheme.body(color: AppTheme.deepSlate, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 14),
               ElevatedButton(
                 onPressed: _loadNotifications,
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.violentRed),
-                child: const Text('RETRY'),
+                child: const Text('Retry'),
               ),
             ],
           ),
@@ -249,4 +286,3 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 }
-

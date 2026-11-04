@@ -14,18 +14,25 @@ class ComplianceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusKey = (badgeData?['status_key'] ?? 'pending').toString();
-    final label = (badgeData?['label'] ?? 'Pending Report').toString();
+    final label = (badgeData?['label'] ?? 'Pending').toString();
     final deadline = (badgeData?['deadline_time'] ?? '07:00 PM').toString();
-    final isSubmitted = statusKey == 'submitted' || statusKey == 'submitted_late';
+    final isSubmitted =
+        statusKey == 'submitted' || statusKey == 'submitted_late';
     final isPending = statusKey == 'pending';
+
+    final badgeBg = isSubmitted ? AppTheme.successBg : AppTheme.warningBg;
+    final badgeText = isSubmitted ? AppTheme.successText : AppTheme.warningText;
 
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: AppTheme.neoCardDecoration(
-        backgroundColor: isSubmitted ? const Color(0xFFF0FDF4) : AppTheme.pureWhite,
-        borderColor: isPending ? AppTheme.violentRed : AppTheme.pitchBlack,
-        shadowOffset: 4.0,
-        shadowColor: isPending ? AppTheme.violentRed : AppTheme.pureWhite,
+      decoration: BoxDecoration(
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPending ? const Color(0xFFFDE68A) : AppTheme.borderSubtle,
+          width: 1.0,
+        ),
+        boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -33,12 +40,22 @@ class ComplianceCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                color: isSubmitted ? Colors.green.shade800 : AppTheme.violentRed,
-                child: Icon(
-                  isSubmitted ? Icons.check_circle_outline : Icons.assignment_late_outlined,
-                  color: AppTheme.pureWhite,
-                  size: 20,
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isSubmitted ? AppTheme.successBg : AppTheme.warningBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Icon(
+                    isSubmitted
+                        ? Icons.check_circle_outline
+                        : Icons.assignment_outlined,
+                    color: isSubmitted
+                        ? AppTheme.successText
+                        : AppTheme.warningText,
+                    size: 20,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -47,21 +64,35 @@ class ComplianceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "TODAY'S WORK REPORT",
-                      style: AppTheme.mono(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF555555),
+                      "Today's Work Report",
+                      style: AppTheme.heading(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.mutedSlate,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      label.toUpperCase(),
-                      style: AppTheme.heading(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: isPending ? AppTheme.violentRed : AppTheme.pitchBlack,
-                      ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: badgeBg,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isSubmitted ? 'Submitted — On Time' : label,
+                            style: AppTheme.heading(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: badgeText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -69,15 +100,16 @@ class ComplianceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.pitchBlack,
-                  border: Border.all(color: AppTheme.pitchBlack),
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.borderSubtle),
                 ),
                 child: Text(
-                  'DUE $deadline',
+                  'Due $deadline',
                   style: AppTheme.mono(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.pureWhite,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.mutedSlate,
                   ),
                 ),
               ),
@@ -85,20 +117,18 @@ class ComplianceCard extends StatelessWidget {
           ),
           if (isPending) ...[
             const SizedBox(height: 14),
-            ElevatedButton.icon(
-              onPressed: onSubmitReport,
-              icon: const Icon(Icons.send_rounded, size: 16),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.violentRed,
-                foregroundColor: AppTheme.pureWhite,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              label: Text(
-                'SUBMIT DAILY REPORT',
-                style: AppTheme.mono(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.pureWhite,
+            SizedBox(
+              height: 42,
+              child: ElevatedButton.icon(
+                onPressed: onSubmitReport,
+                icon: const Icon(Icons.send_rounded, size: 16),
+                label: const Text('Submit Daily Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.navyBlue,
+                  foregroundColor: AppTheme.pureWhite,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),

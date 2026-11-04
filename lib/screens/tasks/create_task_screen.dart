@@ -127,10 +127,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Task assigned successfully.'),
-          backgroundColor: AppTheme.pitchBlack,
-        ),
+        const SnackBar(content: Text('Task assigned successfully.')),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -138,7 +135,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('ApiException', '').trim()),
-          backgroundColor: AppTheme.violentRed,
+          backgroundColor: AppTheme.dangerText,
         ),
       );
     } finally {
@@ -153,15 +150,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: Text('ASSIGN NEW TASK', style: AppTheme.heading(fontSize: 16)),
+        title: Text('Assign New Task', style: AppTheme.heading(fontSize: 18)),
       ),
       body: _isLoadingLookups
           ? const Center(
               child: CircularProgressIndicator(
-                color: AppTheme.violentRed,
-                strokeWidth: 3,
+                color: AppTheme.royalBlue,
+                strokeWidth: 2.5,
               ),
             )
           : _lookupError != null
@@ -171,35 +168,36 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               child: Form(
                 key: _formKey,
                 child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: AppTheme.neoCardDecoration(
-                    backgroundColor: AppTheme.pureWhite,
-                    borderColor: AppTheme.pitchBlack,
-                    shadowOffset: 4,
-                    shadowColor: AppTheme.pureWhite,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.borderSubtle,
+                      width: 1.0,
+                    ),
+                    boxShadow: const [AppTheme.softShadow],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 1. Project Selector
                       Text(
-                        'PROJECT *',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Project *',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
                         initialValue: _selectedProjectId,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
                           contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                            horizontal: 14,
+                            vertical: 12,
                           ),
                         ),
                         items: _projects.map((p) {
@@ -214,7 +212,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: AppTheme.body(
                                 fontSize: 13,
-                                color: AppTheme.pitchBlack,
+                                color: AppTheme.deepSlate,
                               ),
                             ),
                           );
@@ -225,26 +223,24 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           });
                         },
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       // 2. Task Title
                       Text(
-                        'TASK TITLE *',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Task Title *',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       TextFormField(
                         controller: _titleController,
-                        style: AppTheme.body(color: AppTheme.pitchBlack),
+                        style: AppTheme.body(color: AppTheme.deepSlate),
                         decoration: const InputDecoration(
                           hintText:
                               'e.g. Implement checkout flow backend integration',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
                         ),
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
@@ -253,42 +249,41 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       // 3. Description
                       Text(
-                        'DESCRIPTION & INSTRUCTIONS',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Description & Instructions',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       TextFormField(
                         controller: _descriptionController,
                         maxLines: 3,
-                        style: AppTheme.body(color: AppTheme.pitchBlack),
+                        style: AppTheme.body(color: AppTheme.deepSlate),
                         decoration: const InputDecoration(
                           hintText:
                               'Provide task context, requirements, deliverables...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       // 4. Priority Selector
                       Text(
-                        'PRIORITY LEVEL',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Priority Level',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       _buildPrioritySelector(),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       // 5. Deadline & Estimated Hours
                       Row(
@@ -298,14 +293,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'DEADLINE',
-                                  style: AppTheme.mono(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
+                                  'Deadline',
+                                  style: AppTheme.heading(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.deepSlate,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                GestureDetector(
+                                const SizedBox(height: 8),
+                                InkWell(
                                   onTap: () async {
                                     final picked = await showDatePicker(
                                       context: context,
@@ -324,14 +320,18 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                       });
                                     }
                                   },
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 12,
+                                      horizontal: 14,
+                                      vertical: 14,
                                     ),
                                     decoration: BoxDecoration(
+                                      color: AppTheme.scaffoldBg,
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color: const Color(0xFFCCCCCC),
+                                        color: AppTheme.borderSubtle,
+                                        width: 1.0,
                                       ),
                                     ),
                                     child: Row(
@@ -345,8 +345,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                           style: AppTheme.mono(fontSize: 12),
                                         ),
                                         const Icon(
-                                          Icons.calendar_today,
+                                          Icons.calendar_today_outlined,
                                           size: 16,
+                                          color: AppTheme.mutedSlate,
                                         ),
                                       ],
                                     ),
@@ -361,29 +362,23 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'EST. HOURS',
-                                  style: AppTheme.mono(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
+                                  'Est. Hours',
+                                  style: AppTheme.heading(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.deepSlate,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 TextFormField(
                                   controller: _estimatedHoursController,
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
                                       ),
-                                  style: AppTheme.mono(fontSize: 12),
+                                  style: AppTheme.mono(fontSize: 13),
                                   decoration: const InputDecoration(
                                     hintText: 'e.g. 8.5',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.zero,
-                                    ),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 12,
-                                    ),
                                   ),
                                 ),
                               ],
@@ -395,23 +390,21 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
                       // 6. Lead Owner Assignee
                       Text(
-                        'PRIMARY OWNER *',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Primary Owner *',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
                         initialValue: _selectedOwnerId,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
                           contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                            horizontal: 14,
+                            vertical: 12,
                           ),
                         ),
                         items: _employees.map((e) {
@@ -426,7 +419,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: AppTheme.body(
                                 fontSize: 13,
-                                color: AppTheme.pitchBlack,
+                                color: AppTheme.deepSlate,
                               ),
                             ),
                           );
@@ -439,18 +432,19 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // 7. Contributors (Optional Multi-Select)
+                      // 7. Contributors
                       Text(
-                        'CONTRIBUTORS (OPTIONAL)',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                        'Contributors (Optional)',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.deepSlate,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: _employees
                             .where(
                               (e) =>
@@ -462,7 +456,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               final isSelected = _selectedContributorIds
                                   .contains(id);
 
-                              return GestureDetector(
+                              return InkWell(
                                 onTap: () {
                                   setState(() {
                                     if (isSelected) {
@@ -472,27 +466,31 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                     }
                                   });
                                 },
+                                borderRadius: BorderRadius.circular(6),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 10,
+                                    vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? AppTheme.pitchBlack
-                                        : const Color(0xFFF0F0F0),
+                                        ? AppTheme.navyBlue
+                                        : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: AppTheme.pitchBlack,
-                                      width: 1,
+                                      color: isSelected
+                                          ? AppTheme.navyBlue
+                                          : AppTheme.borderSubtle,
                                     ),
                                   ),
                                   child: Text(
                                     name,
-                                    style: AppTheme.mono(
-                                      fontSize: 10,
+                                    style: AppTheme.body(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
                                       color: isSelected
                                           ? AppTheme.pureWhite
-                                          : AppTheme.pitchBlack,
+                                          : AppTheme.deepSlate,
                                     ),
                                   ),
                                 ),
@@ -500,29 +498,37 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                             })
                             .toList(),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       // 8. Submit Button
                       SizedBox(
                         width: double.infinity,
+                        height: 52,
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitTask,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.violentRed,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: AppTheme.navyBlue,
+                            foregroundColor: AppTheme.pureWhite,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           child: _isSubmitting
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 22,
+                                  height: 22,
                                   child: CircularProgressIndicator(
                                     color: AppTheme.pureWhite,
-                                    strokeWidth: 2,
+                                    strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'CREATE & ASSIGN TASK',
-                                  style: TextStyle(fontWeight: FontWeight.w900),
+                              : Text(
+                                  'Create & Assign Task',
+                                  style: AppTheme.heading(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.pureWhite,
+                                  ),
                                 ),
                         ),
                       ),
@@ -539,37 +545,56 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     return Row(
       children: priorities.map((p) {
         final isSelected = _selectedPriority == p;
+        Color selectedBg = AppTheme.navyBlue;
+        Color selectedFg = AppTheme.pureWhite;
+
+        if (p == 'critical') {
+          selectedBg = AppTheme.dangerBg;
+          selectedFg = AppTheme.dangerText;
+        } else if (p == 'high') {
+          selectedBg = AppTheme.warningBg;
+          selectedFg = AppTheme.warningText;
+        } else if (p == 'medium') {
+          selectedBg = AppTheme.infoBg;
+          selectedFg = AppTheme.infoText;
+        }
+
+        final label = p[0].toUpperCase() + p.substring(1);
+
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: GestureDetector(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: InkWell(
               onTap: () {
                 setState(() {
                   _selectedPriority = p;
                 });
               },
+              borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.pitchBlack
-                      : const Color(0xFFF0F0F0),
+                  color: isSelected ? selectedBg : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
-                        ? AppTheme.pitchBlack
-                        : const Color(0xFFCCCCCC),
-                    width: 1.5,
+                        ? (p == 'critical'
+                              ? const Color(0xFFFECACA)
+                              : p == 'high'
+                              ? const Color(0xFFFDE68A)
+                              : p == 'medium'
+                              ? const Color(0xFFBFDBFE)
+                              : AppTheme.navyBlue)
+                        : AppTheme.borderSubtle,
                   ),
                 ),
                 child: Center(
                   child: Text(
-                    p.toUpperCase(),
-                    style: AppTheme.mono(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: isSelected
-                          ? AppTheme.pureWhite
-                          : AppTheme.pitchBlack,
+                    label,
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? selectedFg : AppTheme.mutedSlate,
                     ),
                   ),
                 ),
@@ -588,33 +613,33 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1414),
-            border: Border.all(color: AppTheme.violentRed, width: 2),
+            color: AppTheme.dangerBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.dangerText.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'FAILED TO LOAD FORM DATA',
-                style: AppTheme.mono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.violentRed,
+                'Failed to load form data',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.dangerText,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 _lookupError ?? 'Unknown error occurred.',
-                style: AppTheme.body(color: AppTheme.pureWhite, fontSize: 13),
+                style: AppTheme.body(color: AppTheme.deepSlate, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
               ElevatedButton(
                 onPressed: _loadLookups,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.violentRed,
-                ),
-                child: const Text('RETRY'),
+                child: const Text('Retry'),
               ),
             ],
           ),

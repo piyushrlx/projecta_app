@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/projeqta_logo.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/dashboard_service.dart';
@@ -33,6 +34,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _dashboardData;
   String? _errorMessage;
   int _unreadNotifications = 0;
+  int? _selectedProjectId;
+  int? _selectedDepartmentId;
+  int? _selectedUserId;
 
   @override
   void initState() {
@@ -48,7 +52,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
-      final data = await _dashboardService.getDashboard();
+      final data = await _dashboardService.getDashboard(
+        projectId: _selectedProjectId,
+        departmentId: _selectedDepartmentId,
+        userId: _selectedUserId,
+      );
       if (mounted) {
         setState(() {
           _dashboardData = data;
@@ -81,32 +89,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.pureWhite,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: AppTheme.pitchBlack, width: 2.0),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
         title: Text(
-          'LOGOUT CONFIRMATION',
-          style: AppTheme.heading(fontSize: 16, color: AppTheme.pitchBlack),
+          'Sign Out Confirmation',
+          style: AppTheme.heading(fontSize: 17, color: AppTheme.deepSlate),
         ),
         content: Text(
-          'Are you sure you want to sign out from Projecta?',
-          style: AppTheme.body(fontSize: 14),
+          'Are you sure you want to sign out from projeqta?',
+          style: AppTheme.body(fontSize: 14, color: AppTheme.mutedSlate),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'CANCEL',
-              style: AppTheme.mono(color: AppTheme.pitchBlack),
+              'Cancel',
+              style: AppTheme.heading(fontSize: 14, color: AppTheme.mutedSlate),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.violentRed,
+              backgroundColor: AppTheme.dangerText,
             ),
-            child: const Text('LOGOUT'),
+            child: const Text('Sign Out'),
           ),
         ],
       ),
@@ -147,92 +156,138 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = widget.user;
 
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              user.fullName.toUpperCase(),
-              style: AppTheme.heading(fontSize: 16),
+      backgroundColor: AppTheme.scaffoldBg,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.pureWhite,
+            border: Border(
+              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
             ),
-            Text(
-              user.designation ??
-                  (user.isAdmin ? 'ADMINISTRATOR' : 'STAFF WORKER'),
-              style: AppTheme.mono(
-                fontSize: 11,
-                color: const Color(0xFFAAAAAA),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Notifications Bell with Unread Badge
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Notifications',
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationsScreen(),
-                    ),
-                  );
-                  _loadNotificationCount();
-                },
-              ),
-              if (_unreadNotifications > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(
-                      color: AppTheme.violentRed,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      _unreadNotifications > 9
-                          ? '9+'
-                          : _unreadNotifications.toString(),
-                      style: AppTheme.mono(
-                        fontSize: 9,
-                        color: AppTheme.pureWhite,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      textAlign: TextAlign.center,
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const ProjeqtaIcon(size: 24),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            user.fullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.heading(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.deepSlate,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Role Pill
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: user.isAdmin
+                                ? AppTheme.infoBg
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            user.isAdmin ? 'Admin' : 'Staff',
+                            style: AppTheme.heading(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: user.isAdmin
+                                  ? AppTheme.infoText
+                                  : AppTheme.mutedSlate,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                  // Notification Bell with Soft Badge
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications_outlined,
+                          color: AppTheme.mutedSlate,
+                        ),
+                        tooltip: 'Notifications',
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
+                          _loadNotificationCount();
+                        },
+                      ),
+                      if (_unreadNotifications > 0)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.dangerText,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              _unreadNotifications > 9
+                                  ? '9+'
+                                  : _unreadNotifications.toString(),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: AppTheme.pureWhite,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: AppTheme.mutedSlate),
+                    tooltip: 'Refresh',
+                    onPressed: () {
+                      _loadDashboard();
+                      _loadNotificationCount();
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: AppTheme.mutedSlate),
+                    tooltip: 'Sign Out',
+                    onPressed: _handleLogout,
+                  ),
+                ],
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: () {
-              _loadDashboard();
-              _loadNotificationCount();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: _handleLogout,
-          ),
-        ],
+        ),
       ),
       body: IndexedStack(
         index: _selectedTabIndex,
         children: [
-          // Tab 0: Core Dashboard
+          // Tab 0: Pulse (Dashboard)
           _buildDashboardTab(),
           // Tab 1: Tasks & Kanban
           const TasksScreen(),
@@ -242,67 +297,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ReportsListScreen(user: user),
         ],
       ),
-      // Role-Aware Violent Red Floating Action Button
+      // Executive Navy Blue FAB (16px rounded corners, white icon)
       floatingActionButton: FloatingActionButton(
         onPressed: _onFabPressed,
-        backgroundColor: AppTheme.violentRed,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: AppTheme.pureWhite, width: 2),
-        ),
-        elevation: 6,
-        tooltip: user.isAdmin ? 'Assign New Task' : 'Submit Daily Report',
+        backgroundColor: AppTheme.navyBlue,
+        foregroundColor: AppTheme.pureWhite,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Icon(
-          user.isAdmin ? Icons.add_task : Icons.post_add,
-          color: AppTheme.pureWhite,
-          size: 28,
+          user.isAdmin ? Icons.add : Icons.add_comment_outlined,
+          size: 26,
         ),
       ),
-      // Persistent Neo-Brutalist Bottom Navigation Bar
+      // Persistent 4-Tab Bottom Navigation Bar (height 68px, Royal Blue active icon)
       bottomNavigationBar: Container(
+        height: 68,
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFF2E2E2E), width: 2)),
+          color: AppTheme.pureWhite,
+          border: Border(
+            top: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x050F172A),
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
+          ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedTabIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedTabIndex = index;
-            });
-            if (index == 0) _loadDashboard();
-          },
-          backgroundColor: AppTheme.pitchBlack,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.violentRed,
-          unselectedItemColor: const Color(0xFF888888),
-          selectedLabelStyle: AppTheme.mono(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-          ),
-          unselectedLabelStyle: AppTheme.mono(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'OVERVIEW',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.check_box_outlined),
-              activeIcon: Icon(Icons.check_box),
-              label: 'TASKS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.folder_outlined),
-              activeIcon: Icon(Icons.folder),
-              label: 'PROJECTS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined),
-              activeIcon: Icon(Icons.assignment),
-              label: 'REPORTS',
+        child: Row(
+          children: [
+            _buildNavTab(0, 'Pulse', Icons.speed),
+            _buildNavTab(1, 'Tasks', Icons.check_box_outlined),
+            _buildNavTab(2, 'Projects', Icons.folder_outlined),
+            _buildNavTab(3, 'Reports', Icons.assignment_outlined),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavTab(int index, String label, IconData icon) {
+    final isSelected = _selectedTabIndex == index;
+    final color = isSelected ? AppTheme.royalBlue : AppTheme.mutedSlate;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedTabIndex = index;
+          });
+          if (index == 0) _loadDashboard();
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTheme.heading(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: color,
+              ),
             ),
           ],
         ),
@@ -317,8 +375,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           width: 32,
           height: 32,
           child: CircularProgressIndicator(
-            strokeWidth: 3,
-            color: AppTheme.violentRed,
+            strokeWidth: 2.5,
+            color: AppTheme.royalBlue,
           ),
         ),
       );
@@ -331,29 +389,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1414),
-              border: Border.all(color: AppTheme.violentRed, width: 2),
+              color: AppTheme.dangerBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.dangerText.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'CONNECTION NOTICE',
-                  style: AppTheme.mono(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.violentRed,
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppTheme.dangerText,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Connection Notice',
+                      style: AppTheme.heading(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.dangerText,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   _errorMessage!,
-                  style: AppTheme.body(fontSize: 13, color: AppTheme.pureWhite),
+                  style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 ElevatedButton(
                   onPressed: _loadDashboard,
-                  child: const Text('RETRY'),
+                  child: const Text('Retry Connection'),
                 ),
               ],
             ),
@@ -364,12 +435,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadDashboard,
-      color: AppTheme.violentRed,
+      color: AppTheme.royalBlue,
       child: widget.user.isAdmin
           ? AdminDashboardView(
               user: widget.user,
               data: _dashboardData ?? {},
               onRefresh: _loadDashboard,
+              selectedProjectId: _selectedProjectId,
+              selectedDepartmentId: _selectedDepartmentId,
+              selectedUserId: _selectedUserId,
+              onFilterChanged: (projId, deptId, userId) {
+                setState(() {
+                  _selectedProjectId = projId;
+                  _selectedDepartmentId = deptId;
+                  _selectedUserId = userId;
+                });
+                _loadDashboard();
+              },
             )
           : StaffDashboardView(
               user: widget.user,

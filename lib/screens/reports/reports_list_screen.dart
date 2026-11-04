@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
@@ -20,7 +21,8 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<ReportModel> _reports = [];
-  String _selectedFilter = 'ALL'; // ALL, PENDING, APPROVED, REJECTED, CLARIFICATION
+  String _selectedFilter =
+      'All'; // All, Pending Review, Approved, Returned / Rejected, Late
 
   @override
   void initState() {
@@ -36,19 +38,27 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
 
     try {
       String? statusQuery;
-      if (_selectedFilter == 'PENDING') statusQuery = 'submitted';
-      if (_selectedFilter == 'APPROVED') statusQuery = 'approved';
-      if (_selectedFilter == 'REJECTED') statusQuery = 'rejected';
-      if (_selectedFilter == 'CLARIFICATION') statusQuery = 'clarification_requested';
+      bool? isLate;
+
+      final upper = _selectedFilter.toUpperCase();
+      if (upper == 'PENDING REVIEW') statusQuery = 'submitted';
+      if (upper == 'APPROVED') statusQuery = 'approved';
+      if (upper == 'RETURNED / REJECTED') statusQuery = 'rejected';
+      if (upper == 'LATE') isLate = true;
 
       final res = await _reportService.getReports(
         status: statusQuery,
         limit: 50,
       );
 
+      var list = (res['reports'] as List<ReportModel>?) ?? [];
+      if (upper == 'LATE' && isLate == true) {
+        list = list.where((r) => r.isLate).toList();
+      }
+
       if (mounted) {
         setState(() {
-          _reports = (res['reports'] as List<ReportModel>?) ?? [];
+          _reports = list;
           _isLoading = false;
         });
       }
@@ -78,8 +88,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
       isScrollControlled: true,
       backgroundColor: AppTheme.pureWhite,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-        side: BorderSide(color: AppTheme.pitchBlack, width: 2),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
@@ -96,15 +105,29 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'REVIEW DAILY REPORT',
-                  style: AppTheme.heading(fontSize: 16, color: AppTheme.pitchBlack),
+                  'Review Daily Report',
+                  style: AppTheme.heading(
+                    fontSize: 17,
+                    color: AppTheme.deepSlate,
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  color: AppTheme.pitchBlack,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.scaffoldBg,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                  ),
                   child: Text(
                     report.hoursFormatted,
-                    style: AppTheme.mono(fontSize: 11, color: AppTheme.pureWhite, fontWeight: FontWeight.w800),
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      color: AppTheme.deepSlate,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -112,47 +135,62 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
             const SizedBox(height: 8),
             Text(
               '${report.employeeName ?? 'Worker'} · ${report.reportDate}',
-              style: AppTheme.mono(fontSize: 12, color: const Color(0xFF666666)),
+              style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
             ),
             const SizedBox(height: 4),
             Text(
               '${report.projectName ?? 'Project'} ${report.taskTitle != null ? '· ${report.taskTitle}' : ''}',
-              style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              color: const Color(0xFFF5F5F5),
-              child: Text(
-                report.workSummary,
-                style: AppTheme.body(fontSize: 13),
+              style: AppTheme.heading(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
               ),
             ),
-            const SizedBox(height: 14),
-            Text(
-              'REVIEWER FEEDBACK / NOTE (REQUIRED FOR REJECT OR CLARIFY)',
-              style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: commentController,
-              maxLines: 2,
-              style: AppTheme.body(color: AppTheme.pitchBlack),
-              decoration: const InputDecoration(
-                hintText: 'Enter feedback for employee...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.zero),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.scaffoldBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Text(
+                report.workSummary,
+                style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
               ),
             ),
             const SizedBox(height: 16),
+            Text(
+              'Reviewer Feedback (required for Reject / Clarify)',
+              style: AppTheme.heading(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: commentController,
+              maxLines: 2,
+              style: AppTheme.body(color: AppTheme.deepSlate),
+              decoration: const InputDecoration(
+                hintText: 'Enter feedback for employee...',
+              ),
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx, 'approve');
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
-                    child: const Text('APPROVE'),
+                    onPressed: () => Navigator.pop(ctx, 'approve'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.successText,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Approve'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -161,30 +199,49 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                     onPressed: () {
                       if (commentController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Comment required to request clarification.')),
+                          const SnackBar(
+                            content: Text(
+                              'Comment required to request clarification.',
+                            ),
+                          ),
                         );
                         return;
                       }
                       Navigator.pop(ctx, 'clarify');
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE65100)),
-                    child: const Text('CLARIFY'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.warningText,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Clarify'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () {
                       if (commentController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Comment required to reject report.')),
+                          const SnackBar(
+                            content: Text('Comment required to reject report.'),
+                          ),
                         );
                         return;
                       }
                       Navigator.pop(ctx, 'reject');
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.violentRed),
-                    child: const Text('REJECT'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.dangerText,
+                      side: const BorderSide(color: AppTheme.dangerText),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Reject'),
                   ),
                 ),
               ],
@@ -203,10 +260,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Report review marked as ${result.toUpperCase()}.'),
-            backgroundColor: AppTheme.pitchBlack,
-          ),
+          SnackBar(content: Text('Report marked as ${result.toUpperCase()}.')),
         );
         _loadReports();
       } catch (e) {
@@ -214,9 +268,27 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceAll('ApiException', '').trim()),
-            backgroundColor: AppTheme.violentRed,
+            backgroundColor: AppTheme.dangerText,
           ),
         );
+      }
+    }
+  }
+
+  void _onReportTapped(ReportModel report) async {
+    if (widget.user.isAdmin) {
+      if (report.status == 'submitted' || report.status == 'submitted_late') {
+        _showReviewBottomSheet(report);
+      }
+    } else {
+      if (report.isRejected || report.isClarificationRequested) {
+        final res = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReportSubmissionScreen(existingReport: report),
+          ),
+        );
+        if (res == true) _loadReports();
       }
     }
   }
@@ -224,12 +296,12 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   @override
   Widget build(BuildContext context) {
     final isAdmin = widget.user.isAdmin;
-    final title = isAdmin ? 'DAILY REPORTS INBOX' : 'MY DAILY REPORTS';
+    final title = isAdmin ? 'Daily Reports Inbox' : 'My Daily Reports';
 
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: Text(title, style: AppTheme.heading(fontSize: 16)),
+        title: Text(title, style: AppTheme.heading(fontSize: 18)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -240,64 +312,96 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
       ),
       body: Column(
         children: [
-          // Filter Chips
-          _buildFilterBar(),
+          // Filter Chips Bar
+          _buildFilterChips(),
 
           // Reports List
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppTheme.violentRed, strokeWidth: 3),
+                    child: CircularProgressIndicator(
+                      color: AppTheme.royalBlue,
+                      strokeWidth: 2.5,
+                    ),
                   )
                 : _errorMessage != null
-                    ? _buildErrorView()
-                    : _reports.isEmpty
-                        ? _buildEmptyView()
-                        : RefreshIndicator(
-                            onRefresh: _loadReports,
-                            color: AppTheme.violentRed,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _reports.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: 12),
-                              itemBuilder: (ctx, idx) => _buildReportCard(_reports[idx]),
-                            ),
-                          ),
+                ? _buildErrorView()
+                : _reports.isEmpty
+                ? _buildEmptyView()
+                : RefreshIndicator(
+                    onRefresh: _loadReports,
+                    color: AppTheme.royalBlue,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _reports.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, idx) =>
+                          _buildReportCard(_reports[idx]),
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterBar() {
-    final filters = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CLARIFICATION'];
+  Widget _buildFilterChips() {
+    final filters = [
+      'All',
+      'Pending Review',
+      'Approved',
+      'Returned / Rejected',
+      'Late',
+    ];
+
     return Container(
-      color: AppTheme.pitchBlack,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppTheme.pureWhite,
+        border: Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+        ),
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: filters.map((f) {
-            final isSelected = _selectedFilter == f;
+            final isSelected = _selectedFilter.toUpperCase() == f.toUpperCase();
+            final isAlert =
+                f.toUpperCase() == 'LATE' ||
+                f.toUpperCase().contains('REJECTED');
+
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
+              child: InkWell(
                 onTap: () => _onFilterTap(f),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.violentRed : AppTheme.pitchBlack,
+                    color: isSelected
+                        ? (isAlert ? AppTheme.dangerBg : AppTheme.navyBlue)
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? AppTheme.violentRed : AppTheme.pureWhite,
-                      width: 1.5,
+                      color: isSelected
+                          ? (isAlert
+                                ? const Color(0xFFFECACA)
+                                : AppTheme.navyBlue)
+                          : AppTheme.borderSubtle,
                     ),
                   ),
                   child: Text(
                     f,
-                    style: AppTheme.mono(
+                    style: AppTheme.heading(
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.pureWhite,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? (isAlert ? AppTheme.dangerText : AppTheme.pureWhite)
+                          : AppTheme.mutedSlate,
                     ),
                   ),
                 ),
@@ -310,180 +414,215 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   }
 
   Widget _buildReportCard(ReportModel report) {
-    final isAdmin = widget.user.isAdmin;
-
-    return GestureDetector(
-      onTap: () async {
-        if (isAdmin && report.canReview) {
-          _showReviewBottomSheet(report);
-        } else if (!isAdmin && (report.isDraft || report.isReturned)) {
-          final updated = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ReportSubmissionScreen(existingReport: report),
-            ),
-          );
-          if (updated == true) _loadReports();
-        }
-      },
-      child: Container(
-        decoration: AppTheme.neoCardDecoration(
-          backgroundColor: AppTheme.pureWhite,
-          borderColor: AppTheme.pitchBlack,
-          shadowOffset: 4,
-          shadowColor: AppTheme.pureWhite,
-        ),
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Date, Late badge, Status pill
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      color: AppTheme.pitchBlack,
-                      child: Text(
-                        report.reportDate,
-                        style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.pureWhite),
+    return BrutalistPressable(
+      onTap: () => _onReportTapped(report),
+      backgroundColor: AppTheme.pureWhite,
+      borderColor: report.isLate
+          ? const Color(0xFFFECACA)
+          : AppTheme.borderSubtle,
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Date + Status Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.scaffoldBg,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                    ),
+                    child: Text(
+                      report.reportDate,
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.deepSlate,
                       ),
                     ),
-                    if (report.isLate) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        color: AppTheme.violentRed,
-                        child: Text(
-                          'LATE',
-                          style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.pureWhite),
+                  ),
+                  if (report.isLate) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.dangerBg,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Late',
+                        style: AppTheme.heading(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.dangerText,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                _buildStatusPill(report.status),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Project & Task Info
-            Text(
-              '${report.projectCode != null ? '${report.projectCode} · ' : ''}${report.projectName ?? 'Project'}',
-              style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF666666)),
-            ),
-            if (report.taskTitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                'TASK: ${report.taskTitle}',
-                style: AppTheme.mono(fontSize: 11, color: AppTheme.pitchBlack),
-              ),
-            ],
-            const SizedBox(height: 6),
-
-            // Summary
-            Text(
-              report.workSummary,
-              style: AppTheme.heading(fontSize: 14, color: AppTheme.pitchBlack),
-            ),
-            const SizedBox(height: 10),
-
-            // Review Comment Banner if rejected / clarified
-            if (report.reviewComment != null && report.reviewComment!.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                color: const Color(0xFFFFF3E0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.comment, size: 14, color: Color(0xFFE65100)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Manager feedback: ${report.reviewComment}',
-                        style: AppTheme.body(fontSize: 11, color: const Color(0xFFE65100), fontWeight: FontWeight.w600),
-                      ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-
-            // Bottom Meta Row: Employee (if admin), Hours, Action hint
-            Row(
-              children: [
-                if (isAdmin && report.employeeName != null) ...[
-                  const Icon(Icons.person_outline, size: 14, color: AppTheme.neutralGrey),
-                  const SizedBox(width: 4),
-                  Text(report.employeeName!, style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                ] else
-                  const Spacer(),
-                const Icon(Icons.access_time, size: 13, color: AppTheme.neutralGrey),
-                const SizedBox(width: 4),
-                Text(
-                  report.hoursFormatted,
-                  style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w800),
-                ),
-                if (isAdmin && report.canReview) ...[
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: AppTheme.violentRed,
-                    child: Text(
-                      'TAP TO REVIEW',
-                      style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.pureWhite),
-                    ),
-                  ),
-                ] else if (!isAdmin && (report.isDraft || report.isReturned)) ...[
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: AppTheme.pitchBlack,
-                    child: Text(
-                      'TAP TO REVISE',
-                      style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.pureWhite),
-                    ),
-                  ),
                 ],
-              ],
+              ),
+              _buildStatusPill(report.status),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Employee name & project
+          if (widget.user.isAdmin && report.employeeName != null) ...[
+            Text(
+              report.employeeName!,
+              style: AppTheme.heading(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
+              ),
             ),
+            const SizedBox(height: 2),
           ],
-        ),
+          Text(
+            report.projectName ?? 'General Project',
+            style: AppTheme.body(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.mutedSlate,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Summary text
+          Text(
+            report.workSummary,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+          ),
+          const SizedBox(height: 12),
+
+          // Footer meta: Hours + Progress After + Review button
+          Row(
+            children: [
+              const Icon(
+                Icons.access_time_outlined,
+                size: 14,
+                color: AppTheme.mutedSlate,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                report.hoursFormatted,
+                style: AppTheme.mono(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.mutedSlate,
+                ),
+              ),
+              if (report.progressAfter != null) ...[
+                const SizedBox(width: 10),
+                Text('·', style: TextStyle(color: AppTheme.mutedSlate)),
+                const SizedBox(width: 10),
+                Text(
+                  'Progress: ${report.progressAfter}%',
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                  ),
+                ),
+              ],
+              const Spacer(),
+              if (widget.user.isAdmin &&
+                  (report.status == 'submitted' ||
+                      report.status == 'submitted_late'))
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.infoBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Review',
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.infoText,
+                    ),
+                  ),
+                )
+              else if (!widget.user.isAdmin &&
+                  (report.isRejected || report.isClarificationRequested))
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Revise',
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.warningText,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildStatusPill(String status) {
-    Color bg = const Color(0xFFEEEEEE);
-    Color fg = AppTheme.pitchBlack;
+    Color bg = const Color(0xFFF1F5F9);
+    Color fg = AppTheme.mutedSlate;
 
     if (status == 'approved') {
-      bg = const Color(0xFFE8F5E9);
-      fg = const Color(0xFF2E7D32);
+      bg = AppTheme.successBg;
+      fg = AppTheme.successText;
     } else if (status == 'rejected') {
-      bg = const Color(0xFFFFEBEE);
-      fg = AppTheme.violentRed;
-    } else if (status == 'clarification_requested') {
-      bg = const Color(0xFFFFF3E0);
-      fg = const Color(0xFFE65100);
-    } else if (status == 'submitted') {
-      bg = const Color(0xFFE3F2FD);
-      fg = const Color(0xFF1565C0);
+      bg = AppTheme.dangerBg;
+      fg = AppTheme.dangerText;
+    } else if (status.contains('clarification')) {
+      bg = AppTheme.warningBg;
+      fg = AppTheme.warningText;
+    } else if (status.contains('submitted')) {
+      bg = AppTheme.infoBg;
+      fg = AppTheme.infoText;
     }
 
+    final formatted = status.replaceAll('_', ' ');
+    final label = formatted.isEmpty
+        ? 'Pending'
+        : formatted[0].toUpperCase() + formatted.substring(1);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: AppTheme.pitchBlack, width: 1),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        status.replaceAll('_', ' ').toUpperCase(),
-        style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w800, color: fg),
+        label,
+        style: AppTheme.heading(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: fg,
+        ),
       ),
     );
   }
@@ -493,13 +632,17 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.assignment_outlined, size: 48, color: AppTheme.pureWhite),
+          const Icon(
+            Icons.assignment_outlined,
+            size: 48,
+            color: AppTheme.mutedSlate,
+          ),
           const SizedBox(height: 12),
-          Text('NO REPORTS FOUND', style: AppTheme.heading(fontSize: 16)),
-          const SizedBox(height: 6),
+          Text('No Reports Found', style: AppTheme.heading(fontSize: 16)),
+          const SizedBox(height: 4),
           Text(
             'No reports matching filter "$_selectedFilter"',
-            style: AppTheme.body(fontSize: 13, color: const Color(0xFFAAAAAA)),
+            style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
           ),
         ],
       ),
@@ -513,20 +656,33 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1414),
-            border: Border.all(color: AppTheme.violentRed, width: 2),
+            color: AppTheme.dangerBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.dangerText.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('FAILED TO LOAD REPORTS', style: AppTheme.mono(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.violentRed)),
+              Text(
+                'Failed to load reports',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.dangerText,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text(_errorMessage ?? 'Unknown error occurred.', style: AppTheme.body(color: AppTheme.pureWhite, fontSize: 13), textAlign: TextAlign.center),
+              Text(
+                _errorMessage ?? 'Unknown error occurred.',
+                style: AppTheme.body(color: AppTheme.deepSlate, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 14),
               ElevatedButton(
                 onPressed: _loadReports,
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.violentRed),
-                child: const Text('RETRY'),
+                child: const Text('Retry'),
               ),
             ],
           ),
@@ -535,4 +691,3 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
     );
   }
 }
-

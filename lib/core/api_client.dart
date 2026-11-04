@@ -28,7 +28,7 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.7';
+  static const String defaultLanIp = '192.168.1.6';
   static const String _defaultAndroidUrl = 'http://$defaultLanIp/projecta/api/v1';
   static const String _defaultLocalhostUrl = 'http://localhost/projecta/api/v1';
   static const String _tokenPrefKey = 'auth_token';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/task_model.dart';
 import '../../services/task_service.dart';
 import 'task_detail_screen.dart';
@@ -7,15 +8,23 @@ import 'task_detail_screen.dart';
 class TasksScreen extends StatefulWidget {
   final int? projectId;
   final String? projectName;
+  final TaskService? taskService;
+  final String? initialFilter;
 
-  const TasksScreen({super.key, this.projectId, this.projectName});
+  const TasksScreen({
+    super.key,
+    this.projectId,
+    this.projectName,
+    this.taskService,
+    this.initialFilter,
+  });
 
   @override
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  final TaskService _taskService = TaskService();
+  late final TaskService _taskService = widget.taskService ?? TaskService();
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -23,8 +32,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
   // List View State
   List<TaskModel> _tasks = [];
-  String _selectedFilter =
-      'ALL'; // ALL, MY PRIORITY, OVERDUE, IN PROGRESS, BLOCKED, PENDING REVIEW
+  late String _selectedFilter = widget.initialFilter ?? 'All';
 
   // Kanban View State
   Map<String, List<TaskModel>> _kanbanColumns = {
@@ -35,10 +43,20 @@ class _TasksScreenState extends State<TasksScreen> {
     'completed': [],
   };
 
+  late final PageController _kanbanPageController;
+  int _activeKanbanPage = 0;
+
   @override
   void initState() {
     super.initState();
+    _kanbanPageController = PageController(viewportFraction: 0.88);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _kanbanPageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -61,11 +79,12 @@ class _TasksScreenState extends State<TasksScreen> {
         bool? overdue;
         String? priority;
 
-        if (_selectedFilter == 'OVERDUE') overdue = true;
-        if (_selectedFilter == 'IN PROGRESS') status = 'in_progress';
-        if (_selectedFilter == 'BLOCKED') status = 'blocked';
-        if (_selectedFilter == 'PENDING REVIEW') status = 'pending_review';
-        if (_selectedFilter == 'MY PRIORITY') priority = 'high';
+        final upper = _selectedFilter.toUpperCase();
+        if (upper == 'OVERDUE') overdue = true;
+        if (upper == 'IN PROGRESS') status = 'in_progress';
+        if (upper == 'BLOCKED') status = 'blocked';
+        if (upper == 'PENDING REVIEW') status = 'pending_review';
+        if (upper == 'MY PRIORITY') priority = 'high';
 
         final res = await _taskService.getTasks(
           projectId: widget.projectId,
@@ -103,30 +122,19 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     final title = widget.projectName != null
-        ? '${widget.projectName!.toUpperCase()} TASKS'
-        : 'TASKS & KANBAN';
+        ? '${widget.projectName} Tasks'
+        : 'Tasks & Kanban';
 
     return Scaffold(
-      backgroundColor: AppTheme.pitchBlack,
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
         title: Text(
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTheme.heading(fontSize: 16),
+          style: AppTheme.heading(fontSize: 18),
         ),
         actions: [
-          // View Toggle Button (List vs Kanban)
-          IconButton(
-            icon: Icon(_isKanbanView ? Icons.view_list : Icons.view_kanban),
-            tooltip: _isKanbanView ? 'Switch to List' : 'Switch to Kanban',
-            onPressed: () {
-              setState(() {
-                _isKanbanView = !_isKanbanView;
-              });
-              _loadData();
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -136,7 +144,10 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
       body: Column(
         children: [
-          // If in list view, show 1-tap filter chips
+          // Top Segmented Switcher
+          _buildViewToggle(),
+
+          // If in list view, show filter chips
           if (!_isKanbanView) _buildFilterBar(),
 
           // Main Body
@@ -144,8 +155,8 @@ class _TasksScreenState extends State<TasksScreen> {
             child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: AppTheme.violentRed,
-                      strokeWidth: 3,
+                      color: AppTheme.royalBlue,
+                      strokeWidth: 2.5,
                     ),
                   )
                 : _errorMessage != null
@@ -159,52 +170,174 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  Widget _buildViewToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppTheme.pureWhite,
+        border: Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  if (_isKanbanView) {
+                    setState(() => _isKanbanView = false);
+                    _loadData();
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: !_isKanbanView
+                        ? AppTheme.pureWhite
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: !_isKanbanView
+                        ? const [AppTheme.softShadow]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.format_list_bulleted,
+                        size: 16,
+                        color: !_isKanbanView
+                            ? AppTheme.navyBlue
+                            : AppTheme.mutedSlate,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'List View',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: !_isKanbanView
+                              ? AppTheme.navyBlue
+                              : AppTheme.mutedSlate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  if (!_isKanbanView) {
+                    setState(() => _isKanbanView = true);
+                    _loadData();
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _isKanbanView
+                        ? AppTheme.pureWhite
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: _isKanbanView
+                        ? const [AppTheme.softShadow]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.view_column_outlined,
+                        size: 16,
+                        color: _isKanbanView
+                            ? AppTheme.navyBlue
+                            : AppTheme.mutedSlate,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Kanban Board',
+                        style: AppTheme.heading(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _isKanbanView
+                              ? AppTheme.navyBlue
+                              : AppTheme.mutedSlate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterBar() {
     final filters = [
-      'ALL',
-      'MY PRIORITY',
-      'OVERDUE',
-      'IN PROGRESS',
-      'BLOCKED',
-      'PENDING REVIEW',
+      'All',
+      'My Priority',
+      'Overdue',
+      'In Progress',
+      'Blocked',
+      'Pending Review',
     ];
 
     return Container(
-      color: AppTheme.pitchBlack,
+      color: AppTheme.pureWhite,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: filters.map((f) {
-            final isSelected = _selectedFilter == f;
-            final isAlert = f == 'OVERDUE' || f == 'BLOCKED';
+            final isSelected = _selectedFilter.toUpperCase() == f.toUpperCase();
+            final isAlert =
+                f.toUpperCase() == 'OVERDUE' || f.toUpperCase() == 'BLOCKED';
 
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
+              child: InkWell(
                 onTap: () => _onFilterTap(f),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 7,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? (isAlert ? AppTheme.violentRed : AppTheme.pureWhite)
-                        : AppTheme.pitchBlack,
+                        ? (isAlert ? AppTheme.dangerBg : AppTheme.navyBlue)
+                        : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isAlert ? AppTheme.violentRed : AppTheme.pureWhite,
-                      width: 2.0,
+                      color: isSelected
+                          ? (isAlert
+                                ? const Color(0xFFFECACA)
+                                : AppTheme.navyBlue)
+                          : AppTheme.borderSubtle,
                     ),
                   ),
                   child: Text(
                     f,
-                    style: AppTheme.mono(
+                    style: AppTheme.heading(
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: isSelected
-                          ? (isAlert ? AppTheme.pureWhite : AppTheme.pitchBlack)
-                          : AppTheme.pureWhite,
+                          ? (isAlert ? AppTheme.dangerText : AppTheme.pureWhite)
+                          : AppTheme.mutedSlate,
                     ),
                   ),
                 ),
@@ -225,17 +358,14 @@ class _TasksScreenState extends State<TasksScreen> {
             const Icon(
               Icons.check_circle_outline,
               size: 48,
-              color: AppTheme.pureWhite,
+              color: AppTheme.mutedSlate,
             ),
             const SizedBox(height: 12),
-            Text('NO TASKS FOUND', style: AppTheme.heading(fontSize: 16)),
-            const SizedBox(height: 6),
+            Text('No Tasks Found', style: AppTheme.heading(fontSize: 16)),
+            const SizedBox(height: 4),
             Text(
               'No tasks matching filter "$_selectedFilter"',
-              style: AppTheme.body(
-                fontSize: 13,
-                color: const Color(0xFFAAAAAA),
-              ),
+              style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
             ),
           ],
         ),
@@ -244,80 +374,222 @@ class _TasksScreenState extends State<TasksScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: AppTheme.violentRed,
+      color: AppTheme.royalBlue,
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _tasks.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (ctx, idx) => _buildTaskCard(_tasks[idx]),
       ),
     );
   }
 
+  // Smooth Horizontal Snap Columns via PageView (viewportFraction: 0.88)
   Widget _buildKanbanBoard() {
-    final columnKeys = [
-      {'key': 'not_started', 'label': 'NOT STARTED'},
-      {'key': 'in_progress', 'label': 'IN PROGRESS'},
-      {'key': 'blocked', 'label': 'BLOCKED'},
-      {'key': 'pending_review', 'label': 'REVIEW'},
-      {'key': 'completed', 'label': 'DONE'},
+    final columnDefs = [
+      {
+        'key': 'not_started',
+        'label': 'Not Started',
+        'bg': const Color(0xFFF1F5F9),
+        'fg': AppTheme.mutedSlate,
+      },
+      {
+        'key': 'in_progress',
+        'label': 'In Progress',
+        'bg': AppTheme.infoBg,
+        'fg': AppTheme.infoText,
+      },
+      {
+        'key': 'blocked',
+        'label': 'Blocked',
+        'bg': AppTheme.dangerBg,
+        'fg': AppTheme.dangerText,
+      },
+      {
+        'key': 'pending_review',
+        'label': 'Pending Review',
+        'bg': AppTheme.warningBg,
+        'fg': AppTheme.warningText,
+      },
+      {
+        'key': 'completed',
+        'label': 'Completed',
+        'bg': AppTheme.successBg,
+        'fg': AppTheme.successText,
+      },
     ];
 
-    return DefaultTabController(
-      length: columnKeys.length,
-      child: Column(
-        children: [
-          Container(
-            color: const Color(0xFF161616),
-            child: TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              indicatorColor: AppTheme.violentRed,
-              indicatorWeight: 3,
-              labelColor: AppTheme.pureWhite,
-              unselectedLabelColor: const Color(0xFF888888),
-              labelStyle: AppTheme.mono(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-              tabs: columnKeys.map((c) {
-                final list = _kanbanColumns[c['key']] ?? [];
-                return Tab(text: '${c['label']} (${list.length})');
-              }).toList(),
-            ),
-          ),
-          Expanded(
-            child: TabBarView(
-              children: columnKeys.map((c) {
-                final list = _kanbanColumns[c['key']] ?? [];
-                if (list.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No tasks in ${c['label']}',
-                      style: AppTheme.body(color: const Color(0xFF888888)),
+    return Column(
+      children: [
+        // Horizontal Column Indicators & Status Pills
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: AppTheme.pureWhite,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(columnDefs.length, (idx) {
+                final def = columnDefs[idx];
+                final list = _kanbanColumns[def['key']] ?? [];
+                final isCurrent = _activeKanbanPage == idx;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () {
+                      _kanbanPageController.animateToPage(
+                        idx,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? AppTheme.navyBlue
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${def['label']} (${list.length})',
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isCurrent
+                              ? AppTheme.pureWhite
+                              : AppTheme.mutedSlate,
+                        ),
+                      ),
                     ),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: _loadData,
-                  color: AppTheme.violentRed,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: list.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (ctx, idx) => _buildTaskCard(list[idx]),
                   ),
                 );
-              }).toList(),
+              }),
             ),
           ),
-        ],
-      ),
+        ),
+
+        // Snapping PageView with viewportFraction 0.88
+        Expanded(
+          child: PageView.builder(
+            controller: _kanbanPageController,
+            itemCount: columnDefs.length,
+            onPageChanged: (idx) {
+              setState(() => _activeKanbanPage = idx);
+            },
+            itemBuilder: (context, colIndex) {
+              final col = columnDefs[colIndex];
+              final list = _kanbanColumns[col['key']] ?? [];
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6.0,
+                  vertical: 12.0,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.borderSubtle,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Column Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppTheme.pureWhite,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppTheme.borderSubtle,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              col['label'] as String,
+                              style: AppTheme.heading(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.deepSlate,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: col['bg'] as Color,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${list.length}',
+                                style: AppTheme.mono(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: col['fg'] as Color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Column Tasks List
+                      Expanded(
+                        child: list.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No tasks in ${col['label']}',
+                                  style: AppTheme.body(
+                                    fontSize: 12,
+                                    color: AppTheme.mutedSlate,
+                                  ),
+                                ),
+                              )
+                            : RefreshIndicator(
+                                onRefresh: _loadData,
+                                color: AppTheme.royalBlue,
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.all(12),
+                                  itemCount: list.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (ctx, idx) =>
+                                      _buildTaskCard(list[idx]),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildTaskCard(TaskModel task) {
-    return GestureDetector(
+    return BrutalistPressable(
       onTap: () async {
         final changed = await Navigator.push<bool>(
           context,
@@ -327,198 +599,206 @@ class _TasksScreenState extends State<TasksScreen> {
           _loadData();
         }
       },
-      child: Container(
-        decoration: AppTheme.neoCardDecoration(
-          backgroundColor: AppTheme.pureWhite,
-          borderColor: AppTheme.pitchBlack,
-          shadowOffset: 4,
-          shadowColor: AppTheme.pureWhite,
-        ),
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Code + Project + Priority Badge
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  color: AppTheme.pitchBlack,
-                  child: Text(
-                    task.taskCode,
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.pureWhite,
-                    ),
-                  ),
-                ),
-                if (task.projectName != null) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      task.projectName!.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.mono(
-                        fontSize: 10,
-                        color: const Color(0xFF666666),
-                      ),
-                    ),
-                  ),
-                ] else
-                  const Spacer(),
-                _buildPriorityBadge(task.priority),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Title
-            Text(
-              task.title,
-              style: AppTheme.heading(fontSize: 15, color: AppTheme.pitchBlack),
-            ),
-            const SizedBox(height: 8),
-
-            // Dependency Lock Banner if locked
-            if (task.isLocked) ...[
+      backgroundColor: AppTheme.pureWhite,
+      borderColor: task.isLocked
+          ? const Color(0xFFFECACA)
+          : AppTheme.borderSubtle,
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Code + Project + Priority Badge
+          Row(
+            children: [
               Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                color: const Color(0xFFFFEBEE),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.lock,
-                      size: 14,
-                      color: AppTheme.violentRed,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'BLOCKED BY ${task.openDependenciesCount} UNFINISHED DEPENDENCY',
-                        style: AppTheme.mono(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.violentRed,
-                        ),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: AppTheme.borderSubtle),
                 ),
-              ),
-            ],
-
-            // Progress Bar if in progress
-            if (task.status == 'in_progress' || task.progress > 0) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'PROGRESS',
-                    style: AppTheme.mono(
-                      fontSize: 10,
-                      color: const Color(0xFF666666),
-                    ),
-                  ),
-                  Text(
-                    '${task.progress}%',
-                    style: AppTheme.mono(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.zero,
-                child: LinearProgressIndicator(
-                  value: (task.progress / 100).clamp(0.0, 1.0),
-                  minHeight: 5,
-                  backgroundColor: const Color(0xFFEEEEEE),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    task.isLocked ? AppTheme.violentRed : AppTheme.pitchBlack,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Bottom Meta Row: Status tag, Assignee count, Deadline
-            Row(
-              children: [
-                _buildStatusPill(task.status),
-                const SizedBox(width: 8),
-                if (task.assignees.isNotEmpty) ...[
-                  const Icon(
-                    Icons.person_outline,
-                    size: 13,
-                    color: AppTheme.neutralGrey,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    task.assignees.first.fullName.split(' ').first,
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      color: const Color(0xFF555555),
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 12,
-                  color: task.isOverdue
-                      ? AppTheme.violentRed
-                      : AppTheme.neutralGrey,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  task.deadline ?? 'NO DATE',
+                child: Text(
+                  task.taskCode,
                   style: AppTheme.mono(
                     fontSize: 11,
-                    color: task.isOverdue
-                        ? AppTheme.violentRed
-                        : const Color(0xFF444444),
-                    fontWeight: task.isOverdue
-                        ? FontWeight.w800
-                        : FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
+                  ),
+                ),
+              ),
+              if (task.projectName != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    task.projectName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body(
+                      fontSize: 11,
+                      color: AppTheme.mutedSlate,
+                    ),
+                  ),
+                ),
+              ] else
+                const Spacer(),
+              _buildPriorityBadge(task.priority),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Title
+          Text(
+            task.title,
+            style: AppTheme.heading(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.deepSlate,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Dependency Lock Banner if locked
+          if (task.isLocked) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.dangerBg,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 14,
+                    color: AppTheme.dangerText,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Blocked by ${task.openDependenciesCount} dependency',
+                      style: AppTheme.heading(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.dangerText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Progress Bar if in progress
+          if (task.status == 'in_progress' || task.progress > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Progress',
+                  style: AppTheme.body(
+                    fontSize: 10,
+                    color: AppTheme.mutedSlate,
+                  ),
+                ),
+                Text(
+                  '${task.progress}%',
+                  style: AppTheme.mono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: (task.progress / 100).clamp(0.0, 1.0),
+                minHeight: 5,
+                backgroundColor: const Color(0xFFE2E8F0),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  task.isLocked ? AppTheme.dangerText : AppTheme.royalBlue,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
-        ),
+
+          // Bottom Meta Row: Status tag, Assignee count, Deadline
+          Row(
+            children: [
+              _buildStatusPill(task.status),
+              const SizedBox(width: 8),
+              if (task.assignees.isNotEmpty) ...[
+                const Icon(
+                  Icons.person_outline,
+                  size: 13,
+                  color: AppTheme.mutedSlate,
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  task.assignees.first.fullName.split(' ').first,
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                  ),
+                ),
+              ],
+              const Spacer(),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 12,
+                color: task.isOverdue
+                    ? AppTheme.dangerText
+                    : AppTheme.lightSlate,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                task.deadline ?? 'No date',
+                style: AppTheme.mono(
+                  fontSize: 11,
+                  color: task.isOverdue
+                      ? AppTheme.dangerText
+                      : AppTheme.mutedSlate,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPriorityBadge(String priority) {
-    Color bg = const Color(0xFFE0E0E0);
-    Color fg = AppTheme.pitchBlack;
+    Color bg = const Color(0xFFF1F5F9);
+    Color fg = AppTheme.mutedSlate;
 
-    if (priority == 'critical' || priority == 'high') {
-      bg = AppTheme.violentRed;
-      fg = AppTheme.pureWhite;
-    } else if (priority == 'medium') {
-      bg = const Color(0xFFFFF3E0);
-      fg = const Color(0xFFE65100);
+    final p = priority.toLowerCase();
+    if (p == 'critical' || p == 'urgent') {
+      bg = AppTheme.dangerBg;
+      fg = AppTheme.dangerText;
+    } else if (p == 'high') {
+      bg = AppTheme.warningBg;
+      fg = AppTheme.warningText;
+    } else if (p == 'medium') {
+      bg = AppTheme.infoBg;
+      fg = AppTheme.infoText;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: AppTheme.pitchBlack, width: 1),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        priority.toUpperCase(),
-        style: AppTheme.mono(
+        priority[0].toUpperCase() + priority.substring(1).toLowerCase(),
+        style: AppTheme.heading(
           fontSize: 9,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           color: fg,
         ),
       ),
@@ -526,34 +806,39 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Widget _buildStatusPill(String status) {
-    Color bg = const Color(0xFFEEEEEE);
-    Color fg = AppTheme.pitchBlack;
+    Color bg = const Color(0xFFF1F5F9);
+    Color fg = AppTheme.mutedSlate;
 
     if (status == 'completed') {
-      bg = const Color(0xFFE8F5E9);
-      fg = const Color(0xFF2E7D32);
+      bg = AppTheme.successBg;
+      fg = AppTheme.successText;
     } else if (status == 'blocked') {
-      bg = const Color(0xFFFFEBEE);
-      fg = AppTheme.violentRed;
+      bg = AppTheme.dangerBg;
+      fg = AppTheme.dangerText;
     } else if (status == 'in_progress') {
-      bg = const Color(0xFFE3F2FD);
-      fg = const Color(0xFF1565C0);
+      bg = AppTheme.infoBg;
+      fg = AppTheme.infoText;
     } else if (status == 'pending_review') {
-      bg = const Color(0xFFFFF8E1);
-      fg = const Color(0xFFF57F17);
+      bg = AppTheme.warningBg;
+      fg = AppTheme.warningText;
     }
 
+    final formatted = status.replaceAll('_', ' ');
+    final label = formatted.isEmpty
+        ? 'Pending'
+        : formatted[0].toUpperCase() + formatted.substring(1).toLowerCase();
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: AppTheme.pitchBlack, width: 1),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        status.replaceAll('_', ' ').toUpperCase(),
-        style: AppTheme.mono(
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
+        label,
+        style: AppTheme.heading(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
           color: fg,
         ),
       ),
@@ -567,34 +852,31 @@ class _TasksScreenState extends State<TasksScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1414),
-            border: Border.all(color: AppTheme.violentRed, width: 2),
+            color: AppTheme.dangerBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.dangerText.withValues(alpha: 0.3),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'FAILED TO LOAD TASKS',
-                style: AppTheme.mono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.violentRed,
+                'Failed to load tasks',
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.dangerText,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 _errorMessage ?? 'Unknown error occurred.',
-                style: AppTheme.body(color: AppTheme.pureWhite, fontSize: 13),
+                style: AppTheme.body(color: AppTheme.deepSlate, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: _loadData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.violentRed,
-                ),
-                child: const Text('RETRY'),
-              ),
+              ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
             ],
           ),
         ),
