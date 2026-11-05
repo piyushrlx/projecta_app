@@ -10,11 +10,7 @@ class ApiException implements Exception {
   final String message;
   final dynamic details;
 
-  ApiException({
-    required this.statusCode,
-    required this.message,
-    this.details,
-  });
+  ApiException({required this.statusCode, required this.message, this.details});
 
   @override
   String toString() => 'ApiException [$statusCode]: $message';
@@ -28,12 +24,17 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.6';
-  static const String _defaultAndroidUrl = 'http://$defaultLanIp/projecta/api/v1';
+  static const String defaultLanIp = '192.168.1.4';
+  static const String _defaultAdbTunnelUrl =
+      'http://localhost:8080/projecta/api/v1';
+  static const String _defaultAndroidUrl =
+      'http://$defaultLanIp/projecta/api/v1';
   static const String _defaultLocalhostUrl = 'http://localhost/projecta/api/v1';
   static const String _tokenPrefKey = 'auth_token';
   static const String _baseUrlPrefKey = 'api_base_url';
-  static const Duration requestTimeout = Duration(seconds: 10);
+
+  /// Set to 30 minutes as requested for long-running local operations
+  static const Duration requestTimeout = Duration(minutes: 30);
 
   String _baseUrl = _defaultLocalhostUrl;
   String? _cachedToken;
@@ -107,10 +108,9 @@ class ApiClient {
         (key, value) => MapEntry(key, value?.toString() ?? ''),
       );
       final baseUri = Uri.parse(fullUrl);
-      return baseUri.replace(queryParameters: {
-        ...baseUri.queryParameters,
-        ...stringQuery,
-      });
+      return baseUri.replace(
+        queryParameters: {...baseUri.queryParameters, ...stringQuery},
+      );
     }
 
     return Uri.parse(fullUrl);
@@ -136,34 +136,94 @@ class ApiClient {
     return headers;
   }
 
+  /// Automatically tests alternative local endpoints (USB ADB tunnel, Wi-Fi LAN IP, Emulator)
+  /// when the current baseUrl experiences connection timeout.
+  Future<bool> _tryAutoFallback() async {
+    if (kIsWeb) return false;
+    final candidates = <String>[
+      _defaultAdbTunnelUrl,
+      'http://$defaultLanIp/projecta/api/v1',
+      'http://10.0.2.2/projecta/api/v1',
+      'http://localhost/projecta/api/v1',
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate == _baseUrl) continue;
+      try {
+        final healthUri = Uri.parse('$candidate/health');
+        final res = await _httpClient
+            .get(healthUri)
+            .timeout(const Duration(milliseconds: 1500));
+        if (res.statusCode == 200) {
+          await setBaseUrl(candidate);
+          return true;
+        }
+      } catch (_) {
+        // Try next candidate
+      }
+    }
+    return false;
+  }
+
+  /// Wraps HTTP requests with auto-fallback and unified error transformation
+  Future<http.Response> _executeWithFallback(
+    Future<http.Response> Function() requestSender,
+  ) async {
+    try {
+      final response = await requestSender().timeout(requestTimeout);
+      return _handleResponse(response);
+    } on Exception catch (initialError) {
+      final isNetworkIssue =
+          initialError is TimeoutException ||
+          initialError is SocketException ||
+          initialError is http.ClientException;
+
+      if (isNetworkIssue) {
+        final switched = await _tryAutoFallback();
+        if (switched) {
+          try {
+            final retryResponse = await requestSender().timeout(requestTimeout);
+            return _handleResponse(retryResponse);
+          } catch (_) {
+            // Fall through to throw standard formatted ApiException below
+          }
+        }
+      }
+
+      if (initialError is TimeoutException) {
+        throw ApiException(
+          statusCode: 0,
+          message:
+              'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
+        );
+      } else if (initialError is SocketException) {
+        throw ApiException(
+          statusCode: 0,
+          message:
+              'Cannot connect to $_baseUrl (${initialError.message}).\nTip: If testing via USB cable, ensure "adb reverse tcp:8080 tcp:80" is active.',
+        );
+      } else if (initialError is http.ClientException) {
+        throw ApiException(
+          statusCode: 0,
+          message:
+              'Network connection failed: ${initialError.message}\n(Target: $_baseUrl)',
+        );
+      } else {
+        rethrow;
+      }
+    }
+  }
+
   Future<http.Response> get(
     String endpoint, {
     Map<String, String>? headers,
     Map<String, dynamic>? queryParameters,
   }) async {
-    final uri = _buildUri(endpoint, queryParameters);
-    final mergedHeaders = await _buildHeaders(extraHeaders: headers);
-    try {
-      final response = await _httpClient
-          .get(uri, headers: mergedHeaders)
-          .timeout(requestTimeout);
-      return _handleResponse(response);
-    } on TimeoutException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
-      );
-    } on SocketException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Cannot connect to $_baseUrl (${e.message}).',
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Network connection failed: ${e.message}\n(Target: $_baseUrl)',
-      );
-    }
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint, queryParameters);
+      final mergedHeaders = await _buildHeaders(extraHeaders: headers);
+      return _httpClient.get(uri, headers: mergedHeaders);
+    });
   }
 
   Future<http.Response> post(
@@ -171,31 +231,12 @@ class ApiClient {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final uri = _buildUri(endpoint);
-    final mergedHeaders = await _buildHeaders(extraHeaders: headers);
-    final encodedBody = body != null ? jsonEncode(body) : null;
-
-    try {
-      final response = await _httpClient
-          .post(uri, headers: mergedHeaders, body: encodedBody)
-          .timeout(requestTimeout);
-      return _handleResponse(response);
-    } on TimeoutException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
-      );
-    } on SocketException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Cannot connect to $_baseUrl (${e.message}).',
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Network connection failed: ${e.message}\n(Target: $_baseUrl)',
-      );
-    }
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint);
+      final mergedHeaders = await _buildHeaders(extraHeaders: headers);
+      final encodedBody = body != null ? jsonEncode(body) : null;
+      return _httpClient.post(uri, headers: mergedHeaders, body: encodedBody);
+    });
   }
 
   Future<http.Response> put(
@@ -203,31 +244,12 @@ class ApiClient {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final uri = _buildUri(endpoint);
-    final mergedHeaders = await _buildHeaders(extraHeaders: headers);
-    final encodedBody = body != null ? jsonEncode(body) : null;
-
-    try {
-      final response = await _httpClient
-          .put(uri, headers: mergedHeaders, body: encodedBody)
-          .timeout(requestTimeout);
-      return _handleResponse(response);
-    } on TimeoutException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
-      );
-    } on SocketException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Cannot connect to $_baseUrl (${e.message}).',
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Network connection failed: ${e.message}\n(Target: $_baseUrl)',
-      );
-    }
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint);
+      final mergedHeaders = await _buildHeaders(extraHeaders: headers);
+      final encodedBody = body != null ? jsonEncode(body) : null;
+      return _httpClient.put(uri, headers: mergedHeaders, body: encodedBody);
+    });
   }
 
   Future<http.Response> patch(
@@ -235,31 +257,12 @@ class ApiClient {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final uri = _buildUri(endpoint);
-    final mergedHeaders = await _buildHeaders(extraHeaders: headers);
-    final encodedBody = body != null ? jsonEncode(body) : null;
-
-    try {
-      final response = await _httpClient
-          .patch(uri, headers: mergedHeaders, body: encodedBody)
-          .timeout(requestTimeout);
-      return _handleResponse(response);
-    } on TimeoutException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
-      );
-    } on SocketException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Cannot connect to $_baseUrl (${e.message}).',
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Network connection failed: ${e.message}\n(Target: $_baseUrl)',
-      );
-    }
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint);
+      final mergedHeaders = await _buildHeaders(extraHeaders: headers);
+      final encodedBody = body != null ? jsonEncode(body) : null;
+      return _httpClient.patch(uri, headers: mergedHeaders, body: encodedBody);
+    });
   }
 
   Future<http.Response> delete(
@@ -267,31 +270,12 @@ class ApiClient {
     Map<String, String>? headers,
     Object? body,
   }) async {
-    final uri = _buildUri(endpoint);
-    final mergedHeaders = await _buildHeaders(extraHeaders: headers);
-    final encodedBody = body != null ? jsonEncode(body) : null;
-
-    try {
-      final response = await _httpClient
-          .delete(uri, headers: mergedHeaders, body: encodedBody)
-          .timeout(requestTimeout);
-      return _handleResponse(response);
-    } on TimeoutException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Connection timed out reaching $_baseUrl.\nVerify your device Wi-Fi and server IP.',
-      );
-    } on SocketException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Cannot connect to $_baseUrl (${e.message}).',
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Network connection failed: ${e.message}\n(Target: $_baseUrl)',
-      );
-    }
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint);
+      final mergedHeaders = await _buildHeaders(extraHeaders: headers);
+      final encodedBody = body != null ? jsonEncode(body) : null;
+      return _httpClient.delete(uri, headers: mergedHeaders, body: encodedBody);
+    });
   }
 
   http.Response _handleResponse(http.Response response) {
@@ -305,9 +289,11 @@ class ApiClient {
     try {
       responseData = jsonDecode(response.body);
       if (responseData is Map<String, dynamic>) {
-        if (responseData.containsKey('error') && responseData['error'] != null) {
+        if (responseData.containsKey('error') &&
+            responseData['error'] != null) {
           errorMessage = responseData['error'].toString();
-        } else if (responseData.containsKey('message') && responseData['message'] != null) {
+        } else if (responseData.containsKey('message') &&
+            responseData['message'] != null) {
           errorMessage = responseData['message'].toString();
         }
       }
@@ -326,4 +312,3 @@ class ApiClient {
     return jsonDecode(response.body);
   }
 }
-

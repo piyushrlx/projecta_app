@@ -27,8 +27,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkSession() async {
     await _apiClient.loadSavedBaseUrl();
-    // Artificial small delay for logo presentation
-    await Future.delayed(const Duration(milliseconds: 600));
 
     try {
       final token = await _apiClient.getToken();

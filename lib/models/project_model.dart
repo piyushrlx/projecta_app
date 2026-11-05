@@ -1,3 +1,27 @@
+int _asInt(dynamic val, [int fallback = 0]) {
+  if (val == null) return fallback;
+  if (val is num) return val.toInt();
+  return int.tryParse(val.toString()) ?? fallback;
+}
+
+int? _asNullableInt(dynamic val) {
+  if (val == null) return null;
+  if (val is num) return val.toInt();
+  return int.tryParse(val.toString());
+}
+
+double? _asNullableDouble(dynamic val) {
+  if (val == null) return null;
+  if (val is num) return val.toDouble();
+  return double.tryParse(val.toString());
+}
+
+double _asDouble(dynamic val, [double fallback = 0.0]) {
+  if (val == null) return fallback;
+  if (val is num) return val.toDouble();
+  return double.tryParse(val.toString()) ?? fallback;
+}
+
 class ProjectModel {
   final int id;
   final String projectCode;
@@ -16,10 +40,13 @@ class ProjectModel {
   final int memberCount;
   final int totalTasks;
   final int doneTasks;
+  final int pendingTasks;
   final int overdueTasks;
   final double completionPercent;
   final bool isWeighted;
   final bool canManage;
+  final String? archivedAt;
+  final List<Map<String, dynamic>> teamMembers;
 
   const ProjectModel({
     required this.id,
@@ -39,39 +66,101 @@ class ProjectModel {
     this.memberCount = 0,
     this.totalTasks = 0,
     this.doneTasks = 0,
+    this.pendingTasks = 0,
     this.overdueTasks = 0,
     this.completionPercent = 0.0,
     this.isWeighted = false,
     this.canManage = false,
+    this.archivedAt,
+    this.teamMembers = const [],
   });
 
   bool get isActive => status == 'active';
   bool get isCompleted => status == 'completed';
-  bool get isAtRisk => overdueTasks > 0 || status == 'on_hold';
+  bool get isAtRisk => overdueTasks > 0 || status == 'on_hold' || isOverdue;
+  bool get isArchived => archivedAt != null && archivedAt!.isNotEmpty;
+
+  /// True if deadline is past and status is not completed/cancelled (matching web projects.php line 158)
+  bool get isOverdue {
+    if (deadline == null || deadline!.isEmpty) return false;
+    if (status == 'completed' || status == 'cancelled') return false;
+    try {
+      final d = DateTime.parse(deadline!);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dead = DateTime(d.year, d.month, d.day);
+      return dead.isBefore(today);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Days late if overdue (matching web days_between(deadline, today))
+  int get daysOverdue {
+    if (!isOverdue) return 0;
+    try {
+      final d = DateTime.parse(deadline!);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dead = DateTime(d.year, d.month, d.day);
+      return today.difference(dead).inDays;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Formatted days label matching web project-details.php (e.g. '30 days remaining', 'Due today', '2 days overdue')
+  String? get deadlineDaysLabel {
+    if (deadline == null || deadline!.isEmpty) return null;
+    if (status == 'completed' || status == 'cancelled') return null;
+    try {
+      final d = DateTime.parse(deadline!);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dead = DateTime(d.year, d.month, d.day);
+      final diff = dead.difference(today).inDays;
+      if (diff < 0) {
+        final absDiff = diff.abs();
+        return '$absDiff day${absDiff == 1 ? '' : 's'} overdue';
+      } else if (diff == 0) {
+        return 'Due today';
+      } else {
+        return '$diff day${diff == 1 ? '' : 's'} remaining';
+      }
+    } catch (_) {
+      return null;
+    }
+  }
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    final teamList = (json['team_members'] as List<dynamic>?) ?? [];
     return ProjectModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       projectCode: json['project_code']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       clientName: json['client_name']?.toString(),
       startDate: json['start_date']?.toString(),
       deadline: json['deadline']?.toString(),
       completedAt: json['completed_at']?.toString(),
+      archivedAt: json['archived_at']?.toString(),
       priority: json['priority']?.toString() ?? 'medium',
       status: json['status']?.toString() ?? 'planned',
-      budget: (json['budget'] as num?)?.toDouble(),
-      departmentId: (json['department_id'] as num?)?.toInt(),
+      budget: _asNullableDouble(json['budget']),
+      departmentId: _asNullableInt(json['department_id']),
       departmentName: json['department_name']?.toString(),
-      managerId: (json['manager_id'] as num?)?.toInt(),
+      managerId: _asNullableInt(json['manager_id']),
       managerName: json['manager_name']?.toString(),
-      memberCount: (json['member_count'] as num?)?.toInt() ?? 0,
-      totalTasks: (json['total_tasks'] as num?)?.toInt() ?? 0,
-      doneTasks: (json['done_tasks'] as num?)?.toInt() ?? 0,
-      overdueTasks: (json['overdue_tasks'] as num?)?.toInt() ?? 0,
-      completionPercent: (json['completion_percent'] as num?)?.toDouble() ?? 0.0,
-      isWeighted: json['is_weighted'] == true || json['is_weighted'] == 1,
+      memberCount: _asInt(json['member_count']),
+      totalTasks: _asInt(json['total_tasks']),
+      doneTasks: _asInt(json['done_tasks']),
+      pendingTasks: _asInt(json['pending_tasks']),
+      overdueTasks: _asInt(json['overdue_tasks']),
+      completionPercent: _asDouble(json['completion_percent']),
+      isWeighted: json['is_weighted'] == true ||
+          json['is_weighted'] == 1 ||
+          json['progress_method'] == 'weighted',
       canManage: json['can_manage'] == true || json['can_manage'] == 1,
+      teamMembers: teamList.map((t) => Map<String, dynamic>.from(t as Map)).toList(),
     );
   }
 }
@@ -86,6 +175,7 @@ class ProjectMemberModel {
   final String? email;
   final String? designation;
   final String? profilePhotoUrl;
+  final int openTasks;
 
   const ProjectMemberModel({
     required this.id,
@@ -97,12 +187,13 @@ class ProjectMemberModel {
     this.email,
     this.designation,
     this.profilePhotoUrl,
+    this.openTasks = 0,
   });
 
   factory ProjectMemberModel.fromJson(Map<String, dynamic> json) {
     return ProjectMemberModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      userId: (json['user_id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
+      userId: _asInt(json['user_id']),
       memberRole: json['member_role']?.toString() ?? 'member',
       addedAt: json['added_at']?.toString(),
       fullName: json['full_name']?.toString() ?? '',
@@ -110,12 +201,14 @@ class ProjectMemberModel {
       email: json['email']?.toString(),
       designation: json['designation']?.toString(),
       profilePhotoUrl: json['profile_photo_url']?.toString(),
+      openTasks: _asInt(json['open_tasks']),
     );
   }
 }
 
 class ProjectMilestoneModel {
   final int id;
+  final int projectId;
   final String title;
   final String? description;
   final String? deliverables;
@@ -123,9 +216,11 @@ class ProjectMilestoneModel {
   final String status;
   final String? completedAt;
   final int sortOrder;
+  final int taskCount;
 
   const ProjectMilestoneModel({
     required this.id,
+    this.projectId = 0,
     required this.title,
     this.description,
     this.deliverables,
@@ -133,20 +228,61 @@ class ProjectMilestoneModel {
     required this.status,
     this.completedAt,
     this.sortOrder = 0,
+    this.taskCount = 0,
   });
 
   bool get isCompleted => status == 'completed';
 
+  bool get isOverdue {
+    if (isCompleted || dueDate == null || dueDate!.isEmpty) return false;
+    try {
+      final parsed = DateTime.parse(dueDate!);
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      return parsed.isBefore(todayDate);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  ProjectMilestoneModel copyWith({
+    int? id,
+    int? projectId,
+    String? title,
+    String? description,
+    String? deliverables,
+    String? dueDate,
+    String? status,
+    String? completedAt,
+    int? sortOrder,
+    int? taskCount,
+  }) {
+    return ProjectMilestoneModel(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      deliverables: deliverables ?? this.deliverables,
+      dueDate: dueDate ?? this.dueDate,
+      status: status ?? this.status,
+      completedAt: completedAt ?? this.completedAt,
+      sortOrder: sortOrder ?? this.sortOrder,
+      taskCount: taskCount ?? this.taskCount,
+    );
+  }
+
   factory ProjectMilestoneModel.fromJson(Map<String, dynamic> json) {
     return ProjectMilestoneModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
+      projectId: _asInt(json['project_id']),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString(),
       deliverables: json['deliverables']?.toString(),
       dueDate: json['due_date']?.toString(),
       status: json['status']?.toString() ?? 'pending',
       completedAt: json['completed_at']?.toString(),
-      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+      sortOrder: _asInt(json['sort_order']),
+      taskCount: _asInt(json['task_count']),
     );
   }
 }
@@ -173,13 +309,13 @@ class ProjectTaskCountsModel {
   factory ProjectTaskCountsModel.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const ProjectTaskCountsModel();
     return ProjectTaskCountsModel(
-      total: (json['total'] as num?)?.toInt() ?? 0,
-      notStarted: (json['not_started'] as num?)?.toInt() ?? 0,
-      inProgress: (json['in_progress'] as num?)?.toInt() ?? 0,
-      blocked: (json['blocked'] as num?)?.toInt() ?? 0,
-      pendingReview: (json['pending_review'] as num?)?.toInt() ?? 0,
-      completed: (json['completed'] as num?)?.toInt() ?? 0,
-      cancelled: (json['cancelled'] as num?)?.toInt() ?? 0,
+      total: _asInt(json['total']),
+      notStarted: _asInt(json['not_started']),
+      inProgress: _asInt(json['in_progress']),
+      blocked: _asInt(json['blocked']),
+      pendingReview: _asInt(json['pending_review']),
+      completed: _asInt(json['completed']),
+      cancelled: _asInt(json['cancelled']),
     );
   }
 }
@@ -201,7 +337,7 @@ class ProjectActivityModel {
 
   factory ProjectActivityModel.fromJson(Map<String, dynamic> json) {
     return ProjectActivityModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       activityType: json['activity_type']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       createdAt: json['created_at']?.toString() ?? '',

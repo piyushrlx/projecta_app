@@ -19,6 +19,7 @@ class AppTheme {
   static const Color deepSlate = Color(0xFF0F172A); // Headings / Titles
   static const Color mutedSlate = Color(0xFF475569); // Labels / Subtitles
   static const Color lightSlate = Color(0xFF94A3B8); // Hints / Placeholders
+  static const Color sidebarSectionHeader = Color(0xFF64748B);
 
   // Semantic Status Badges & Alerts
   static const Color successBg = Color(0xFFDCFCE7);

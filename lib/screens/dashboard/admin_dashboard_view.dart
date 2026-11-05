@@ -17,7 +17,8 @@ class AdminDashboardView extends StatefulWidget {
   final UserModel user;
   final Map<String, dynamic> data;
   final VoidCallback onRefresh;
-  final Function(int? projectId, int? departmentId, int? userId)? onFilterChanged;
+  final Function(int? projectId, int? departmentId, int? userId)?
+  onFilterChanged;
   final int? selectedProjectId;
   final int? selectedDepartmentId;
   final int? selectedUserId;
@@ -53,10 +54,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   Widget build(BuildContext context) {
     final kpis = (widget.data['kpis'] as Map<String, dynamic>?) ?? {};
     final alerts = (widget.data['alerts'] as Map<String, dynamic>?) ?? {};
-    final activeProjects = (widget.data['active_projects'] as List<dynamic>?) ?? [];
-    final employees = (widget.data['employee_overview'] as List<dynamic>?) ?? [];
+    final activeProjects =
+        (widget.data['active_projects'] as List<dynamic>?) ?? [];
+    final employees =
+        (widget.data['employee_overview'] as List<dynamic>?) ?? [];
     final activity = (widget.data['recent_activity'] as List<dynamic>?) ?? [];
-    final filterOptions = (widget.data['filter_options'] as Map<String, dynamic>?) ?? {};
+    final filterOptions =
+        (widget.data['filter_options'] as Map<String, dynamic>?) ?? {};
 
     final overdueTasksCount = (kpis['overdue_tasks'] ?? 0) as int;
     final reportsPendingCount = (kpis['reports_pending_today'] ?? 0) as int;
@@ -71,15 +75,20 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     final missingReportsList =
         (alerts['missing_reports'] as List<dynamic>?) ?? [];
 
-    final hasActiveFilters = (widget.selectedProjectId != null && widget.selectedProjectId! > 0) ||
-        (widget.selectedDepartmentId != null && widget.selectedDepartmentId! > 0) ||
+    final hasActiveFilters =
+        (widget.selectedProjectId != null && widget.selectedProjectId! > 0) ||
+        (widget.selectedDepartmentId != null &&
+            widget.selectedDepartmentId! > 0) ||
         (widget.selectedUserId != null && widget.selectedUserId! > 0);
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       children: [
-        // PART A: COMPACT TOP SUMMARY
-        // 1. Top Urgent Action Strip with Filter Trigger
+        // PART A: GREETING HEADER (Matching Reference Step 2)
+        _buildGreetingHeader(),
+        const SizedBox(height: 14),
+
+        // PART B: URGENT ACTION STATUS CARDS & BANNER
         _buildUrgentActionStrip(
           context,
           overdueTasksCount,
@@ -88,13 +97,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           filterOptions,
           hasActiveFilters,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        // 2. Quick Actions Bar (Immediately below top banner for instant 1-tap access)
+        // PART C: QUICK ACTIONS (3 Distinct Cards Row)
         _buildQuickActions(context),
         const SizedBox(height: 16),
 
-        // PART B: SEGMENTED PILL TAB BAR
+        // PART D: SEGMENTED PILL TAB BAR
         _buildSegmentedPills(),
         const SizedBox(height: 16),
 
@@ -125,6 +134,41 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             missingReportsList,
             activity,
           ),
+      ],
+    );
+  }
+
+  // Greeting Header (Matching Reference Image 1, Step 2)
+  Widget _buildGreetingHeader() {
+    final hour = DateTime.now().hour;
+    String greeting = 'Good Morning';
+    if (hour >= 12 && hour < 17) {
+      greeting = 'Good Afternoon';
+    } else if (hour >= 17) {
+      greeting = 'Good Evening';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$greeting 👋',
+          style: AppTheme.heading(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.deepSlate,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          "Here's what's happening today",
+          style: AppTheme.body(
+            fontSize: 13,
+            color: AppTheme.mutedSlate,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
       ],
     );
   }
@@ -170,7 +214,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                     Icon(
                       tabs[index]['icon'] as IconData,
                       size: 13,
-                      color: isSelected ? AppTheme.pureWhite : AppTheme.mutedSlate,
+                      color: isSelected
+                          ? AppTheme.pureWhite
+                          : AppTheme.mutedSlate,
                     ),
                     const SizedBox(width: 4),
                     Flexible(
@@ -178,8 +224,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         tabs[index]['label'] as String,
                         style: AppTheme.heading(
                           fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                          color: isSelected ? AppTheme.pureWhite : AppTheme.deepSlate,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          color: isSelected
+                              ? AppTheme.pureWhite
+                              : AppTheme.deepSlate,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -308,8 +358,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 label: 'Overdue Tasks',
                 value: '$overdueTasksCount',
                 isUrgent: overdueTasksCount > 0,
-                subtitle: overdueTasksCount > 0 ? 'Requires attention' : 'Clear',
-                onTap: () => setState(() => _selectedSubTabIndex = 3),
+                subtitle: overdueTasksCount > 0
+                    ? 'Requires attention'
+                    : 'Clear',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const TasksScreen(initialFilter: 'OVERDUE'),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 10),
@@ -420,8 +480,16 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           )
         else ...[
-          ...overdueList.take(2).map((t) => _buildOverdueItem(context, t as Map<String, dynamic>)),
-          ...blockedList.take(2).map((t) => _buildBlockedItem(context, t as Map<String, dynamic>)),
+          ...overdueList
+              .take(2)
+              .map(
+                (t) => _buildOverdueItem(context, t as Map<String, dynamic>),
+              ),
+          ...blockedList
+              .take(2)
+              .map(
+                (t) => _buildBlockedItem(context, t as Map<String, dynamic>),
+              ),
         ],
         const SizedBox(height: 18),
 
@@ -474,7 +542,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           )
         else
-          ...activeProjects.take(3).map((p) => _buildProjectCard(context, p as Map<String, dynamic>)),
+          ...activeProjects
+              .take(3)
+              .map(
+                (p) => _buildProjectCard(context, p as Map<String, dynamic>),
+              ),
       ],
     );
   }
@@ -576,7 +648,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           )
         else
-          ...filtered.map((p) => _buildProjectCard(context, p as Map<String, dynamic>)),
+          ...filtered.map(
+            (p) => _buildProjectCard(context, p as Map<String, dynamic>),
+          ),
       ],
     );
   }
@@ -610,7 +684,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               decoration: BoxDecoration(
                 color: compliancePercent > 70
                     ? AppTheme.successBg
-                    : (compliancePercent > 30 ? AppTheme.warningBg : const Color(0xFFF1F5F9)),
+                    : (compliancePercent > 30
+                          ? AppTheme.warningBg
+                          : const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -620,7 +696,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   fontWeight: FontWeight.w600,
                   color: compliancePercent > 70
                       ? AppTheme.successText
-                      : (compliancePercent > 30 ? AppTheme.warningText : AppTheme.mutedSlate),
+                      : (compliancePercent > 30
+                            ? AppTheme.warningText
+                            : AppTheme.mutedSlate),
                 ),
               ),
             ),
@@ -645,9 +723,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           )
         else
           ...employees.map(
-            (em) => EmployeeWorkloadCard(
-              employee: em as Map<String, dynamic>,
-            ),
+            (em) => EmployeeWorkloadCard(employee: em as Map<String, dynamic>),
           ),
       ],
     );
@@ -726,7 +802,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     );
   }
 
-  // Top Urgent Action Strip (Header with Overflow-Proof Flex)
+  // PART B: URGENT ACTION STATUS CARDS & BANNER (Matching Reference Step 2)
   Widget _buildUrgentActionStrip(
     BuildContext context,
     int overdueTasksCount,
@@ -735,431 +811,543 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     Map<String, dynamic> filterOptions,
     bool hasActiveFilters,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-        boxShadow: const [AppTheme.softShadow],
-      ),
-      padding: const EdgeInsets.all(14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row with Zero-Overflow Wrapping
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.infoBg,
-                    borderRadius: BorderRadius.circular(6),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sub-header Row with Admin Executive Control & Filter
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.infoBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Admin Executive Control',
+                  style: AppTheme.heading(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.infoText,
                   ),
-                  child: Text(
-                    'Admin Executive Control',
-                    style: AppTheme.heading(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.infoText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        widget.data['date']?.toString() ?? '',
-                        style: AppTheme.mono(
-                          fontSize: 11,
-                          color: AppTheme.mutedSlate,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.data['date']?.toString() ?? '',
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (widget.onFilterChanged != null) ...[
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => DashboardFilterSheet(
+                            filterOptions: filterOptions,
+                            selectedProjectId: widget.selectedProjectId,
+                            selectedDepartmentId: widget.selectedDepartmentId,
+                            selectedUserId: widget.selectedUserId,
+                            onApply: (p, d, u) {
+                              widget.onFilterChanged?.call(p, d, u);
+                            },
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: BoxDecoration(
+                          color: hasActiveFilters
+                              ? AppTheme.royalBlue
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.filter_list,
+                              size: 12,
+                              color: hasActiveFilters
+                                  ? AppTheme.pureWhite
+                                  : AppTheme.mutedSlate,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              hasActiveFilters ? 'Active' : 'Filter',
+                              style: AppTheme.heading(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: hasActiveFilters
+                                    ? AppTheme.pureWhite
+                                    : AppTheme.mutedSlate,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    if (widget.onFilterChanged != null) ...[
-                      const SizedBox(width: 6),
-                      InkWell(
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => DashboardFilterSheet(
-                              filterOptions: filterOptions,
-                              selectedProjectId: widget.selectedProjectId,
-                              selectedDepartmentId: widget.selectedDepartmentId,
-                              selectedUserId: widget.selectedUserId,
-                              onApply: (p, d, u) {
-                                widget.onFilterChanged?.call(p, d, u);
-                              },
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Two Side-by-Side Status Cards
+        Row(
+          children: [
+            // Left Card: Overdue Tasks
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const TasksScreen(initialFilter: 'OVERDUE'),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: overdueTasksCount > 0
+                        ? const Color(0xFFFEF2F2)
+                        : AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: overdueTasksCount > 0
+                          ? const Color(0xFFFECACA)
+                          : AppTheme.borderSubtle,
+                      width: 1.0,
+                    ),
+                    boxShadow: const [AppTheme.softShadow],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Overdue Tasks',
+                              style: AppTheme.heading(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: overdueTasksCount > 0
+                                    ? AppTheme.dangerText
+                                    : AppTheme.mutedSlate,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: hasActiveFilters ? AppTheme.royalBlue : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.filter_list,
-                                size: 12,
-                                color: hasActiveFilters ? AppTheme.pureWhite : AppTheme.mutedSlate,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                hasActiveFilters ? 'Active' : 'Filter',
-                                style: AppTheme.heading(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: hasActiveFilters ? AppTheme.pureWhite : AppTheme.mutedSlate,
-                                ),
-                              ),
-                            ],
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 18,
+                            color: AppTheme.dangerText,
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$overdueTasksCount',
+                        style: AppTheme.heading(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: overdueTasksCount > 0
+                              ? AppTheme.dangerText
+                              : AppTheme.deepSlate,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        overdueTasksCount > 0
+                            ? 'Tap to resolve'
+                            : 'All on schedule',
+                        style: AppTheme.body(
+                          fontSize: 10,
+                          color: AppTheme.mutedSlate,
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Overdue & Reports Pending Counters
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TasksScreen()),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: overdueTasksCount > 0
-                          ? const Color(0xFFFEF2F2)
-                          : AppTheme.scaffoldBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: overdueTasksCount > 0
-                            ? const Color(0xFFFECACA)
-                            : AppTheme.borderSubtle,
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Overdue Tasks',
-                          style: AppTheme.heading(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: overdueTasksCount > 0
-                                ? AppTheme.dangerText
-                                : AppTheme.deepSlate,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$overdueTasksCount',
-                          style: AppTheme.heading(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: overdueTasksCount > 0
-                                ? AppTheme.dangerText
-                                : AppTheme.deepSlate,
-                          ),
-                        ),
-                        Text(
-                          overdueTasksCount > 0 ? 'Tap to resolve' : 'All on schedule',
-                          style: AppTheme.body(
-                            fontSize: 10,
-                            color: AppTheme.mutedSlate,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ReportsListScreen(user: widget.user),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: awaitingReviewCount > 0 || reportsPendingCount > 0
-                          ? const Color(0xFFFEF3C7).withValues(alpha: 0.5)
-                          : AppTheme.scaffoldBg,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: awaitingReviewCount > 0 || reportsPendingCount > 0
-                            ? const Color(0xFFFDE68A)
-                            : AppTheme.borderSubtle,
-                        width: 1.0,
+            ),
+            const SizedBox(width: 10),
+            // Right Card: Pending Reports
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReportsListScreen(
+                        user: widget.user,
+                        initialFilter: 'pending_review',
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Pending Reports Today',
-                          style: AppTheme.heading(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: reportsPendingCount > 0
-                                ? AppTheme.warningText
-                                : AppTheme.deepSlate,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$reportsPendingCount',
-                          style: AppTheme.heading(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: reportsPendingCount > 0
-                                ? AppTheme.warningText
-                                : AppTheme.deepSlate,
-                          ),
-                        ),
-                        Text(
-                          reportsPendingCount > 0
-                              ? (awaitingReviewCount > 0 ? '$awaitingReviewCount awaiting approval' : 'Awaiting submission')
-                              : 'Team up to date',
-                          style: AppTheme.body(
-                            fontSize: 10,
-                            color: AppTheme.mutedSlate,
-                          ),
-                        ),
-                      ],
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: reportsPendingCount > 0
+                        ? const Color(0xFFFFFBEB)
+                        : AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: reportsPendingCount > 0
+                          ? const Color(0xFFFDE68A)
+                          : AppTheme.borderSubtle,
+                      width: 1.0,
                     ),
+                    boxShadow: const [AppTheme.softShadow],
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          if (awaitingReviewCount > 0) ...[
-            const SizedBox(height: 10),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ReportsListScreen(user: widget.user),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.warningBg,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.assignment_late_outlined,
-                      color: AppTheme.warningText,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Reports Awaiting Review',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Pending Reports',
+                              style: AppTheme.heading(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: reportsPendingCount > 0
+                                    ? AppTheme.warningText
+                                    : AppTheme.mutedSlate,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.description_outlined,
+                            size: 18,
+                            color: AppTheme.warningText,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$reportsPendingCount',
                         style: AppTheme.heading(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.warningText,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: reportsPendingCount > 0
+                              ? AppTheme.warningText
+                              : AppTheme.deepSlate,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppTheme.warningText,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '$awaitingReviewCount',
-                        style: AppTheme.mono(
+                      const SizedBox(height: 2),
+                      Text(
+                        reportsPendingCount > 0
+                            ? (awaitingReviewCount > 0
+                                  ? '$awaitingReviewCount awaiting approval'
+                                  : 'Awaiting submission')
+                            : 'Team up to date',
+                        style: AppTheme.body(
                           fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.pureWhite,
+                          color: AppTheme.mutedSlate,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: AppTheme.warningText,
-                      size: 10,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 10),
+
+        // Reports Awaiting Review Banner
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReportsListScreen(
+                  user: widget.user,
+                  initialFilter: 'pending_review',
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7).withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 1.0),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.assignment_late_outlined,
+                  color: AppTheme.warningText,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Reports Awaiting Review',
+                    style: AppTheme.heading(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.warningText,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB45309),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${awaitingReviewCount > 0 ? awaitingReviewCount : (reportsPendingCount > 0 ? reportsPendingCount : 1)}',
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.pureWhite,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppTheme.warningText,
+                  size: 12,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  // Quick Actions Bar (Positioned directly below top banner for instant 1-tap access)
+  // PART C: QUICK ACTIONS (Matching Reference Step 2: 3 Distinct Cards Row)
   Widget _buildQuickActions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle),
-        boxShadow: const [AppTheme.softShadow],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Quick Actions',
-                  style: AppTheme.heading(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const Icon(Icons.bolt, size: 16, color: AppTheme.royalBlue),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: AppTheme.heading(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.deepSlate,
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildActionChip(
-                context,
-                icon: Icons.add_task,
-                label: '+ Assign Task',
-                isPrimary: true,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            // 1. + Assign Task Card
+            Expanded(
+              child: InkWell(
                 onTap: () async {
                   final res = await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateTaskScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
                   );
                   if (res == true) widget.onRefresh();
                 },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                    boxShadow: const [AppTheme.softShadow],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.royalBlue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.add,
+                            color: AppTheme.pureWhite,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '+ Assign\nTask',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.deepSlate,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              _buildActionChip(
-                context,
-                icon: Icons.folder_open,
-                label: 'Projects',
-                isPrimary: false,
-                onTap: () => setState(() => _selectedSubTabIndex = 1),
-              ),
-              _buildActionChip(
-                context,
-                icon: Icons.assignment_turned_in_outlined,
-                label: 'Review Reports',
-                isPrimary: false,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ReportsListScreen(user: widget.user),
-                    ),
-                  );
-                },
-              ),
-              _buildActionChip(
-                context,
-                icon: Icons.timer_off_outlined,
-                label: 'Overdue Backlog',
-                isPrimary: false,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TasksScreen(initialFilter: 'Overdue'),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionChip(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required bool isPrimary,
-    required VoidCallback onTap,
-  }) {
-    return BrutalistPressable(
-      onTap: onTap,
-      backgroundColor: isPrimary ? AppTheme.royalBlue : AppTheme.scaffoldBg,
-      borderColor: isPrimary ? AppTheme.royalBlue : AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: isPrimary ? AppTheme.pureWhite : AppTheme.deepSlate,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: AppTheme.heading(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: isPrimary ? AppTheme.pureWhite : AppTheme.deepSlate,
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 10),
+            // 2. Projects Card
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _selectedSubTabIndex = 1),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                    boxShadow: const [AppTheme.softShadow],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.folder_outlined,
+                            color: AppTheme.deepSlate,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Projects\n ',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.deepSlate,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // 3. Review Reports Card
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReportsListScreen(
+                        user: widget.user,
+                        initialFilter: 'pending_review',
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                    boxShadow: const [AppTheme.softShadow],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.assignment_turned_in_outlined,
+                            color: AppTheme.deepSlate,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Review\nReports',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.deepSlate,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1206,7 +1394,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 6),
-          ...overdueList.map((t) => _buildOverdueItem(context, t as Map<String, dynamic>)),
+          ...overdueList.map(
+            (t) => _buildOverdueItem(context, t as Map<String, dynamic>),
+          ),
           const SizedBox(height: 12),
         ],
 
@@ -1255,7 +1445,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.warningBg,
                       borderRadius: BorderRadius.circular(6),
@@ -1340,7 +1533,9 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(height: 6),
-          ...blockedList.map((t) => _buildBlockedItem(context, t as Map<String, dynamic>)),
+          ...blockedList.map(
+            (t) => _buildBlockedItem(context, t as Map<String, dynamic>),
+          ),
           const SizedBox(height: 12),
         ],
 
@@ -1424,9 +1619,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ? () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => TaskDetailScreen(taskId: id),
-                ),
+                MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: id)),
               );
             }
           : null,
@@ -1492,9 +1685,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ? () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => TaskDetailScreen(taskId: id),
-                ),
+                MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: id)),
               );
             }
           : null,
@@ -1505,11 +1696,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          const Icon(
-            Icons.block,
-            color: AppTheme.warningText,
-            size: 16,
-          ),
+          const Icon(Icons.block, color: AppTheme.warningText, size: 16),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -1525,10 +1712,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           const SizedBox(width: 6),
           Text(
             task['project_name']?.toString() ?? '',
-            style: AppTheme.body(
-              fontSize: 11,
-              color: AppTheme.mutedSlate,
-            ),
+            style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -1544,7 +1728,8 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     final pending = (proj['pending_tasks'] ?? 0) as int;
     final id = (proj['id'] as num?)?.toInt();
     final members = (proj['members'] as List<dynamic>?) ?? [];
-    final memberCount = (proj['member_count'] as num?)?.toInt() ?? members.length;
+    final memberCount =
+        (proj['member_count'] as num?)?.toInt() ?? members.length;
     final code = proj['project_code']?.toString() ?? '';
     final priority = proj['priority']?.toString() ?? 'Medium';
 
@@ -1572,7 +1757,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             children: [
               if (code.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(4),
@@ -1641,15 +1829,46 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ),
           const SizedBox(height: 4),
 
-          // Subtitle: Manager & Due Date
-          Text(
-            'Manager: ${proj['manager_name'] ?? 'Unassigned'} · Due: ${proj['deadline'] ?? 'No date'}',
-            style: AppTheme.body(
-              fontSize: 11,
-              color: AppTheme.mutedSlate,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // Subtitle: Manager & Dates (Start Date above Due Date)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Manager: ${proj['manager_name'] ?? 'Unassigned'}',
+                style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Text(
+                    'Start ${proj['start_date'] ?? '—'}',
+                    style: AppTheme.mono(
+                      fontSize: 10,
+                      color: AppTheme.mutedSlate,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '·',
+                    style: const TextStyle(
+                      color: AppTheme.mutedSlate,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Due ${proj['deadline'] ?? '—'}',
+                    style: AppTheme.mono(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 8),
 
@@ -1693,7 +1912,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ),
                   if (overdue > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.dangerBg,
                         borderRadius: BorderRadius.circular(4),

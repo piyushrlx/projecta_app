@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../services/project_service.dart';
 import '../../services/task_service.dart';
 
 class CreateTaskScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class CreateTaskScreen extends StatefulWidget {
 
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final TaskService _taskService = TaskService();
+  final ProjectService _projectService = ProjectService();
 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -20,11 +22,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final _estimatedHoursController = TextEditingController();
 
   bool _isLoadingLookups = true;
+  bool _isLoadingMembers = false;
   bool _isSubmitting = false;
   String? _lookupError;
 
   List<Map<String, dynamic>> _projects = [];
-  List<Map<String, dynamic>> _employees = [];
+  List<Map<String, dynamic>> _projectMembers = [];
 
   int? _selectedProjectId;
   String _selectedPriority = 'medium'; // low, medium, high, critical
@@ -47,31 +50,80 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     });
 
     try {
-      final projectsFuture = _taskService.getActiveProjects();
-      final employeesFuture = _taskService.getActiveEmployees();
-
-      final results = await Future.wait([projectsFuture, employeesFuture]);
+      final projects = await _taskService.getActiveProjects();
 
       if (mounted) {
         setState(() {
-          _projects = results[0];
-          _employees = results[1];
-
+          _projects = projects;
           if (_selectedProjectId == null && _projects.isNotEmpty) {
-            _selectedProjectId = (_projects.first['id'] as num?)?.toInt();
+            final p0 = _projects.first['id'];
+            _selectedProjectId = p0 is num ? p0.toInt() : (p0 is String ? int.tryParse(p0) : null);
           }
-          if (_employees.isNotEmpty) {
-            _selectedOwnerId = (_employees.first['id'] as num?)?.toInt();
-          }
-
           _isLoadingLookups = false;
         });
+
+        if (_selectedProjectId != null) {
+          await _loadProjectMembers(_selectedProjectId!);
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _lookupError = e.toString().replaceAll('ApiException', '').trim();
           _isLoadingLookups = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadProjectMembers(int projectId) async {
+    setState(() {
+      _isLoadingMembers = true;
+    });
+
+    try {
+      final detail = await _projectService.getProjectDetails(projectId);
+      final assignable = <Map<String, dynamic>>[];
+
+      // Manager is always eligible for task assignment
+      if (detail.project.managerId != null) {
+        assignable.add({
+          'id': detail.project.managerId!,
+          'full_name': detail.project.managerName ?? 'Project Manager',
+          'designation': 'Project Manager',
+          'role': 'manager',
+        });
+      }
+
+      // Add project members who have memberRole == 'member' (exclude read-only viewers)
+      for (final mem in detail.members) {
+        final uid = mem.userId;
+        if (!assignable.any((a) => a['id'] == uid)) {
+          if (mem.memberRole.toLowerCase() == 'member') {
+            assignable.add({
+              'id': uid,
+              'full_name': mem.fullName,
+              'designation': mem.designation ?? 'Member',
+              'role': mem.memberRole,
+            });
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _projectMembers = assignable;
+          if (_selectedOwnerId == null || !assignable.any((a) => a['id'] == _selectedOwnerId)) {
+            _selectedOwnerId = assignable.isNotEmpty ? assignable.first['id'] as int? : null;
+          }
+          _selectedContributorIds.removeWhere((id) => !assignable.any((a) => a['id'] == id));
+          _isLoadingMembers = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMembers = false;
         });
       }
     }
@@ -221,6 +273,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           setState(() {
                             _selectedProjectId = val;
                           });
+                          if (val != null) {
+                            _loadProjectMembers(val);
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -389,47 +444,73 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       const SizedBox(height: 16),
 
                       // 6. Lead Owner Assignee
-                      Text(
-                        'Primary Owner *',
-                        style: AppTheme.heading(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.deepSlate,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Primary Owner *',
+                            style: AppTheme.heading(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.deepSlate,
+                            ),
+                          ),
+                          if (_isLoadingMembers)
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<int>(
-                        initialValue: _selectedOwnerId,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
+                      if (_projectMembers.isEmpty && !_isLoadingMembers)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
                           ),
-                        ),
-                        items: _employees.map((e) {
-                          final id = (e['id'] as num).toInt();
-                          final name = e['full_name']?.toString() ?? '';
-                          final des = e['designation']?.toString() ?? 'Staff';
-                          return DropdownMenuItem<int>(
-                            value: id,
-                            child: Text(
-                              '$name ($des)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTheme.body(
-                                fontSize: 13,
-                                color: AppTheme.deepSlate,
-                              ),
+                          child: const Text(
+                            'No assigned team members in this project. Please add members in project settings first.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF991B1B)),
+                          ),
+                        )
+                      else
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedOwnerId,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedOwnerId = val;
-                          });
-                        },
-                      ),
+                          ),
+                          items: _projectMembers.map((e) {
+                            final rawId = e['id'];
+                            final id = rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()) ?? 0;
+                            final name = e['full_name']?.toString() ?? '';
+                            final des = e['designation']?.toString() ?? 'Member';
+                            return DropdownMenuItem<int>(
+                              value: id,
+                              child: Text(
+                                '$name ($des)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.body(
+                                  fontSize: 13,
+                                  color: AppTheme.deepSlate,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedOwnerId = val;
+                            });
+                          },
+                        ),
                       const SizedBox(height: 16),
 
                       // 7. Contributors
@@ -442,62 +523,74 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _employees
-                            .where(
-                              (e) =>
-                                  (e['id'] as num).toInt() != _selectedOwnerId,
-                            )
-                            .map((e) {
-                              final id = (e['id'] as num).toInt();
-                              final name = e['full_name']?.toString() ?? '';
-                              final isSelected = _selectedContributorIds
-                                  .contains(id);
+                      if (_projectMembers.where((e) {
+                        final rawId = e['id'];
+                        final id = rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()) ?? 0;
+                        return id != _selectedOwnerId;
+                      }).isEmpty)
+                        Text(
+                          'No other team members available for contributor role.',
+                          style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _projectMembers
+                              .where((e) {
+                                final rawId = e['id'];
+                                final id = rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()) ?? 0;
+                                return id != _selectedOwnerId;
+                              })
+                              .map((e) {
+                                final rawId = e['id'];
+                                final id = rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()) ?? 0;
+                                final name = e['full_name']?.toString() ?? '';
+                                final isSelected = _selectedContributorIds.contains(id);
 
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    if (isSelected) {
-                                      _selectedContributorIds.remove(id);
-                                    } else {
-                                      _selectedContributorIds.add(id);
-                                    }
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppTheme.navyBlue
-                                        : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedContributorIds.remove(id);
+                                      } else {
+                                        _selectedContributorIds.add(id);
+                                      }
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
                                       color: isSelected
                                           ? AppTheme.navyBlue
-                                          : AppTheme.borderSubtle,
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppTheme.navyBlue
+                                            : AppTheme.borderSubtle,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      name,
+                                      style: AppTheme.body(
+                                        fontSize: 12,
+                                        color: isSelected
+                                            ? AppTheme.pureWhite
+                                            : AppTheme.deepSlate,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                      ),
                                     ),
                                   ),
-                                  child: Text(
-                                    name,
-                                    style: AppTheme.body(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: isSelected
-                                          ? AppTheme.pureWhite
-                                          : AppTheme.deepSlate,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            })
-                            .toList(),
-                      ),
+                                );
+                              }).toList(),
+                        ),
                       const SizedBox(height: 28),
 
                       // 8. Submit Button

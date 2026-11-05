@@ -8,8 +8,13 @@ import 'report_submission_screen.dart';
 
 class ReportsListScreen extends StatefulWidget {
   final UserModel user;
+  final String? initialFilter;
 
-  const ReportsListScreen({super.key, required this.user});
+  const ReportsListScreen({
+    super.key,
+    required this.user,
+    this.initialFilter,
+  });
 
   @override
   State<ReportsListScreen> createState() => _ReportsListScreenState();
@@ -21,12 +26,27 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<ReportModel> _reports = [];
-  String _selectedFilter =
-      'All'; // All, Pending Review, Approved, Returned / Rejected, Late
+  late String _selectedFilter;
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialFilter != null) {
+      final f = widget.initialFilter!.trim().toLowerCase();
+      if (f == 'pending_review' || f == 'pending review' || f == 'pending') {
+        _selectedFilter = 'Pending Review';
+      } else if (f == 'approved') {
+        _selectedFilter = 'Approved';
+      } else if (f == 'late') {
+        _selectedFilter = 'Late';
+      } else if (f == 'returned' || f == 'rejected') {
+        _selectedFilter = 'Returned / Rejected';
+      } else {
+        _selectedFilter = widget.initialFilter!;
+      }
+    } else {
+      _selectedFilter = 'All';
+    }
     _loadReports();
   }
 
@@ -134,12 +154,12 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '${report.employeeName ?? 'Worker'} · ${report.reportDate}',
+              '${report.employeeName ?? 'Worker'} Â· ${report.reportDate}',
               style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
             ),
             const SizedBox(height: 4),
             Text(
-              '${report.projectName ?? 'Project'} ${report.taskTitle != null ? '· ${report.taskTitle}' : ''}',
+              '${report.projectName ?? 'Project'} ${report.taskTitle != null ? 'Â· ${report.taskTitle}' : ''}',
               style: AppTheme.heading(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -528,7 +548,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
               ),
               if (report.progressAfter != null) ...[
                 const SizedBox(width: 10),
-                Text('·', style: TextStyle(color: AppTheme.mutedSlate)),
+                Text('Â·', style: TextStyle(color: AppTheme.mutedSlate)),
                 const SizedBox(width: 10),
                 Text(
                   'Progress: ${report.progressAfter}%',

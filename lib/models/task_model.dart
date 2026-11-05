@@ -1,3 +1,24 @@
+int _asInt(dynamic v, [int fallback = 0]) {
+  if (v == null) return fallback;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? fallback;
+  return fallback;
+}
+
+int? _asNullableInt(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt();
+  return null;
+}
+
+double? _asNullableDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  return null;
+}
+
 class TaskAssigneeModel {
   final int userId;
   final String fullName;
@@ -19,7 +40,7 @@ class TaskAssigneeModel {
 
   factory TaskAssigneeModel.fromJson(Map<String, dynamic> json) {
     return TaskAssigneeModel(
-      userId: (json['user_id'] as num?)?.toInt() ?? 0,
+      userId: _asInt(json['user_id']),
       fullName: json['full_name']?.toString() ?? '',
       responsibility: json['responsibility']?.toString() ?? 'owner',
       profilePhotoUrl: json['profile_photo_url']?.toString(),
@@ -89,27 +110,27 @@ class TaskModel {
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     final rawAssignees = (json['assignees'] as List<dynamic>?) ?? [];
     return TaskModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       taskCode: json['task_code']?.toString() ?? '',
-      projectId: (json['project_id'] as num?)?.toInt() ?? 0,
+      projectId: _asInt(json['project_id']),
       projectName: json['project_name']?.toString(),
       projectCode: json['project_code']?.toString(),
-      milestoneId: (json['milestone_id'] as num?)?.toInt(),
+      milestoneId: _asNullableInt(json['milestone_id']),
       milestoneTitle: json['milestone_title']?.toString(),
-      parentTaskId: (json['parent_task_id'] as num?)?.toInt(),
+      parentTaskId: _asNullableInt(json['parent_task_id']),
       title: json['title']?.toString() ?? '',
       startDate: json['start_date']?.toString(),
       deadline: json['deadline']?.toString(),
       originalDeadline: json['original_deadline']?.toString(),
       priority: json['priority']?.toString() ?? 'medium',
       status: json['status']?.toString() ?? 'not_started',
-      estimatedHours: (json['estimated_hours'] as num?)?.toDouble(),
-      actualMinutes: (json['actual_minutes'] as num?)?.toInt() ?? 0,
-      progress: (json['progress'] as num?)?.toInt() ?? 0,
+      estimatedHours: _asNullableDouble(json['estimated_hours']),
+      actualMinutes: _asInt(json['actual_minutes']),
+      progress: _asInt(json['progress']),
       completedAt: json['completed_at']?.toString(),
       lastUpdateAt: json['last_update_at']?.toString(),
-      openDependenciesCount: (json['open_dependencies_count'] as num?)?.toInt() ?? 0,
-      subtaskCount: (json['subtask_count'] as num?)?.toInt() ?? 0,
+      openDependenciesCount: _asInt(json['open_dependencies_count']),
+      subtaskCount: _asInt(json['subtask_count']),
       isOverdue: json['is_overdue'] == true || json['is_overdue'] == 1,
       assignees: rawAssignees
           .map((a) => TaskAssigneeModel.fromJson(a as Map<String, dynamic>))
@@ -137,11 +158,11 @@ class TaskDependencyModel {
 
   factory TaskDependencyModel.fromJson(Map<String, dynamic> json) {
     return TaskDependencyModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       taskCode: json['task_code']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       status: json['status']?.toString() ?? 'not_started',
-      progress: (json['progress'] as num?)?.toInt() ?? 0,
+      progress: _asInt(json['progress']),
     );
   }
 }
@@ -169,13 +190,13 @@ class SubtaskModel {
 
   factory SubtaskModel.fromJson(Map<String, dynamic> json) {
     return SubtaskModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       taskCode: json['task_code']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       deadline: json['deadline']?.toString(),
       priority: json['priority']?.toString() ?? 'medium',
       status: json['status']?.toString() ?? 'not_started',
-      progress: (json['progress'] as num?)?.toInt() ?? 0,
+      progress: _asInt(json['progress']),
     );
   }
 }
@@ -217,15 +238,15 @@ class TaskExtensionRequestModel {
 
   factory TaskExtensionRequestModel.fromJson(Map<String, dynamic> json) {
     return TaskExtensionRequestModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      taskId: (json['task_id'] as num?)?.toInt() ?? 0,
-      requestedBy: (json['requested_by'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
+      taskId: _asInt(json['task_id']),
+      requestedBy: _asInt(json['requested_by']),
       requesterName: json['requester_name']?.toString() ?? '',
       currentDeadline: json['current_deadline']?.toString(),
       requestedDeadline: json['requested_deadline']?.toString() ?? '',
       reason: json['reason']?.toString() ?? '',
       status: json['status']?.toString() ?? 'pending',
-      decidedBy: (json['decided_by'] as num?)?.toInt(),
+      decidedBy: _asNullableInt(json['decided_by']),
       deciderName: json['decider_name']?.toString(),
       decisionNote: json['decision_note']?.toString(),
       decidedAt: json['decided_at']?.toString(),
@@ -257,11 +278,11 @@ class TaskStatusHistoryModel {
 
   factory TaskStatusHistoryModel.fromJson(Map<String, dynamic> json) {
     return TaskStatusHistoryModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: _asInt(json['id']),
       oldStatus: json['old_status']?.toString(),
       newStatus: json['new_status']?.toString() ?? '',
-      oldProgress: (json['old_progress'] as num?)?.toInt(),
-      newProgress: (json['new_progress'] as num?)?.toInt(),
+      oldProgress: _asNullableInt(json['old_progress']),
+      newProgress: _asNullableInt(json['new_progress']),
       changedByName: json['changed_by_name']?.toString(),
       note: json['note']?.toString(),
       createdAt: json['created_at']?.toString() ?? '',
@@ -338,7 +359,7 @@ class TaskDetailModel {
       statusHistory: historyJson
           .map((h) => TaskStatusHistoryModel.fromJson(h as Map<String, dynamic>))
           .toList(),
-      commentsCount: (json['comments_count'] as num?)?.toInt() ?? 0,
+      commentsCount: _asInt(json['comments_count']),
     );
   }
 }

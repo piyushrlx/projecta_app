@@ -45,11 +45,17 @@ class TaskService {
       final tasks = list
           .map((item) => TaskModel.fromJson(item as Map<String, dynamic>))
           .toList();
+      final totalRaw = data['total'];
+      final pageRaw = data['page'];
+      final pagesRaw = data['pages'];
+      final totalParsed = totalRaw is num ? totalRaw.toInt() : (totalRaw is String ? int.tryParse(totalRaw) ?? 0 : 0);
+      final pageParsed = pageRaw is num ? pageRaw.toInt() : (pageRaw is String ? int.tryParse(pageRaw) ?? page : page);
+      final pagesParsed = pagesRaw is num ? pagesRaw.toInt() : (pagesRaw is String ? int.tryParse(pagesRaw) ?? 1 : 1);
       return {
         'tasks': tasks,
-        'total': (data['total'] as num?)?.toInt() ?? 0,
-        'page': (data['page'] as num?)?.toInt() ?? page,
-        'pages': (data['pages'] as num?)?.toInt() ?? 1,
+        'total': totalParsed,
+        'page': pageParsed,
+        'pages': pagesParsed,
       };
     }
 

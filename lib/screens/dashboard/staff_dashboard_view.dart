@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
+import '../projects/projects_list_screen.dart';
 import '../reports/report_submission_screen.dart';
 import '../tasks/task_detail_screen.dart';
+import '../tasks/tasks_screen.dart';
 import 'widgets/compliance_card.dart';
 import 'widgets/kpi_card.dart';
 
@@ -22,7 +24,8 @@ class StaffDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kpis = (data['kpis'] as Map<String, dynamic>?) ?? {};
-    final compliance = data['compliance_badge'] as Map<String, dynamic>?;
+    final compliance =
+        (data['compliance'] ?? data['compliance_badge']) as Map<String, dynamic>?;
     final nextTasks = (data['what_to_work_on_next'] as List<dynamic>?) ?? [];
     final recentFeedback = (data['recent_feedback'] as List<dynamic>?) ?? [];
 
@@ -79,6 +82,14 @@ class StaffDashboardView extends StatelessWidget {
               child: KpiCard(
                 label: 'Active Projects',
                 value: '${kpis['active_projects'] ?? 0}',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProjectsListScreen(),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -86,6 +97,14 @@ class StaffDashboardView extends StatelessWidget {
               child: KpiCard(
                 label: 'Open Tasks',
                 value: '${kpis['open_tasks'] ?? 0}',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TasksScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -95,8 +114,14 @@ class StaffDashboardView extends StatelessWidget {
           children: [
             Expanded(
               child: KpiCard(
-                label: 'In Progress',
-                value: '${kpis['in_progress_tasks'] ?? 0}',
+                label: 'Due Today',
+                value: '${kpis['due_today'] ?? 0}',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TasksScreen()),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -106,6 +131,48 @@ class StaffDashboardView extends StatelessWidget {
                 value: '$overdueCount',
                 isUrgent: overdueCount > 0,
                 subtitle: overdueCount > 0 ? 'Requires attention' : 'All clear',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const TasksScreen(initialFilter: 'OVERDUE'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: KpiCard(
+                label: 'Awaiting Review',
+                value: '${kpis['pending_review'] ?? 0}',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const TasksScreen(initialFilter: 'PENDING REVIEW'),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: KpiCard(
+                label: 'Completed',
+                value: '${kpis['completed'] ?? 0}',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TasksScreen()),
+                  );
+                },
               ),
             ),
           ],
