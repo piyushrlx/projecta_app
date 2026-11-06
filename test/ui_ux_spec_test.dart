@@ -26,13 +26,20 @@ class FakeTaskService extends TaskService {
   }
 
   @override
-  Future<Map<String, List<TaskModel>>> getKanban({int? projectId}) async {
+  Future<Map<String, dynamic>> getKanban({
+    int? projectId,
+    String? priority,
+    int? userId,
+  }) async {
     return {
+      'is_cached': false,
+      'columns': {
       'not_started': [],
       'in_progress': [],
       'blocked': [],
       'pending_review': [],
       'completed': [],
+      },
     };
   }
 }

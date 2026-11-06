@@ -2,7 +2,9 @@ import '../core/api_client.dart';
 import '../models/task_model.dart';
 
 class TaskService {
-  final ApiClient _client = ApiClient();
+  final ApiClient _client;
+
+  TaskService({ApiClient? client}) : _client = client ?? ApiClient();
 
   Future<Map<String, dynamic>> getTasks({
     int? projectId,
@@ -37,7 +39,11 @@ class TaskService {
       query['search'] = search.trim();
     }
 
-    final response = await _client.get('/tasks', queryParameters: query);
+    final response = await _client.getWithCache(
+      '/tasks',
+      queryParameters: query,
+    );
+    final isCached = ApiClient.isCachedResponse(response);
     final dynamic data = _client.decodeJson(response);
 
     if (data is Map<String, dynamic>) {
@@ -48,32 +54,48 @@ class TaskService {
       final totalRaw = data['total'];
       final pageRaw = data['page'];
       final pagesRaw = data['pages'];
-      final totalParsed = totalRaw is num ? totalRaw.toInt() : (totalRaw is String ? int.tryParse(totalRaw) ?? 0 : 0);
-      final pageParsed = pageRaw is num ? pageRaw.toInt() : (pageRaw is String ? int.tryParse(pageRaw) ?? page : page);
-      final pagesParsed = pagesRaw is num ? pagesRaw.toInt() : (pagesRaw is String ? int.tryParse(pagesRaw) ?? 1 : 1);
+      final totalParsed = totalRaw is num
+          ? totalRaw.toInt()
+          : (totalRaw is String ? int.tryParse(totalRaw) ?? 0 : 0);
+      final pageParsed = pageRaw is num
+          ? pageRaw.toInt()
+          : (pageRaw is String ? int.tryParse(pageRaw) ?? page : page);
+      final pagesParsed = pagesRaw is num
+          ? pagesRaw.toInt()
+          : (pagesRaw is String ? int.tryParse(pagesRaw) ?? 1 : 1);
       return {
         'tasks': tasks,
         'total': totalParsed,
         'page': pageParsed,
         'pages': pagesParsed,
+        'is_cached': isCached,
       };
     }
 
-    return {
-      'tasks': <TaskModel>[],
-      'total': 0,
-      'page': page,
-      'pages': 1,
-    };
+    return {'tasks': <TaskModel>[], 'total': 0, 'page': page, 'pages': 1};
   }
 
-  Future<Map<String, List<TaskModel>>> getKanban({int? projectId}) async {
+  Future<Map<String, dynamic>> getKanban({
+    int? projectId,
+    String? priority,
+    int? userId,
+  }) async {
     final query = <String, dynamic>{};
     if (projectId != null) {
       query['project_id'] = projectId.toString();
     }
+    if (priority != null && priority.isNotEmpty && priority != 'ALL') {
+      query['priority'] = priority.toLowerCase();
+    }
+    if (userId != null) {
+      query['user_id'] = userId.toString();
+    }
 
-    final response = await _client.get('/kanban', queryParameters: query);
+    final response = await _client.getWithCache(
+      '/kanban',
+      queryParameters: query,
+    );
+    final isCached = ApiClient.isCachedResponse(response);
     final dynamic data = _client.decodeJson(response);
 
     final result = <String, List<TaskModel>>{
@@ -84,7 +106,8 @@ class TaskService {
       'completed': [],
     };
 
-    if (data is Map<String, dynamic> && data['columns'] is Map<String, dynamic>) {
+    if (data is Map<String, dynamic> &&
+        data['columns'] is Map<String, dynamic>) {
       final cols = data['columns'] as Map<String, dynamic>;
       for (final key in result.keys) {
         if (cols[key] is List) {
@@ -95,7 +118,10 @@ class TaskService {
       }
     }
 
-    return result;
+    return {
+      'columns': result,
+      'is_cached': isCached,
+    };
   }
 
   Future<TaskDetailModel> getTaskDetails(int id) async {
@@ -111,15 +137,13 @@ class TaskService {
     );
   }
 
-  Future<void> updateStatus(
+  Future<Map<String, dynamic>> updateStatus(
     int id, {
     required String status,
     int? progress,
     String? note,
   }) async {
-    final body = <String, dynamic>{
-      'status': status,
-    };
+    final body = <String, dynamic>{'status': status};
     if (progress != null) {
       body['progress'] = progress;
     }
@@ -128,14 +152,16 @@ class TaskService {
       body['completion_notes'] = note.trim();
     }
 
-    await _client.post('/tasks/$id/status', body: body);
+    final response = await _client.post('/tasks/$id/status', body: body);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return {'ok': true};
   }
 
   Future<void> updateProgress(int id, int progress) async {
-    await _client.post(
-      '/tasks/$id/progress',
-      body: {'progress': progress},
-    );
+    await _client.post('/tasks/$id/progress', body: {'progress': progress});
   }
 
   Future<void> requestExtension(
@@ -145,10 +171,7 @@ class TaskService {
   }) async {
     await _client.post(
       '/tasks/$id/extension-request',
-      body: {
-        'requested_deadline': requestedDeadline,
-        'reason': reason,
-      },
+      body: {'requested_deadline': requestedDeadline, 'reason': reason},
     );
   }
 
@@ -158,9 +181,7 @@ class TaskService {
     required String decision, // 'approve' or 'reject'
     String? note,
   }) async {
-    final body = <String, dynamic>{
-      'decision': decision,
-    };
+    final body = <String, dynamic>{'decision': decision};
     if (requestId != null) {
       body['request_id'] = requestId;
     }
@@ -191,7 +212,10 @@ class TaskService {
   }
 
   Future<List<Map<String, dynamic>>> getActiveProjects() async {
-    final response = await _client.get('/projects', queryParameters: {'limit': '100', 'status': 'active'});
+    final response = await _client.get(
+      '/projects',
+      queryParameters: {'limit': '100', 'status': 'active'},
+    );
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic> && data['projects'] is List) {
       return (data['projects'] as List).cast<Map<String, dynamic>>();
@@ -199,4 +223,3 @@ class TaskService {
     return [];
   }
 }
-

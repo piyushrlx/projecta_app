@@ -15,6 +15,7 @@ import '../team/team_list_screen.dart';
 import 'admin_dashboard_view.dart';
 import 'staff_dashboard_view.dart';
 import '../../core/widgets/app_side_drawer.dart';
+import '../../core/widgets/offline_cache_banner.dart';
 import '../../core/widgets/server_config_dialog.dart';
 import 'widgets/compliance_card.dart';
 import 'widgets/dashboard_filter_sheet.dart';
@@ -595,31 +596,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
+    final isCached = _dashboardData?['is_cached'] == true;
+
+    final view = widget.user.isAdmin
+        ? AdminDashboardView(
+            user: widget.user,
+            data: _dashboardData ?? {},
+            onRefresh: _loadDashboard,
+            selectedProjectId: _selectedProjectId,
+            selectedDepartmentId: _selectedDepartmentId,
+            selectedUserId: _selectedUserId,
+            onFilterChanged: (projId, deptId, userId) {
+              setState(() {
+                _selectedProjectId = projId;
+                _selectedDepartmentId = deptId;
+                _selectedUserId = userId;
+              });
+              _loadDashboard();
+            },
+          )
+        : StaffDashboardView(
+            user: widget.user,
+            data: _dashboardData ?? {},
+            onRefresh: _loadDashboard,
+          );
+
     return RefreshIndicator(
       onRefresh: _loadDashboard,
       color: AppTheme.royalBlue,
-      child: widget.user.isAdmin
-          ? AdminDashboardView(
-              user: widget.user,
-              data: _dashboardData ?? {},
-              onRefresh: _loadDashboard,
-              selectedProjectId: _selectedProjectId,
-              selectedDepartmentId: _selectedDepartmentId,
-              selectedUserId: _selectedUserId,
-              onFilterChanged: (projId, deptId, userId) {
-                setState(() {
-                  _selectedProjectId = projId;
-                  _selectedDepartmentId = deptId;
-                  _selectedUserId = userId;
-                });
-                _loadDashboard();
-              },
+      child: isCached
+          ? Column(
+              children: [
+                OfflineCacheBanner(onRetry: _loadDashboard),
+                Expanded(child: view),
+              ],
             )
-          : StaffDashboardView(
-              user: widget.user,
-              data: _dashboardData ?? {},
-              onRefresh: _loadDashboard,
-            ),
+          : view,
     );
   }
 

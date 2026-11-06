@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/offline_cache_banner.dart';
 import '../../models/project_model.dart';
 import '../../services/directory_service.dart';
 import '../../services/project_service.dart';
 import '../tasks/tasks_screen.dart';
 import 'project_form_screen.dart';
+import 'widgets/project_activity_timeline.dart';
+import 'widgets/project_milestones_section.dart';
+import 'widgets/project_overview_card.dart';
+import 'widgets/project_scope_section.dart';
+import 'widgets/project_task_metric_grid.dart';
+import 'widgets/project_team_section.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final int projectId;
@@ -54,8 +62,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     }
   }
 
+  bool _checkOfflineMutationGuard() {
+    if (_detail?.isFromCache == true) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cannot modify project data while viewing offline cached data.',
+          ),
+          backgroundColor: Color(0xFFB45309),
+        ),
+      );
+      return true;
+    }
+    return false;
+  }
+
   // ---------------------------------------------------------------- Milestone Actions
   Future<void> _toggleMilestone(ProjectMilestoneModel m) async {
+    if (_checkOfflineMutationGuard()) return;
+
     if (_detail == null || !_detail!.project.canManage) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -131,6 +157,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _showMilestoneModal({ProjectMilestoneModel? existing}) {
+    if (_checkOfflineMutationGuard()) return;
+
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
     final delivCtrl = TextEditingController(text: existing?.deliverables ?? '');
@@ -303,6 +331,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _confirmDeleteMilestone(ProjectMilestoneModel m) {
+    if (_checkOfflineMutationGuard()) return;
+
     if (m.taskCount > 0) {
       showDialog(
         context: context,
@@ -361,6 +391,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   // ---------------------------------------------------------------- Team Member Actions
   void _showAddMemberModal() async {
+    if (_checkOfflineMutationGuard()) return;
+
     List<Map<String, dynamic>> employees = [];
     try {
       employees = await _directoryService.getEmployees(limit: 100);
@@ -493,6 +525,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _confirmRemoveMember(ProjectMemberModel m) {
+    if (_checkOfflineMutationGuard()) return;
+
     if (m.userId == _detail?.project.managerId) {
       showDialog(
         context: context,
@@ -573,6 +607,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   // ---------------------------------------------------------------- Project Admin Actions
   void _showChangeStatusSheet() {
+    if (_checkOfflineMutationGuard()) return;
+
     final statuses = [
       'draft',
       'planned',
@@ -669,6 +705,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _handleToggleArchive() {
+    if (_checkOfflineMutationGuard()) return;
+
     final p = _detail?.project;
     if (p == null) return;
     final isArchived = p.isArchived;
@@ -913,12 +951,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             ),
           ],
 
+          // Ambient Offline Banner
+          if (detail.isFromCache)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: OfflineCacheBanner(onRetry: _loadProjectDetail),
+            ),
+
           // 1. Header Summary Card
-          _buildOverviewCard(p, detail),
+          ProjectOverviewCard(project: p, detail: detail),
           const SizedBox(height: 16),
 
           // 2. Task Breakdown Metrics
-          _buildTaskCountsCard(detail.taskCounts),
+          ProjectTaskMetricGrid(counts: detail.taskCounts),
           const SizedBox(height: 16),
 
           // 3. Button: View All Project Tasks
@@ -950,24 +995,36 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           const SizedBox(height: 24),
 
           // 4. Milestones Section (Interactive Stepper)
-          _buildMilestonesSection(detail.milestones, p.canManage),
+          ProjectMilestonesSection(
+            milestones: detail.milestones,
+            canManage: p.canManage,
+            onToggle: _toggleMilestone,
+            onAdd: _showMilestoneModal,
+            onEdit: (m) => _showMilestoneModal(existing: m),
+            onDelete: _confirmDeleteMilestone,
+          ),
           const SizedBox(height: 24),
 
           // 5. Team Members Strip
-          _buildTeamSection(detail.members, p.canManage),
+          ProjectTeamSection(
+            members: detail.members,
+            canManage: p.canManage,
+            onAdd: _showAddMemberModal,
+            onRemove: _confirmRemoveMember,
+          ),
           const SizedBox(height: 24),
 
           // 6. Scope & Deliverables
           if ((detail.scopeOfWork != null && detail.scopeOfWork!.isNotEmpty) ||
               (detail.deliverables != null &&
                   detail.deliverables!.isNotEmpty)) ...[
-            _buildScopeSection(detail),
+            ProjectScopeSection(detail: detail),
             const SizedBox(height: 24),
           ],
 
           // 7. Recent Activity Section
           if (detail.recentActivity.isNotEmpty) ...[
-            _buildActivitySection(detail.recentActivity),
+            ProjectActivityTimeline(activities: detail.recentActivity),
             const SizedBox(height: 24),
           ],
         ],
@@ -975,1015 +1032,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
-  Widget _buildOverviewCard(ProjectModel p, ProjectDetailModel detail) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-        boxShadow: const [AppTheme.softShadow],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.scaffoldBg,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Text(
-                  p.projectCode,
-                  style: AppTheme.mono(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: p.isActive
-                      ? AppTheme.infoBg
-                      : p.isCompleted
-                      ? AppTheme.successBg
-                      : AppTheme.warningBg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  p.status.isEmpty
-                      ? 'Active'
-                      : p.status[0].toUpperCase() +
-                            p.status.substring(1).toLowerCase(),
-                  style: AppTheme.heading(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: p.isActive
-                        ? AppTheme.infoText
-                        : p.isCompleted
-                        ? AppTheme.successText
-                        : AppTheme.warningText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            p.name,
-            style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
-          ),
-          if (p.clientName != null && p.clientName!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Client: ${p.clientName}',
-              style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
-            ),
-          ],
-          const SizedBox(height: 16),
-          // Progress Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Project Completion',
-                style: AppTheme.heading(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.mutedSlate,
-                ),
-              ),
-              Text(
-                '${p.completionPercent.toStringAsFixed(1)}%',
-                style: AppTheme.mono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.deepSlate,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (p.completionPercent / 100).clamp(0.0, 1.0),
-              minHeight: 8,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppTheme.royalBlue,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: AppTheme.borderSubtle, thickness: 1.0),
-          const SizedBox(height: 12),
-          // Dates & Manager
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Start Date',
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppDateUtils.fmtDate(p.startDate),
-                      style: AppTheme.mono(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Deadline',
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      p.deadline != null
-                          ? '${AppDateUtils.fmtDate(p.deadline)}${p.deadlineDaysLabel != null ? ' (${p.deadlineDaysLabel})' : ''}'
-                          : 'None',
-                      style: AppTheme.mono(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: p.isOverdue
-                            ? AppTheme.dangerText
-                            : AppTheme.deepSlate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Department',
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      p.departmentName ?? 'General',
-                      style: AppTheme.body(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Manager',
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      p.managerName ?? 'Unassigned',
-                      style: AppTheme.body(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildTaskCountsCard(ProjectTaskCountsModel counts) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-        boxShadow: const [AppTheme.softShadow],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Tasks Breakdown',
-            style: AppTheme.heading(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildMetricPill(
-                'Total',
-                counts.total.toString(),
-                AppTheme.deepSlate,
-              ),
-              _buildMetricPill(
-                'Active',
-                counts.inProgress.toString(),
-                AppTheme.royalBlue,
-              ),
-              _buildMetricPill(
-                'Blocked',
-                counts.blocked.toString(),
-                AppTheme.dangerText,
-              ),
-              _buildMetricPill(
-                'Done',
-                counts.completed.toString(),
-                AppTheme.successText,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildMetricPill(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: AppTheme.heading(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: AppTheme.body(
-            fontSize: 11,
-            color: AppTheme.mutedSlate,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildMilestonesSection(
-    List<ProjectMilestoneModel> milestones,
-    bool canManage,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Milestones',
-                  style: AppTheme.heading(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: Text(
-                    '${milestones.length}',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.deepSlate,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (canManage)
-              TextButton.icon(
-                onPressed: () => _showMilestoneModal(),
-                icon: const Icon(
-                  Icons.add,
-                  size: 16,
-                  color: AppTheme.royalBlue,
-                ),
-                label: Text(
-                  '+ Add Milestone',
-                  style: AppTheme.heading(
-                    fontSize: 12,
-                    color: AppTheme.royalBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (milestones.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderSubtle),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'No milestones defined for this project.',
-                    style: AppTheme.body(
-                      color: AppTheme.mutedSlate,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                if (canManage)
-                  ElevatedButton(
-                    onPressed: () => _showMilestoneModal(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.navyBlue,
-                      foregroundColor: AppTheme.pureWhite,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    child: const Text('Add One'),
-                  ),
-              ],
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-              boxShadow: const [AppTheme.softShadow],
-            ),
-            child: Column(
-              children: List.generate(milestones.length, (idx) {
-                final m = milestones[idx];
-                final isDone = m.isCompleted;
-                final isLast = idx == milestones.length - 1;
 
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        children: [
-                          InkWell(
-                            onTap: () => _toggleMilestone(m),
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: isDone
-                                    ? AppTheme.successBg
-                                    : AppTheme.scaffoldBg,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isDone
-                                      ? AppTheme.successText
-                                      : AppTheme.borderSubtle,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Center(
-                                child: isDone
-                                    ? const Icon(
-                                        Icons.check,
-                                        size: 16,
-                                        color: AppTheme.successText,
-                                      )
-                                    : null,
-                              ),
-                            ),
-                          ),
-                          if (!isLast)
-                            Expanded(
-                              child: Container(
-                                width: 1.5,
-                                color: AppTheme.borderSubtle,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: isLast ? 0 : 20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          m.title,
-                                          style:
-                                              AppTheme.heading(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: isDone
-                                                    ? AppTheme.mutedSlate
-                                                    : AppTheme.deepSlate,
-                                              ).copyWith(
-                                                decoration: isDone
-                                                    ? TextDecoration.lineThrough
-                                                    : null,
-                                              ),
-                                        ),
-                                        if (m.description != null &&
-                                            m.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            m.description!,
-                                            style: AppTheme.body(
-                                              fontSize: 12,
-                                              color: AppTheme.mutedSlate,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 7,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isDone
-                                              ? AppTheme.successBg
-                                              : const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          m.status.isEmpty
-                                              ? 'Pending'
-                                              : m.status[0].toUpperCase() +
-                                                    m.status
-                                                        .substring(1)
-                                                        .toLowerCase(),
-                                          style: AppTheme.heading(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDone
-                                                ? AppTheme.successText
-                                                : AppTheme.mutedSlate,
-                                          ),
-                                        ),
-                                      ),
-                                      if (canManage) ...[
-                                        const SizedBox(width: 4),
-                                        PopupMenuButton<String>(
-                                          padding: EdgeInsets.zero,
-                                          iconSize: 18,
-                                          icon: const Icon(
-                                            Icons.more_vert,
-                                            size: 18,
-                                            color: AppTheme.mutedSlate,
-                                          ),
-                                          onSelected: (val) {
-                                            if (val == 'edit') {
-                                              _showMilestoneModal(existing: m);
-                                            }
-                                            if (val == 'delete') {
-                                              _confirmDeleteMilestone(m);
-                                            }
-                                          },
-                                          itemBuilder: (_) => [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Text('Edit Milestone'),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Text(
-                                                'Delete Milestone',
-                                                style: TextStyle(
-                                                  color: AppTheme.dangerText,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  if (m.dueDate != null) ...[
-                                    Text(
-                                      'Due: ${AppDateUtils.fmtDate(m.dueDate)}',
-                                      style: AppTheme.mono(
-                                        fontSize: 11,
-                                        color: m.isOverdue
-                                            ? AppTheme.dangerText
-                                            : AppTheme.mutedSlate,
-                                        fontWeight: m.isOverdue
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                      ),
-                                    ),
-                                    if (m.isOverdue) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 5,
-                                          vertical: 1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.dangerBg,
-                                          borderRadius: BorderRadius.circular(
-                                            3,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'OVERDUE',
-                                          style: AppTheme.mono(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.dangerText,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                  if (m.taskCount > 0) ...[
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '·',
-                                      style: TextStyle(
-                                        color: AppTheme.mutedSlate,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${m.taskCount} task${m.taskCount == 1 ? '' : 's'}',
-                                      style: AppTheme.body(
-                                        fontSize: 11,
-                                        color: AppTheme.mutedSlate,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              if (m.deliverables != null &&
-                                  m.deliverables!.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.scaffoldBg,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: AppTheme.borderSubtle,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Deliverables: ${m.deliverables}',
-                                    style: AppTheme.body(
-                                      fontSize: 12,
-                                      color: AppTheme.deepSlate,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-          ),
-      ],
-    );
-  }
 
-  Widget _buildTeamSection(List<ProjectMemberModel> members, bool canManage) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Team Members',
-                  style: AppTheme.heading(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: Text(
-                    '${members.length}',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.deepSlate,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (canManage)
-              TextButton.icon(
-                onPressed: _showAddMemberModal,
-                icon: const Icon(
-                  Icons.person_add_alt,
-                  size: 16,
-                  color: AppTheme.royalBlue,
-                ),
-                label: Text(
-                  '+ Add Member',
-                  style: AppTheme.heading(
-                    fontSize: 12,
-                    color: AppTheme.royalBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (members.isEmpty)
-          Text(
-            'No team members assigned.',
-            style: AppTheme.body(color: AppTheme.mutedSlate, fontSize: 13),
-          )
-        else
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: members.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (ctx, idx) {
-                final mem = members[idx];
-                final isViewer = mem.memberRole.toLowerCase().contains(
-                  'viewer',
-                );
 
-                return InkWell(
-                  onTap: canManage ? () => _confirmRemoveMember(mem) : null,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 150,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.pureWhite,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.borderSubtle,
-                        width: 1.0,
-                      ),
-                      boxShadow: const [AppTheme.softShadow],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                mem.fullName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTheme.heading(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.deepSlate,
-                                ),
-                              ),
-                            ),
-                            if (canManage)
-                              const Icon(
-                                Icons.close,
-                                size: 14,
-                                color: AppTheme.mutedSlate,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 1.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isViewer
-                                    ? const Color(0xFFF1F5F9)
-                                    : AppTheme.infoBg,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                isViewer ? 'Viewer' : 'Member',
-                                style: AppTheme.heading(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  color: isViewer
-                                      ? AppTheme.mutedSlate
-                                      : AppTheme.infoText,
-                                ),
-                              ),
-                            ),
-                            if (mem.openTasks > 0) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1.5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF3C7),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '${mem.openTasks} open',
-                                  style: AppTheme.mono(
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFB45309),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          mem.designation ?? 'Team Member',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.body(
-                            fontSize: 11,
-                            color: AppTheme.mutedSlate,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
 
-  Widget _buildScopeSection(ProjectDetailModel detail) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-        boxShadow: const [AppTheme.softShadow],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Scope & Deliverables',
-            style: AppTheme.heading(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.deepSlate,
-            ),
-          ),
-          if (detail.scopeOfWork != null && detail.scopeOfWork!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              detail.scopeOfWork!,
-              style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
-            ),
-          ],
-          if (detail.deliverables != null &&
-              detail.deliverables!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Deliverables',
-              style: AppTheme.heading(
-                fontSize: 12,
-                color: AppTheme.royalBlue,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              detail.deliverables!,
-              style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivitySection(List<ProjectActivityModel> activities) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          initiallyExpanded: false,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          leading: Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: AppTheme.infoBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: AppTheme.royalBlue,
-              size: 18,
-            ),
-          ),
-          title: Row(
-            children: [
-              Text(
-                'Recent Activity',
-                style: AppTheme.heading(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.deepSlate,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${activities.length}',
-                  style: AppTheme.mono(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.mutedSlate,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          subtitle: Text(
-            'Tap to view audit trail & changes',
-            style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
-          ),
-          iconColor: AppTheme.deepSlate,
-          collapsedIconColor: AppTheme.mutedSlate,
-          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          children: [
-            const Divider(height: 1, color: AppTheme.borderSubtle),
-            const SizedBox(height: 12),
-            ...activities.take(10).map((act) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.bolt_rounded,
-                      color: AppTheme.royalBlue,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            act.description,
-                            style: AppTheme.body(
-                              fontSize: 12,
-                              color: AppTheme.deepSlate,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${AppDateUtils.fmtDateTime(act.createdAt)} (${AppDateUtils.timeAgo(act.createdAt)})',
-                            style: AppTheme.mono(
-                              fontSize: 10,
-                              color: AppTheme.mutedSlate,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildErrorView() {
     return Center(

@@ -359,6 +359,7 @@ class ProjectDetailModel {
   final List<ProjectMilestoneModel> milestones;
   final ProjectTaskCountsModel taskCounts;
   final List<ProjectActivityModel> recentActivity;
+  final bool isFromCache;
 
   const ProjectDetailModel({
     required this.project,
@@ -373,9 +374,13 @@ class ProjectDetailModel {
     this.milestones = const [],
     this.taskCounts = const ProjectTaskCountsModel(),
     this.recentActivity = const [],
+    this.isFromCache = false,
   });
 
-  factory ProjectDetailModel.fromJson(Map<String, dynamic> json) {
+  factory ProjectDetailModel.fromJson(
+    Map<String, dynamic> json, {
+    bool isFromCache = false,
+  }) {
     final projJson = (json['project'] as Map<String, dynamic>?) ?? {};
     final membersJson = (json['members'] as List<dynamic>?) ?? [];
     final milestonesJson = (json['milestones'] as List<dynamic>?) ?? [];
@@ -401,6 +406,7 @@ class ProjectDetailModel {
       recentActivity: activityJson
           .map((a) => ProjectActivityModel.fromJson(a as Map<String, dynamic>))
           .toList(),
+      isFromCache: isFromCache,
     );
   }
 }

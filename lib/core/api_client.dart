@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform, SocketException;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +24,7 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.4';
+  static const String defaultLanIp = '192.168.1.6';
   static const String _defaultAdbTunnelUrl =
       'http://localhost:8080/projecta/api/v1';
   static const String _defaultAndroidUrl =
@@ -33,12 +33,24 @@ class ApiClient {
   static const String _tokenPrefKey = 'auth_token';
   static const String _baseUrlPrefKey = 'api_base_url';
 
-  /// Set to 30 minutes as requested for long-running local operations
-  static const Duration requestTimeout = Duration(minutes: 30);
+  /// Standard HTTP request timeout (8s). Fast failure allows rapid auto-fallback
+  /// to USB ADB tunnel (localhost:8080) or Wi-Fi LAN IP without freezing UI.
+  static const Duration requestTimeout = Duration(seconds: 8);
+  static const String cachedHeaderKey = 'x-projeqta-cached';
+
+  static bool isCachedResponse(http.Response response) {
+    return response.headers[cachedHeaderKey] == 'true';
+  }
 
   String _baseUrl = _defaultLocalhostUrl;
   String? _cachedToken;
-  final http.Client _httpClient = http.Client();
+  http.Client _httpClient = http.Client();
+
+  @visibleForTesting
+  set customHttpClient(http.Client client) => _httpClient = client;
+
+  @visibleForTesting
+  void resetHttpClient() => _httpClient = http.Client();
 
   String get baseUrl => _baseUrl;
 
@@ -214,6 +226,13 @@ class ApiClient {
     }
   }
 
+  String _cacheKey(String endpoint, Map<String, dynamic>? queryParameters) {
+    final queryStr = queryParameters != null && queryParameters.isNotEmpty
+        ? queryParameters.entries.map((e) => '${e.key}=${e.value}').join('&')
+        : '';
+    return 'cache_${endpoint}_$queryStr';
+  }
+
   Future<http.Response> get(
     String endpoint, {
     Map<String, String>? headers,
@@ -224,6 +243,60 @@ class ApiClient {
       final mergedHeaders = await _buildHeaders(extraHeaders: headers);
       return _httpClient.get(uri, headers: mergedHeaders);
     });
+  }
+
+  /// Transparently fetches GET requests with offline fallback caching via SharedPreferences.
+  Future<http.Response> getWithCache(
+    String endpoint, {
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final key = _cacheKey(endpoint, queryParameters);
+    try {
+      final response = await get(
+        endpoint,
+        headers: headers,
+        queryParameters: queryParameters,
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          jsonDecode(response.body);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(key, response.body);
+        } catch (_) {
+          // If response body is not valid JSON (e.g. captive portal HTML error), do not cache
+        }
+      }
+      return response;
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedBody = prefs.getString(key);
+      if (cachedBody != null && cachedBody.trim().isNotEmpty) {
+        try {
+          jsonDecode(cachedBody);
+          return http.Response(
+            cachedBody,
+            200,
+            headers: {
+              'content-type': 'application/json; charset=utf-8',
+              cachedHeaderKey: 'true',
+            },
+          );
+        } catch (_) {
+          // Corrupted cache - remove it and let the network exception propagate
+          await prefs.remove(key);
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith('cache_')).toList();
+    for (final k in keys) {
+      await prefs.remove(k);
+    }
   }
 
   Future<http.Response> post(
@@ -309,6 +382,14 @@ class ApiClient {
   }
 
   dynamic decodeJson(http.Response response) {
-    return jsonDecode(response.body);
+    try {
+      return jsonDecode(response.body);
+    } on FormatException catch (e) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Invalid server response (non-JSON payload): ${e.message}',
+        details: response.body,
+      );
+    }
   }
 }

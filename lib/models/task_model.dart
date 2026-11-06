@@ -1,3 +1,5 @@
+import '../core/app_date_utils.dart';
+
 int _asInt(dynamic v, [int fallback = 0]) {
   if (v == null) return fallback;
   if (v is num) return v.toInt();
@@ -73,7 +75,9 @@ class TaskModel {
   final int openDependenciesCount;
   final int subtaskCount;
   final bool isOverdue;
+  final int overdueDays;
   final List<TaskAssigneeModel> assignees;
+  final List<String> allowedStatuses;
 
   const TaskModel({
     required this.id,
@@ -98,7 +102,9 @@ class TaskModel {
     this.openDependenciesCount = 0,
     this.subtaskCount = 0,
     this.isOverdue = false,
+    this.overdueDays = 0,
     this.assignees = const [],
+    this.allowedStatuses = const [],
   });
 
   bool get isLocked => openDependenciesCount > 0;
@@ -106,6 +112,101 @@ class TaskModel {
   bool get isBlocked => status == 'blocked';
   bool get isInProgress => status == 'in_progress';
   bool get isPendingReview => status == 'pending_review';
+  bool isStatusAllowed(String target) => allowedStatuses.contains(target);
+  String get formattedDeadline => AppDateUtils.fmtDate(deadline, fallback: 'No date');
+
+  List<String> nextAllowedStatusesFor(String targetStatus) {
+    final isManager = allowedStatuses.contains('completed');
+    if (isManager) {
+      return const [
+        'not_started',
+        'in_progress',
+        'blocked',
+        'pending_review',
+        'completed',
+      ];
+    }
+    switch (targetStatus) {
+      case 'not_started':
+        final list = <String>['not_started', 'blocked'];
+        if (!isLocked) list.add('in_progress');
+        return list;
+      case 'in_progress':
+        return const [
+          'not_started',
+          'in_progress',
+          'blocked',
+          'pending_review',
+        ];
+      case 'blocked':
+        final list = <String>['blocked', 'not_started'];
+        if (!isLocked) list.add('in_progress');
+        return list;
+      case 'pending_review':
+        return const ['in_progress', 'pending_review'];
+      case 'completed':
+        return const ['completed'];
+      default:
+        return allowedStatuses;
+    }
+  }
+
+  TaskModel copyWith({
+    int? id,
+    String? taskCode,
+    int? projectId,
+    String? projectName,
+    String? projectCode,
+    int? milestoneId,
+    String? milestoneTitle,
+    int? parentTaskId,
+    String? title,
+    String? startDate,
+    String? deadline,
+    String? originalDeadline,
+    String? priority,
+    String? status,
+    double? estimatedHours,
+    int? actualMinutes,
+    int? progress,
+    String? completedAt,
+    String? lastUpdateAt,
+    int? openDependenciesCount,
+    int? subtaskCount,
+    bool? isOverdue,
+    int? overdueDays,
+    List<TaskAssigneeModel>? assignees,
+    List<String>? allowedStatuses,
+  }) {
+    return TaskModel(
+      id: id ?? this.id,
+      taskCode: taskCode ?? this.taskCode,
+      projectId: projectId ?? this.projectId,
+      projectName: projectName ?? this.projectName,
+      projectCode: projectCode ?? this.projectCode,
+      milestoneId: milestoneId ?? this.milestoneId,
+      milestoneTitle: milestoneTitle ?? this.milestoneTitle,
+      parentTaskId: parentTaskId ?? this.parentTaskId,
+      title: title ?? this.title,
+      startDate: startDate ?? this.startDate,
+      deadline: deadline ?? this.deadline,
+      originalDeadline: originalDeadline ?? this.originalDeadline,
+      priority: priority ?? this.priority,
+      status: status ?? this.status,
+      estimatedHours: estimatedHours ?? this.estimatedHours,
+      actualMinutes: actualMinutes ?? this.actualMinutes,
+      progress: progress ?? this.progress,
+      completedAt: completedAt ?? this.completedAt,
+      lastUpdateAt: lastUpdateAt ?? this.lastUpdateAt,
+      openDependenciesCount:
+          openDependenciesCount ?? this.openDependenciesCount,
+      subtaskCount: subtaskCount ?? this.subtaskCount,
+      isOverdue: isOverdue ?? this.isOverdue,
+      overdueDays: overdueDays ?? this.overdueDays,
+      assignees: assignees ?? this.assignees,
+      allowedStatuses: allowedStatuses ?? this.allowedStatuses,
+    );
+  }
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     final rawAssignees = (json['assignees'] as List<dynamic>?) ?? [];
@@ -132,9 +233,14 @@ class TaskModel {
       openDependenciesCount: _asInt(json['open_dependencies_count']),
       subtaskCount: _asInt(json['subtask_count']),
       isOverdue: json['is_overdue'] == true || json['is_overdue'] == 1,
+      overdueDays: _asInt(json['overdue_days']),
       assignees: rawAssignees
           .map((a) => TaskAssigneeModel.fromJson(a as Map<String, dynamic>))
           .toList(),
+      allowedStatuses: (json['allowed_statuses'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 }

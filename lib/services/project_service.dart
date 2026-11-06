@@ -53,7 +53,11 @@ class ProjectService {
       query['search'] = search.trim();
     }
 
-    final response = await _client.get('/projects', queryParameters: query);
+    final response = await _client.getWithCache(
+      '/projects',
+      queryParameters: query,
+    );
+    final isCached = ApiClient.isCachedResponse(response);
     final dynamic data = _client.decodeJson(response);
 
     if (data is Map<String, dynamic>) {
@@ -79,23 +83,20 @@ class ProjectService {
         'total': totalInt,
         'page': pageInt,
         'pages': pagesInt,
+        'is_cached': isCached,
       };
     }
 
-    return {
-      'projects': <ProjectModel>[],
-      'total': 0,
-      'page': page,
-      'pages': 1,
-    };
+    return {'projects': <ProjectModel>[], 'total': 0, 'page': page, 'pages': 1};
   }
 
   Future<ProjectDetailModel> getProjectDetails(int id) async {
-    final response = await _client.get('/projects/$id');
+    final response = await _client.getWithCache('/projects/$id');
+    final isCached = ApiClient.isCachedResponse(response);
     final dynamic data = _client.decodeJson(response);
 
     if (data is Map<String, dynamic>) {
-      return ProjectDetailModel.fromJson(data);
+      return ProjectDetailModel.fromJson(data, isFromCache: isCached);
     }
     throw ApiException(
       statusCode: 500,
@@ -132,7 +133,9 @@ class ProjectService {
       'sort_order': sortOrder,
     };
 
-    final path = id != null && id > 0 ? '/milestones/$id' : '/projects/$projectId/milestones';
+    final path = id != null && id > 0
+        ? '/milestones/$id'
+        : '/projects/$projectId/milestones';
     final response = await _client.post(path, body: body);
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
@@ -147,7 +150,10 @@ class ProjectService {
   }
 
   /// Changes project status (e.g. active, on_hold, completed, cancelled)
-  Future<Map<String, dynamic>> changeProjectStatus(int projectId, String status) async {
+  Future<Map<String, dynamic>> changeProjectStatus(
+    int projectId,
+    String status,
+  ) async {
     final response = await _client.post(
       '/projects/$projectId/status',
       body: {'status': status},
@@ -160,7 +166,10 @@ class ProjectService {
   }
 
   /// Creates or updates a project
-  Future<Map<String, dynamic>> saveProject(Map<String, dynamic> data, {int? id}) async {
+  Future<Map<String, dynamic>> saveProject(
+    Map<String, dynamic> data, {
+    int? id,
+  }) async {
     final path = id != null && id > 0 ? '/projects/$id' : '/projects';
     final response = await _client.post(path, body: data);
     final dynamic dataRes = _client.decodeJson(response);
@@ -174,10 +183,7 @@ class ProjectService {
   Future<void> addProjectMember(int projectId, int userId, String role) async {
     await _client.post(
       '/projects/$projectId/members',
-      body: {
-        'user_id': userId,
-        'member_role': role,
-      },
+      body: {'user_id': userId, 'member_role': role},
     );
   }
 
@@ -187,7 +193,10 @@ class ProjectService {
   }
 
   /// Archives or unarchives a project
-  Future<Map<String, dynamic>> archiveProject(int projectId, {required bool unarchive}) async {
+  Future<Map<String, dynamic>> archiveProject(
+    int projectId, {
+    required bool unarchive,
+  }) async {
     final response = await _client.post(
       '/projects/$projectId/archive',
       body: {'action': unarchive ? 'unarchive' : 'archive'},
@@ -199,4 +208,3 @@ class ProjectService {
     return {'ok': true};
   }
 }
-

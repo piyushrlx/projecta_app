@@ -59,7 +59,7 @@ Future<void> showServerConfigDialog({
               controller: controller,
               style: AppTheme.mono(fontSize: 13),
               decoration: const InputDecoration(
-                hintText: 'http://192.168.1.4/projecta/api/v1',
+                hintText: 'http://192.168.1.6/projecta/api/v1',
                 prefixIcon: Icon(Icons.link, size: 18),
               ),
             ),
@@ -83,8 +83,8 @@ Future<void> showServerConfigDialog({
                   controller,
                 ),
                 _presetChip(
-                  'Wi-Fi (192.168.1.4)',
-                  'http://192.168.1.4/projecta/api/v1',
+                  'Wi-Fi (192.168.1.6)',
+                  'http://192.168.1.6/projecta/api/v1',
                   controller,
                 ),
                 _presetChip(

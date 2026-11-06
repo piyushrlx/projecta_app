@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/offline_cache_banner.dart';
 import '../../models/project_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/directory_service.dart';
@@ -11,14 +13,16 @@ import 'project_detail_screen.dart';
 import 'project_form_screen.dart';
 
 class ProjectsListScreen extends StatefulWidget {
-  const ProjectsListScreen({super.key});
+  final ProjectService? projectService;
+  const ProjectsListScreen({super.key, this.projectService});
 
   @override
   State<ProjectsListScreen> createState() => _ProjectsListScreenState();
 }
 
 class _ProjectsListScreenState extends State<ProjectsListScreen> {
-  final ProjectService _projectService = ProjectService();
+  late final ProjectService _projectService =
+      widget.projectService ?? ProjectService();
   final DirectoryService _directoryService = DirectoryService();
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
@@ -27,6 +31,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   String? _errorMessage;
   List<ProjectModel> _projects = [];
   int _totalProjects = 0;
+  bool _isOfflineCached = false;
 
   // Filter States
   String _selectedPill =
@@ -128,6 +133,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         setState(() {
           _projects = list;
           _totalProjects = total;
+          _isOfflineCached = res['is_cached'] == true;
           _isLoading = false;
         });
       }
@@ -331,6 +337,17 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   void _navigateToCreateProject() async {
+    if (_isOfflineCached) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot create projects while viewing offline cached data.'),
+          backgroundColor: Color(0xFFB45309),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     final created = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const ProjectFormScreen()),
@@ -341,6 +358,17 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   }
 
   void _navigateToEditProject(ProjectModel project) async {
+    if (_isOfflineCached) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot edit projects while viewing offline cached data.'),
+          backgroundColor: Color(0xFFB45309),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => ProjectFormScreen(project: project)),
@@ -418,6 +446,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           : null,
       body: Column(
         children: [
+          // Offline Banner
+          if (_isOfflineCached) OfflineCacheBanner(onRetry: _loadProjects),
+
           // Search Bar
           _buildSearchBar(),
 

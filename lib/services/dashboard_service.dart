@@ -25,9 +25,10 @@ class DashboardService {
       path += '?${uri.query}';
     }
 
-    final response = await _client.get(path);
+    final response = await _client.getWithCache(path);
     final dynamic decoded = _client.decodeJson(response);
     if (decoded is Map<String, dynamic>) {
+      decoded['is_cached'] = ApiClient.isCachedResponse(response);
       return decoded;
     }
     return <String, dynamic>{};
