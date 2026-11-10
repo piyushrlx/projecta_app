@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../api_client.dart';
 import '../theme.dart';
 import '../../models/user_model.dart';
 import 'projeqta_logo.dart';
@@ -513,7 +514,7 @@ class AppSideDrawer extends StatelessWidget {
   }
 
   Widget _buildUserAvatar() {
-    final photoUrl = user.profilePhotoUrl;
+    final photoUrl = ApiClient().resolveMediaUrl(user.profilePhotoUrl);
     if (photoUrl != null && photoUrl.trim().isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),

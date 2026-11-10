@@ -346,6 +346,127 @@ class ProjectActivityModel {
   }
 }
 
+class CommentModel {
+  final int id;
+  final String entityType;
+  final int entityId;
+  final int? parentId;
+  final int userId;
+  final String userName;
+  final String? userRole;
+  final String? profilePhotoUrl;
+  final String body;
+  final String createdAt;
+  final bool isMyComment;
+
+  const CommentModel({
+    required this.id,
+    required this.entityType,
+    required this.entityId,
+    this.parentId,
+    required this.userId,
+    required this.userName,
+    this.userRole,
+    this.profilePhotoUrl,
+    required this.body,
+    required this.createdAt,
+    this.isMyComment = false,
+  });
+
+  factory CommentModel.fromJson(Map<String, dynamic> json) {
+    return CommentModel(
+      id: _asInt(json['id']),
+      entityType: json['entity_type']?.toString() ?? '',
+      entityId: _asInt(json['entity_id']),
+      parentId: _asNullableInt(json['parent_id']),
+      userId: _asInt(json['user_id']),
+      userName: json['user_name']?.toString() ?? 'User',
+      userRole: json['user_role']?.toString(),
+      profilePhotoUrl: json['profile_photo_url']?.toString(),
+      body: json['body']?.toString() ?? '',
+      createdAt: json['created_at']?.toString() ?? '',
+      isMyComment: json['is_my_comment'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'entity_type': entityType,
+      'entity_id': entityId,
+      'parent_id': parentId,
+      'user_id': userId,
+      'user_name': userName,
+      'user_role': userRole,
+      'profile_photo_url': profilePhotoUrl,
+      'body': body,
+      'created_at': createdAt,
+      'is_my_comment': isMyComment,
+    };
+  }
+}
+
+class AttachmentModel {
+  final int id;
+  final String? entityType;
+  final int? entityId;
+  final String originalName;
+  final int sizeBytes;
+  final String mimeType;
+  final String downloadUrl;
+  final String? uploaderName;
+  final String? createdAt;
+
+  const AttachmentModel({
+    required this.id,
+    this.entityType,
+    this.entityId,
+    required this.originalName,
+    required this.sizeBytes,
+    required this.mimeType,
+    required this.downloadUrl,
+    this.uploaderName,
+    this.createdAt,
+  });
+
+  String get formattedSize {
+    if (sizeBytes <= 0) return '0 B';
+    if (sizeBytes < 1024) return '$sizeBytes B';
+    if (sizeBytes < 1024 * 1024) {
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  factory AttachmentModel.fromJson(Map<String, dynamic> json) {
+    return AttachmentModel(
+      id: _asInt(json['id']),
+      entityType: json['entity_type']?.toString(),
+      entityId: _asNullableInt(json['entity_id']),
+      originalName: json['original_name']?.toString() ?? 'Unnamed File',
+      sizeBytes: _asInt(json['size_bytes']),
+      mimeType: json['mime_type']?.toString() ?? 'application/octet-stream',
+      downloadUrl: json['download_url']?.toString() ?? '',
+      uploaderName: json['uploader_name']?.toString(),
+      createdAt: json['created_at']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'entity_type': entityType,
+      'entity_id': entityId,
+      'original_name': originalName,
+      'size_bytes': sizeBytes,
+      'mime_type': mimeType,
+      'download_url': downloadUrl,
+      'uploader_name': uploaderName,
+      'created_at': createdAt,
+    };
+  }
+}
+
 class ProjectDetailModel {
   final ProjectModel project;
   final String? description;
@@ -359,6 +480,8 @@ class ProjectDetailModel {
   final List<ProjectMilestoneModel> milestones;
   final ProjectTaskCountsModel taskCounts;
   final List<ProjectActivityModel> recentActivity;
+  final List<AttachmentModel> attachments;
+  final int commentsCount;
   final bool isFromCache;
 
   const ProjectDetailModel({
@@ -374,6 +497,8 @@ class ProjectDetailModel {
     this.milestones = const [],
     this.taskCounts = const ProjectTaskCountsModel(),
     this.recentActivity = const [],
+    this.attachments = const [],
+    this.commentsCount = 0,
     this.isFromCache = false,
   });
 
@@ -386,6 +511,8 @@ class ProjectDetailModel {
     final milestonesJson = (json['milestones'] as List<dynamic>?) ?? [];
     final countsJson = (json['task_counts'] as Map<String, dynamic>?);
     final activityJson = (json['recent_activity'] as List<dynamic>?) ?? [];
+    final attachmentsJson = (json['attachments'] as List<dynamic>?) ?? [];
+    final commentsCount = _asInt(json['comments_count']);
 
     return ProjectDetailModel(
       project: ProjectModel.fromJson(projJson),
@@ -406,6 +533,10 @@ class ProjectDetailModel {
       recentActivity: activityJson
           .map((a) => ProjectActivityModel.fromJson(a as Map<String, dynamic>))
           .toList(),
+      attachments: attachmentsJson
+          .map((a) => AttachmentModel.fromJson(a as Map<String, dynamic>))
+          .toList(),
+      commentsCount: commentsCount,
       isFromCache: isFromCache,
     );
   }

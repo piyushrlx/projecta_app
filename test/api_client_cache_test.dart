@@ -164,6 +164,40 @@ void main() {
       expect(cols['not_started']!.length, 1);
       expect(cols['not_started']!.first.taskCode, 'T-0101');
     });
+
+    test('ApiClient resolveMediaUrl correctly rewrites localhost URLs for physical devices', () async {
+      final client = ApiClient();
+      await client.setBaseUrl('http://192.168.1.100/projecta/api/v1');
+
+      // Absolute localhost URL
+      expect(
+        client.resolveMediaUrl('http://localhost/projecta/uploads/avatars/user1.png'),
+        'http://192.168.1.100/projecta/uploads/avatars/user1.png',
+      );
+
+      // 127.0.0.1 URL
+      expect(
+        client.resolveMediaUrl('http://127.0.0.1/projecta/uploads/avatars/user2.png'),
+        'http://192.168.1.100/projecta/uploads/avatars/user2.png',
+      );
+
+      // Relative path
+      expect(
+        client.resolveMediaUrl('uploads/avatars/user3.png'),
+        'http://192.168.1.100/projecta/uploads/avatars/user3.png',
+      );
+
+      // External CDN URL preserved
+      expect(
+        client.resolveMediaUrl('https://example.com/avatar.png'),
+        'https://example.com/avatar.png',
+      );
+
+      // Null or empty handling
+      expect(client.resolveMediaUrl(null), isNull);
+      expect(client.resolveMediaUrl(''), isNull);
+      expect(client.resolveMediaUrl('   '), isNull);
+    });
   });
 }
 

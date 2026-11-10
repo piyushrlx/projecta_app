@@ -9,6 +9,8 @@ import '../../services/project_service.dart';
 import '../tasks/tasks_screen.dart';
 import 'project_form_screen.dart';
 import 'widgets/project_activity_timeline.dart';
+import 'widgets/project_attachments_section.dart';
+import 'widgets/project_comments_section.dart';
 import 'widgets/project_milestones_section.dart';
 import 'widgets/project_overview_card.dart';
 import 'widgets/project_scope_section.dart';
@@ -1027,6 +1029,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             ProjectActivityTimeline(activities: detail.recentActivity),
             const SizedBox(height: 24),
           ],
+
+          // 8. Files & Attachments Section
+          ProjectAttachmentsSection(
+            projectId: p.id,
+            attachments: detail.attachments,
+            onUploaded: _loadProjectDetail,
+          ),
+          const SizedBox(height: 24),
+
+          // 9. Discussion & Comments Section
+          ProjectCommentsSection(
+            projectId: p.id,
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

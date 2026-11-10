@@ -6,7 +6,7 @@ import 'api_client.dart';
 class AsyncServerDiscovery {
   static const List<String> defaultCandidates = [
     'http://localhost:8080/projecta/api/v1',
-    'http://192.168.1.6/projecta/api/v1',
+    'http://${ApiClient.defaultLanIp}/projecta/api/v1',
     'http://10.0.2.2/projecta/api/v1',
     'http://localhost/projecta/api/v1',
   ];
@@ -30,19 +30,24 @@ class AsyncServerDiscovery {
           : url;
       final healthUri = Uri.parse('$clean/health');
 
-      httpClient.get(healthUri).timeout(timeout).then((response) {
-        if (response.statusCode == 200 && !completer.isCompleted) {
-          ApiClient().setBaseUrl(clean);
-          completer.complete(clean);
-        }
-      }).catchError((_) {
-        // Ignore individual probe error
-      }).whenComplete(() {
-        pending--;
-        if (pending == 0 && !completer.isCompleted) {
-          completer.complete(null);
-        }
-      });
+      httpClient
+          .get(healthUri)
+          .timeout(timeout)
+          .then((response) {
+            if (response.statusCode == 200 && !completer.isCompleted) {
+              ApiClient().setBaseUrl(clean);
+              completer.complete(clean);
+            }
+          })
+          .catchError((_) {
+            // Ignore individual probe error
+          })
+          .whenComplete(() {
+            pending--;
+            if (pending == 0 && !completer.isCompleted) {
+              completer.complete(null);
+            }
+          });
     }
 
     final fastest = await completer.future;
@@ -52,4 +57,3 @@ class AsyncServerDiscovery {
     return fastest;
   }
 }
-

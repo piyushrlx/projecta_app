@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'core/api_client.dart';
 import 'core/async_server_discovery.dart';
 import 'core/theme.dart';
@@ -8,7 +7,6 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
   await ApiClient().loadSavedBaseUrl();
   // Asynchronously discover fastest server in background without blocking startup
   unawaited(AsyncServerDiscovery.probeAndSelectFastest());

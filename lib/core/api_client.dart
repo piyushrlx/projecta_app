@@ -24,7 +24,7 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.6';
+  static const String defaultLanIp = '192.168.1.7';
   static const String _defaultAdbTunnelUrl =
       'http://localhost:8080/projecta/api/v1';
   static const String _defaultAndroidUrl =
@@ -84,6 +84,49 @@ class ApiClient {
     _baseUrl = cleanUrl;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlPrefKey, _baseUrl);
+  }
+
+  /// Resolves relative or localhost media/avatar URLs to point to the active host and port
+  /// so that physical Android devices can load server-hosted images without localhost connection errors.
+  String? resolveMediaUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return null;
+    final trimmed = url.trim();
+
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      final base = _baseUrl.endsWith('/api/v1')
+          ? _baseUrl.substring(0, _baseUrl.length - '/api/v1'.length)
+          : _baseUrl;
+      final cleanBase = base.endsWith('/')
+          ? base.substring(0, base.length - 1)
+          : base;
+      final cleanPath = trimmed.startsWith('/')
+          ? trimmed.substring(1)
+          : trimmed;
+      return '$cleanBase/$cleanPath';
+    }
+
+    try {
+      final mediaUri = Uri.parse(trimmed);
+      final baseUri = Uri.parse(_baseUrl);
+
+      if (mediaUri.host == 'localhost' || mediaUri.host == '127.0.0.1') {
+        if (baseUri.host != 'localhost' && baseUri.host != '127.0.0.1') {
+          return mediaUri
+              .replace(
+                host: baseUri.host,
+                port: baseUri.hasPort
+                    ? baseUri.port
+                    : (baseUri.scheme == 'https' ? 443 : 80),
+              )
+              .toString();
+        } else if (baseUri.hasPort &&
+            (!mediaUri.hasPort || mediaUri.port != baseUri.port)) {
+          return mediaUri.replace(port: baseUri.port).toString();
+        }
+      }
+    } catch (_) {}
+
+    return trimmed;
   }
 
   Future<void> saveToken(String token) async {
@@ -348,6 +391,57 @@ class ApiClient {
       final mergedHeaders = await _buildHeaders(extraHeaders: headers);
       final encodedBody = body != null ? jsonEncode(body) : null;
       return _httpClient.delete(uri, headers: mergedHeaders, body: encodedBody);
+    });
+  }
+
+  /// Sends a multipart POST request to upload a file (supports file path or raw bytes)
+  Future<http.Response> uploadMultipartFile(
+    String endpoint, {
+    required String fieldName,
+    String? filePath,
+    List<int>? fileBytes,
+    required String fileName,
+    Map<String, String>? fields,
+    Map<String, String>? headers,
+  }) async {
+    return _executeWithFallback(() async {
+      final uri = _buildUri(endpoint);
+      final request = http.MultipartRequest('POST', uri);
+
+      final token = await getToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.headers['Accept'] = 'application/json';
+      if (headers != null) {
+        request.headers.addAll(headers);
+      }
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      if (fileBytes != null && fileBytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            fieldName,
+            fileBytes,
+            filename: fileName,
+          ),
+        );
+      } else if (filePath != null && filePath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            fieldName,
+            filePath,
+            filename: fileName,
+          ),
+        );
+      } else {
+        throw ApiException(statusCode: 400, message: 'No file data provided.');
+      }
+
+      final streamedResponse = await _httpClient.send(request);
+      return http.Response.fromStream(streamedResponse);
     });
   }
 

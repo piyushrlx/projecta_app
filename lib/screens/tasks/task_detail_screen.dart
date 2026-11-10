@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../models/task_model.dart';
 import '../../services/task_service.dart';
+import 'task_form_screen.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -416,6 +417,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           actions: [
+            if (_detail != null && _detail!.canManage)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: AppTheme.royalBlue),
+                tooltip: 'Edit Task',
+                onPressed: () async {
+                  final updated = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TaskFormScreen(detail: _detail),
+                    ),
+                  );
+                  if (updated == true && mounted) {
+                    _loadTaskDetail();
+                  }
+                },
+              ),
             IconButton(
               icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
               tooltip: 'Refresh',
@@ -527,8 +544,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ],
 
           // 8. Subtasks Section
-          if (detail.subtasks.isNotEmpty) ...[
-            _buildSubtasksSection(detail.subtasks),
+          if (detail.subtasks.isNotEmpty || detail.canManage) ...[
+            _buildSubtasksSection(detail),
             const SizedBox(height: 16),
           ],
 
@@ -1108,49 +1125,123 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildSubtasksSection(List<SubtaskModel> subtasks) {
+  Widget _buildSubtasksSection(TaskDetailModel detail) {
+    final subtasks = detail.subtasks;
+    final task = detail.task;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Subtasks (${subtasks.length})',
-          style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Subtasks (${subtasks.length})',
+              style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            if (detail.canManage)
+              TextButton.icon(
+                onPressed: () async {
+                  final added = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TaskFormScreen(
+                        initialProjectId: task.projectId,
+                        parentTaskId: task.id,
+                        parentTaskTitle: task.title,
+                      ),
+                    ),
+                  );
+                  if (added == true && mounted) {
+                    _loadTaskDetail();
+                  }
+                },
+                icon: const Icon(Icons.add, size: 16, color: AppTheme.royalBlue),
+                label: const Text(
+                  'Add Subtask',
+                  style: TextStyle(
+                    color: AppTheme.royalBlue,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 10),
-        ...subtasks.map((s) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 6),
+        if (subtasks.isEmpty)
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppTheme.pureWhite,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppTheme.borderSubtle),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  s.isCompleted
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  color: s.isCompleted
-                      ? AppTheme.royalBlue
-                      : AppTheme.lightSlate,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${s.taskCode} · ${s.title}',
-                    style: AppTheme.body(
-                      fontSize: 13,
-                      color: AppTheme.deepSlate,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              'No subtasks yet. Click "Add Subtask" to break down this work.',
+              style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
             ),
-          );
-        }),
+          )
+        else
+          ...subtasks.map((s) {
+            return InkWell(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TaskDetailScreen(taskId: s.id),
+                  ),
+                );
+                if (mounted) {
+                  _loadTaskDetail();
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.pureWhite,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.borderSubtle),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      s.isCompleted
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: s.isCompleted
+                          ? AppTheme.royalBlue
+                          : AppTheme.lightSlate,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${s.taskCode} · ${s.title}',
+                        style: AppTheme.body(
+                          fontSize: 13,
+                          color: AppTheme.deepSlate,
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: AppTheme.mutedSlate,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
       ],
     );
   }

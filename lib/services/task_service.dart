@@ -202,6 +202,27 @@ class TaskService {
     return <String, dynamic>{};
   }
 
+  Future<Map<String, dynamic>> updateTask(
+    int id,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _client.post('/tasks/$id', body: payload);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> createSubtask(
+    int parentTaskId,
+    Map<String, dynamic> payload,
+  ) async {
+    final subtaskPayload = Map<String, dynamic>.from(payload);
+    subtaskPayload['parent_task_id'] = parentTaskId;
+    return createTask(subtaskPayload);
+  }
+
   Future<List<Map<String, dynamic>>> getActiveEmployees() async {
     final response = await _client.get('/employees');
     final dynamic data = _client.decodeJson(response);

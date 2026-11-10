@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
@@ -1952,11 +1953,16 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ...display.map((m) {
           final member = m as Map<String, dynamic>;
           final name = member['full_name']?.toString() ?? '';
-          final photo = member['profile_photo']?.toString();
+          final rawPhoto = member['profile_photo']?.toString();
+          final photo = ApiClient().resolveMediaUrl(rawPhoto);
           return Container(
             margin: const EdgeInsets.only(right: 3),
             child: photo != null && photo.isNotEmpty && photo.startsWith('http')
-                ? CircleAvatar(radius: 10, backgroundImage: NetworkImage(photo))
+                ? CircleAvatar(
+                    radius: 10,
+                    backgroundImage: NetworkImage(photo),
+                    onBackgroundImageError: (_, _) {},
+                  )
                 : CircleAvatar(
                     radius: 10,
                     backgroundColor: const Color(0xFFE2E8F0),

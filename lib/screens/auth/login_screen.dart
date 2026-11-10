@@ -139,8 +139,8 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: serverController,
                 style: AppTheme.mono(fontSize: 13),
-                decoration: const InputDecoration(
-                  hintText: 'http://192.168.1.6/projecta/api/v1',
+                decoration: InputDecoration(
+                  hintText: 'http://${ApiClient.defaultLanIp}/projecta/api/v1',
                 ),
               ),
               const SizedBox(height: 16),
@@ -158,8 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 runSpacing: 8,
                 children: [
                   _presetChip(
-                    'Wi-Fi (192.168.1.6)',
-                    'http://192.168.1.6/projecta/api/v1',
+                    'Wi-Fi (${ApiClient.defaultLanIp})',
+                    'http://${ApiClient.defaultLanIp}/projecta/api/v1',
                     serverController,
                   ),
                   _presetChip(
@@ -405,7 +405,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => ForgotPasswordScreen(
-                                          initialEmail: _usernameController.text.contains('@')
+                                          initialEmail:
+                                              _usernameController.text.contains(
+                                                '@',
+                                              )
                                               ? _usernameController.text.trim()
                                               : null,
                                         ),
@@ -509,11 +512,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () async {
                               final registeredEmail =
                                   await Navigator.push<String>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterScreen(),
-                                ),
-                              );
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  );
                               if (registeredEmail != null &&
                                   registeredEmail.isNotEmpty &&
                                   mounted) {

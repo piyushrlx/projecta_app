@@ -58,9 +58,9 @@ Future<void> showServerConfigDialog({
             TextField(
               controller: controller,
               style: AppTheme.mono(fontSize: 13),
-              decoration: const InputDecoration(
-                hintText: 'http://192.168.1.6/projecta/api/v1',
-                prefixIcon: Icon(Icons.link, size: 18),
+              decoration: InputDecoration(
+                hintText: 'http://${ApiClient.defaultLanIp}/projecta/api/v1',
+                prefixIcon: const Icon(Icons.link, size: 18),
               ),
             ),
             const SizedBox(height: 16),
@@ -83,8 +83,8 @@ Future<void> showServerConfigDialog({
                   controller,
                 ),
                 _presetChip(
-                  'Wi-Fi (192.168.1.6)',
-                  'http://192.168.1.6/projecta/api/v1',
+                  'Wi-Fi (${ApiClient.defaultLanIp})',
+                  'http://${ApiClient.defaultLanIp}/projecta/api/v1',
                   controller,
                 ),
                 _presetChip(

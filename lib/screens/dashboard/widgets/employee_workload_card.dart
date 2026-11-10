@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/api_client.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/brutalist_pressable.dart';
 
@@ -156,10 +157,12 @@ class EmployeeWorkloadCard extends StatelessWidget {
   }
 
   Widget _buildAvatar(String name, String? photo) {
-    if (photo != null && photo.isNotEmpty && photo.startsWith('http')) {
+    final resolvedPhoto = ApiClient().resolveMediaUrl(photo);
+    if (resolvedPhoto != null && resolvedPhoto.isNotEmpty && resolvedPhoto.startsWith('http')) {
       return CircleAvatar(
         radius: 18,
-        backgroundImage: NetworkImage(photo),
+        backgroundImage: NetworkImage(resolvedPhoto),
+        onBackgroundImageError: (_, _) {},
       );
     }
     final initials = name.isNotEmpty

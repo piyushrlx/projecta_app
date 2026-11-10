@@ -207,4 +207,84 @@ class ProjectService {
     }
     return {'ok': true};
   }
+
+  /// Fetches comments for an entity (project, task, report)
+  Future<List<CommentModel>> getComments(String entityType, int entityId) async {
+    final response = await _client.get(
+      '/comments',
+      queryParameters: {
+        'entity_type': entityType,
+        'entity_id': entityId.toString(),
+      },
+    );
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      final list = (data['comments'] as List<dynamic>?) ?? [];
+      return list
+          .map((c) => CommentModel.fromJson(c as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  /// Adds a new comment to an entity
+  Future<CommentModel> addComment({
+    required String entityType,
+    required int entityId,
+    required String body,
+    int? parentId,
+  }) async {
+    final payload = <String, dynamic>{
+      'entity_type': entityType,
+      'entity_id': entityId,
+      'body': body.trim(),
+    };
+    if (parentId != null) {
+      payload['parent_id'] = parentId;
+    }
+
+    final response = await _client.post('/comments', body: payload);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic> && data['comment'] != null) {
+      return CommentModel.fromJson(data['comment'] as Map<String, dynamic>);
+    }
+    throw ApiException(
+      statusCode: 500,
+      message: 'Failed to create comment.',
+    );
+  }
+
+  /// Uploads a file attachment to an entity (project, task, report)
+  Future<AttachmentModel> uploadAttachment({
+    required String entityType,
+    required int entityId,
+    String? filePath,
+    List<int>? fileBytes,
+    required String fileName,
+  }) async {
+    final response = await _client.uploadMultipartFile(
+      '/attachments/upload',
+      fieldName: 'file',
+      filePath: filePath,
+      fileBytes: fileBytes,
+      fileName: fileName,
+      fields: {
+        'entity_type': entityType,
+        'entity_id': entityId.toString(),
+      },
+    );
+
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic> && data['attachment'] != null) {
+      return AttachmentModel.fromJson(
+        data['attachment'] as Map<String, dynamic>,
+      );
+    }
+    throw ApiException(
+      statusCode: 500,
+      message: data is Map<String, dynamic> && data['message'] != null
+          ? data['message'].toString()
+          : 'Failed to upload attachment.',
+    );
+  }
 }
