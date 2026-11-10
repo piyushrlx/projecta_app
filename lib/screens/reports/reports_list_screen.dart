@@ -4,16 +4,19 @@ import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
+import 'compliance_matrix_view.dart';
 import 'report_submission_screen.dart';
 
 class ReportsListScreen extends StatefulWidget {
   final UserModel user;
   final String? initialFilter;
+  final String? initialViewMode; // 'inbox' or 'compliance'
 
   const ReportsListScreen({
     super.key,
     required this.user,
     this.initialFilter,
+    this.initialViewMode,
   });
 
   @override
@@ -27,10 +30,17 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   String? _errorMessage;
   List<ReportModel> _reports = [];
   late String _selectedFilter;
+  int _selectedTabIndex =
+      0; // 0 = Submissions Queue (Inbox), 1 = Compliance Matrix
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialViewMode == 'compliance' ||
+        widget.initialViewMode == 'matrix') {
+      _selectedTabIndex = 1;
+    }
+
     if (widget.initialFilter != null) {
       final f = widget.initialFilter!.trim().toLowerCase();
       if (f == 'pending_review' || f == 'pending review' || f == 'pending') {
@@ -316,7 +326,11 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   @override
   Widget build(BuildContext context) {
     final isAdmin = widget.user.isAdmin;
-    final title = isAdmin ? 'Daily Reports Inbox' : 'My Daily Reports';
+    final title = !isAdmin
+        ? 'My Daily Reports'
+        : (_selectedTabIndex == 1
+              ? 'Reporting Compliance'
+              : 'Daily Reports Inbox');
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
@@ -326,41 +340,192 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: _loadReports,
+            onPressed: () {
+              if (_selectedTabIndex == 0 || !isAdmin) {
+                _loadReports();
+              } else {
+                setState(() {});
+              }
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          // Filter Chips Bar
-          _buildFilterChips(),
+          // Segmented Switch for Admin users
+          if (isAdmin) _buildAdminSegmentSwitch(),
 
-          // Reports List
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
+          // If Compliance Matrix selected
+          if (isAdmin && _selectedTabIndex == 1)
+            Expanded(child: ComplianceMatrixView(user: widget.user))
+          else ...[
+            // Filter Chips Bar
+            _buildFilterChips(),
+
+            // Reports List
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.royalBlue,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : _errorMessage != null
+                  ? _buildErrorView()
+                  : _reports.isEmpty
+                  ? _buildEmptyView()
+                  : RefreshIndicator(
+                      onRefresh: _loadReports,
                       color: AppTheme.royalBlue,
-                      strokeWidth: 2.5,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _reports.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (ctx, idx) =>
+                            _buildReportCard(_reports[idx]),
+                      ),
                     ),
-                  )
-                : _errorMessage != null
-                ? _buildErrorView()
-                : _reports.isEmpty
-                ? _buildEmptyView()
-                : RefreshIndicator(
-                    onRefresh: _loadReports,
-                    color: AppTheme.royalBlue,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _reports.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (ctx, idx) =>
-                          _buildReportCard(_reports[idx]),
-                    ),
-                  ),
-          ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildAdminSegmentSwitch() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: AppTheme.pureWhite,
+        border: Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  if (_selectedTabIndex != 0) {
+                    setState(() => _selectedTabIndex = 0);
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _selectedTabIndex == 0
+                        ? AppTheme.navyBlue
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: _selectedTabIndex == 0
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x140F172A),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 15,
+                        color: _selectedTabIndex == 0
+                            ? AppTheme.pureWhite
+                            : AppTheme.mutedSlate,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Submissions Queue',
+                          style: AppTheme.heading(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedTabIndex == 0
+                                ? AppTheme.pureWhite
+                                : AppTheme.mutedSlate,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  if (_selectedTabIndex != 1) {
+                    setState(() => _selectedTabIndex = 1);
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _selectedTabIndex == 1
+                        ? AppTheme.navyBlue
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: _selectedTabIndex == 1
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x140F172A),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.grid_view_rounded,
+                        size: 15,
+                        color: _selectedTabIndex == 1
+                            ? AppTheme.pureWhite
+                            : AppTheme.mutedSlate,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Compliance Matrix',
+                          style: AppTheme.heading(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedTabIndex == 1
+                                ? AppTheme.pureWhite
+                                : AppTheme.mutedSlate,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

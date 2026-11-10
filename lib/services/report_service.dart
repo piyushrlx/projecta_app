@@ -101,5 +101,59 @@ class ReportService {
 
     await _client.post('/reports/$id/review', body: body);
   }
+
+  Future<ComplianceSummaryModel> getComplianceSummary(String date) async {
+    final response = await _client.get(
+      '/compliance/summary',
+      queryParameters: {'date': date},
+    );
+    final dynamic data = _client.decodeJson(response);
+
+    if (data is Map<String, dynamic>) {
+      return ComplianceSummaryModel.fromJson(data);
+    }
+    throw ApiException(
+      statusCode: 500,
+      message: 'Invalid compliance summary response format.',
+    );
+  }
+
+  Future<Map<String, dynamic>> remindDefaulter({
+    required int userId,
+    required String date,
+  }) async {
+    final body = <String, dynamic>{
+      'user_id': userId,
+      'date': date,
+    };
+    final response = await _client.post('/reports/remind', body: body);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return {'sent': true, 'message': 'Reminder sent.'};
+  }
+
+  Future<Map<String, dynamic>> createExemption({
+    required int userId,
+    required String startDate,
+    required String endDate,
+    required String type, // 'leave' or 'exemption'
+    String? reason,
+  }) async {
+    final body = <String, dynamic>{
+      'user_id': userId,
+      'start_date': startDate,
+      'end_date': endDate,
+      'type': type,
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    };
+    final response = await _client.post('/reports/exemption', body: body);
+    final dynamic data = _client.decodeJson(response);
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return {'success': true, 'message': 'Exemption granted.'};
+  }
 }
 

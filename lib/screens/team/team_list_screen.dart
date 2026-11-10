@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../services/directory_service.dart';
-import '../tasks/create_task_screen.dart';
+import 'departments_sheet.dart';
+import 'employee_detail_screen.dart';
+import 'employee_form_screen.dart';
 
 class TeamListScreen extends StatefulWidget {
   final int initialTab;
@@ -59,7 +61,7 @@ class _TeamListScreenState extends State<TeamListScreen>
       _errorMessage = null;
     });
     try {
-      final list = await _directoryService.getEmployees();
+      final list = await _directoryService.getEmployees(status: 'all');
       if (mounted) {
         setState(() {
           _employees = list;
@@ -98,7 +100,7 @@ class _TeamListScreenState extends State<TeamListScreen>
             _statusFilter == 'ALL' ||
             (_statusFilter == 'ACTIVE' && status == 'active') ||
             (_statusFilter == 'ON LEAVE' && status == 'on_leave') ||
-            (_statusFilter == 'RESIGNED' && status == 'resigned');
+            (_statusFilter == 'RESIGNED' && (status == 'resigned' || status == 'inactive'));
 
         return matchesSearch && matchesStatus;
       }).toList();
@@ -195,6 +197,12 @@ class _TeamListScreenState extends State<TeamListScreen>
                       ),
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.domain_outlined, color: AppTheme.deepSlate, size: 22),
+                    tooltip: 'Departments',
+                    onPressed: () => DepartmentsSheet.show(context, directoryService: _directoryService),
+                  ),
+                  const SizedBox(width: 4),
                   // Notification Bell with Badge
                   Stack(
                     clipBehavior: Clip.none,
@@ -303,14 +311,19 @@ class _TeamListScreenState extends State<TeamListScreen>
           ),
         ],
       ),
-      // Circular Royal Blue FAB (Matching Reference Step 5)
+      // Circular Royal Blue FAB (Opens Add Employee)
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           HapticFeedback.lightImpact();
-          Navigator.push(
+          final created = await Navigator.push<bool>(
             context,
-            MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+            MaterialPageRoute(
+              builder: (_) => EmployeeFormScreen(directoryService: _directoryService),
+            ),
           );
+          if (created == true) {
+            _loadEmployees();
+          }
         },
         backgroundColor: AppTheme.royalBlue,
         elevation: 4,
@@ -492,7 +505,7 @@ class _TeamListScreenState extends State<TeamListScreen>
     final email = (emp['email'] ?? '').toString();
 
     return BrutalistPressable(
-      onTap: () {},
+      onTap: () => _onMemberTap(emp),
       backgroundColor: AppTheme.pureWhite,
       borderColor: AppTheme.borderSubtle,
       borderRadius: BorderRadius.circular(12),
@@ -586,13 +599,135 @@ class _TeamListScreenState extends State<TeamListScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Icon(Icons.more_vert, size: 18, color: AppTheme.lightSlate),
+              const SizedBox(height: 4),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 20, color: AppTheme.mutedSlate),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onSelected: (val) {
+                  if (val == 'view') _onMemberTap(emp);
+                  if (val == 'edit') _onMemberEdit(emp);
+                  if (val == 'toggle') _toggleEmployeeStatus(emp);
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'view', child: Text('View Profile')),
+                  const PopupMenuItem(value: 'edit', child: Text('Edit Employee')),
+                  PopupMenuItem(
+                    value: 'toggle',
+                    child: Text(status == 'active' ? 'Deactivate' : 'Activate'),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  void _onMemberTap(Map<String, dynamic> emp) {
+    final id = emp['id'] is int
+        ? emp['id'] as int
+        : int.tryParse(emp['id']?.toString() ?? '0') ?? 0;
+    if (id <= 0) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmployeeDetailScreen(
+          employeeId: id,
+          directoryService: _directoryService,
+        ),
+      ),
+    ).then((_) {
+      if (mounted) _loadEmployees();
+    });
+  }
+
+  void _onMemberEdit(Map<String, dynamic> emp) async {
+    final id = emp['id'] is int
+        ? emp['id'] as int
+        : int.tryParse(emp['id']?.toString() ?? '0') ?? 0;
+    if (id <= 0) return;
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmployeeFormScreen(
+          employeeId: id,
+          directoryService: _directoryService,
+        ),
+      ),
+    );
+    if (updated == true && mounted) {
+      _loadEmployees();
+    }
+  }
+
+  Future<void> _toggleEmployeeStatus(Map<String, dynamic> emp) async {
+    final id = emp['id'] is int
+        ? emp['id'] as int
+        : int.tryParse(emp['id']?.toString() ?? '0') ?? 0;
+    if (id <= 0) return;
+    final currentStatus = (emp['status'] ?? 'active').toString();
+    final isActivating = currentStatus != 'active';
+    final name = (emp['name'] ?? emp['full_name'] ?? 'Employee').toString();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.pureWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isActivating ? 'Activate Account' : 'Deactivate Account',
+          style: AppTheme.heading(fontSize: 16, color: AppTheme.deepSlate),
+        ),
+        content: Text(
+          isActivating
+              ? 'Reactivate $name\'s account? They will be allowed to log in and submit daily reports.'
+              : 'Deactivate $name\'s account? They will no longer be able to log in.',
+          style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isActivating ? AppTheme.royalBlue : AppTheme.dangerText,
+            ),
+            child: Text(
+              isActivating ? 'Activate' : 'Deactivate',
+              style: const TextStyle(color: AppTheme.pureWhite),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final res = await _directoryService.toggleEmployeeStatus(id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message']?.toString() ?? 'Status updated successfully.'),
+              backgroundColor: AppTheme.successText,
+            ),
+          );
+          _loadEmployees();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceAll('ApiException:', '').trim()),
+              backgroundColor: AppTheme.dangerText,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildErrorState() {

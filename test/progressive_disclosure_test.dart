@@ -11,6 +11,7 @@ class FakeDirectoryService extends DirectoryService {
   Future<List<Map<String, dynamic>>> getEmployees({
     String? search,
     String? status,
+    int? departmentId,
     int page = 1,
     int limit = 50,
   }) async {
@@ -18,7 +19,7 @@ class FakeDirectoryService extends DirectoryService {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getDepartments() async {
+  Future<List<Map<String, dynamic>>> getDepartments({String status = 'active'}) async {
     return [];
   }
 }

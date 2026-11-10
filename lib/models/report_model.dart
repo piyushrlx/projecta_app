@@ -142,3 +142,233 @@ class TodayReportContextModel {
   }
 }
 
+class ComplianceEmployeeRow {
+  final int id;
+  final String fullName;
+  final String? employeeCode;
+  final String? email;
+  final String? phone;
+  final int? departmentId;
+  final String? departmentName;
+  final String? designation;
+  final String? profilePhoto;
+  final String? profilePhotoUrl;
+  final String status; // 'submitted', 'submitted_late', 'pending', 'returned', 'not_due', 'exempt'
+  final int reports;
+  final String? lastSubmittedAt;
+  final int pendingTasks;
+  final bool required;
+  final int returned;
+
+  const ComplianceEmployeeRow({
+    required this.id,
+    required this.fullName,
+    this.employeeCode,
+    this.email,
+    this.phone,
+    this.departmentId,
+    this.departmentName,
+    this.designation,
+    this.profilePhoto,
+    this.profilePhotoUrl,
+    required this.status,
+    this.reports = 0,
+    this.lastSubmittedAt,
+    this.pendingTasks = 0,
+    this.required = true,
+    this.returned = 0,
+  });
+
+  bool get isSubmitted => status == 'submitted';
+  bool get isLate => status == 'submitted_late';
+  bool get isPending => status == 'pending';
+  bool get isReturned => status == 'returned';
+  bool get isNotDue => status == 'not_due';
+  bool get isExempt => status == 'exempt';
+
+  String get statusLabel {
+    switch (status) {
+      case 'submitted':
+        return 'Submitted';
+      case 'submitted_late':
+        return 'Submitted Late';
+      case 'pending':
+        return 'Pending';
+      case 'returned':
+        return 'Returned';
+      case 'not_due':
+        return 'Not Due';
+      case 'exempt':
+        return 'Exempt';
+      default:
+        return status.replaceAll('_', ' ');
+    }
+  }
+
+  factory ComplianceEmployeeRow.fromJson(Map<String, dynamic> json) {
+    return ComplianceEmployeeRow(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      fullName: json['full_name']?.toString() ?? 'Unnamed Employee',
+      employeeCode: json['employee_code']?.toString(),
+      email: json['email']?.toString(),
+      phone: json['phone']?.toString(),
+      departmentId: (json['department_id'] as num?)?.toInt(),
+      departmentName: json['department_name']?.toString(),
+      designation: json['designation']?.toString(),
+      profilePhoto: json['profile_photo']?.toString(),
+      profilePhotoUrl: json['profile_photo_url']?.toString(),
+      status: json['status']?.toString() ?? 'pending',
+      reports: (json['reports'] as num?)?.toInt() ?? 0,
+      lastSubmittedAt: json['last_submitted_at']?.toString(),
+      pendingTasks: (json['pending_tasks'] as num?)?.toInt() ?? 0,
+      required: json['required'] == true || json['required'] == 1,
+      returned: (json['returned'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class ComplianceDayTrend {
+  final String date;
+  final int percent;
+  final int required;
+  final int compliant;
+
+  const ComplianceDayTrend({
+    required this.date,
+    required this.percent,
+    this.required = 0,
+    this.compliant = 0,
+  });
+
+  String get dayLabel {
+    try {
+      final parts = date.split('-');
+      if (parts.length == 3) {
+        final dt = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final dayName = days[dt.weekday - 1];
+        return '$dayName ${parts[2]}';
+      }
+    } catch (_) {}
+    return date;
+  }
+
+  factory ComplianceDayTrend.fromJson(Map<String, dynamic> json) {
+    return ComplianceDayTrend(
+      date: json['date']?.toString() ?? '',
+      percent: (json['percent'] as num?)?.toInt() ?? 0,
+      required: (json['required'] as num?)?.toInt() ?? 0,
+      compliant: (json['compliant'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class ComplianceSummaryModel {
+  final String date;
+  final String? deadlineTime;
+  final bool deadlinePassed;
+  final bool isWorkingDay;
+  final bool isHoliday;
+  final int percent;
+  final int required;
+  final int compliant;
+  final int submittedOnTime;
+  final int submittedLate;
+  final int pendingCount;
+  final int returnedCount;
+  final int notDueCount;
+  final List<ComplianceEmployeeRow> rows;
+  final List<ComplianceDayTrend> trend;
+
+  const ComplianceSummaryModel({
+    required this.date,
+    this.deadlineTime,
+    this.deadlinePassed = false,
+    this.isWorkingDay = true,
+    this.isHoliday = false,
+    required this.percent,
+    required this.required,
+    required this.compliant,
+    this.submittedOnTime = 0,
+    this.submittedLate = 0,
+    this.pendingCount = 0,
+    this.returnedCount = 0,
+    this.notDueCount = 0,
+    this.rows = const [],
+    this.trend = const [],
+  });
+
+  factory ComplianceSummaryModel.fromJson(Map<String, dynamic> json) {
+    final date = json['date']?.toString() ?? '';
+    final deadlineTime = json['deadline_time']?.toString();
+    final deadlinePassed = json['deadline_passed'] == true;
+    final isWorkingDay = json['is_working_day'] != false;
+    final isHoliday = json['is_holiday'] == true;
+
+    final summary = (json['summary'] is Map<String, dynamic>)
+        ? json['summary'] as Map<String, dynamic>
+        : json;
+
+    final rawRows = (summary['rows'] as List<dynamic>?) ?? [];
+    final rows = rawRows
+        .map((r) => ComplianceEmployeeRow.fromJson(r as Map<String, dynamic>))
+        .toList();
+
+    final rawTrend = (json['trend_7_days'] as List<dynamic>?) ?? [];
+    final trend = rawTrend
+        .map((t) => ComplianceDayTrend.fromJson(t as Map<String, dynamic>))
+        .toList();
+
+    final kpis = summary['kpis'] as Map<String, dynamic>?;
+
+    int percent = (kpis?['percent'] ?? summary['percent'] as num?)?.toInt() ?? 0;
+    int required = (kpis?['required'] ?? summary['required'] as num?)?.toInt() ?? 0;
+    int compliant = (kpis?['compliant'] ?? summary['compliant'] as num?)?.toInt() ?? 0;
+    int submittedOnTime = (kpis?['submitted_on_time'] as num?)?.toInt() ?? 0;
+    int submittedLate = (kpis?['submitted_late'] as num?)?.toInt() ?? 0;
+    int pendingCount = (kpis?['pending'] as num?)?.toInt() ?? 0;
+    int returnedCount = (kpis?['returned'] as num?)?.toInt() ?? 0;
+    int notDueCount = (kpis?['not_due'] as num?)?.toInt() ?? 0;
+
+    // Fallback: If kpis block wasn't present, calculate totals from rows
+    if (kpis == null && rows.isNotEmpty) {
+      submittedOnTime = 0;
+      submittedLate = 0;
+      pendingCount = 0;
+      returnedCount = 0;
+      notDueCount = 0;
+
+      for (final r in rows) {
+        if (r.isSubmitted) submittedOnTime++;
+        if (r.isLate) submittedLate++;
+        if (r.isPending) pendingCount++;
+        if (r.isReturned) returnedCount++;
+        if (r.isNotDue) notDueCount++;
+      }
+      compliant = submittedOnTime + submittedLate;
+    }
+
+    return ComplianceSummaryModel(
+      date: date,
+      deadlineTime: deadlineTime,
+      deadlinePassed: deadlinePassed,
+      isWorkingDay: isWorkingDay,
+      isHoliday: isHoliday,
+      percent: percent,
+      required: required,
+      compliant: compliant,
+      submittedOnTime: submittedOnTime,
+      submittedLate: submittedLate,
+      pendingCount: pendingCount,
+      returnedCount: returnedCount,
+      notDueCount: notDueCount,
+      rows: rows,
+      trend: trend,
+    );
+  }
+}
+
