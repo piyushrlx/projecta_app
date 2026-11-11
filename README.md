@@ -12,6 +12,7 @@ projecta_app/
 │   ├── main.dart                        # App entry point, loads saved API base URL
 │   ├── core/
 │   │   ├── api_client.dart              # Singleton HTTP client (GET/POST/PUT/PATCH/DELETE + auth headers)
+│   │   ├── notification_router.dart     # Deep-link routing engine for PHP backend URLs & notification targets
 │   │   └── theme.dart                   # Neo-Brutalist global theme (Space Grotesk + Inter + JetBrains Mono)
 │   ├── models/
 │   │   ├── user_model.dart              # Authenticated user profile data model
@@ -49,7 +50,7 @@ projecta_app/
 │       │   ├── reports_list_screen.dart  # Staff history / Admin review inbox
 │       │   └── report_submission_screen.dart # Staff 30-second daily report wizard
 │       └── notifications/
-│           └── notifications_screen.dart # Notification feed + mark-all-read
+│           └── notifications_screen.dart # Notification feed + category filters + mark-all-read + deep navigation
 ├── android/
 │   └── app/src/main/AndroidManifest.xml # Android permissions & app config
 ├── pubspec.yaml                          # Flutter dependencies & metadata

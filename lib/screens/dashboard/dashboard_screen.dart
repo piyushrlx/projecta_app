@@ -177,6 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: AppTheme.scaffoldBg,
       drawer: AppSideDrawer(
         user: user,
+        unreadNotifications: _unreadNotifications,
         currentTabIndex: _selectedTabIndex,
         onTabSelected: (index) {
           setState(() {
@@ -216,7 +217,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onNotificationsTap: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+            MaterialPageRoute(
+              builder: (_) => NotificationsScreen(user: user),
+            ),
           );
           _loadNotificationCount();
         },
@@ -331,7 +334,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const NotificationsScreen(),
+                              builder: (_) => NotificationsScreen(user: user),
                             ),
                           );
                           _loadNotificationCount();

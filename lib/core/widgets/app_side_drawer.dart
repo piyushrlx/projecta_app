@@ -18,6 +18,7 @@ class AppSideDrawer extends StatelessWidget {
   final VoidCallback onNotificationsTap;
   final VoidCallback onApprovalsTap;
   final VoidCallback? onDepartmentsTap;
+  final int unreadNotifications;
 
   const AppSideDrawer({
     super.key,
@@ -33,6 +34,7 @@ class AppSideDrawer extends StatelessWidget {
     required this.onNotificationsTap,
     required this.onApprovalsTap,
     this.onDepartmentsTap,
+    this.unreadNotifications = 0,
   });
 
   String _getInitials(String name) {
@@ -369,7 +371,11 @@ class AppSideDrawer extends StatelessWidget {
                     icon: Icons.notifications_outlined,
                     label: 'Notifications',
                     isActive: false,
-                    badgeText: '9+',
+                    badgeText: unreadNotifications > 0
+                        ? (unreadNotifications > 99
+                            ? '99+'
+                            : unreadNotifications.toString())
+                        : null,
                     badgeColor: AppTheme.dangerText,
                     onTap: () {
                       Navigator.pop(context);
