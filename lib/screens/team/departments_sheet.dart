@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../services/directory_service.dart';
+import 'departments_screen.dart';
 
 class DepartmentsSheet extends StatefulWidget {
   final DirectoryService? directoryService;
@@ -288,6 +289,20 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.open_in_new, size: 18, color: AppTheme.royalBlue),
+                  tooltip: 'Open Full Page',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            DepartmentsScreen(directoryService: _directoryService),
+                      ),
+                    );
+                  },
                 ),
                 ElevatedButton.icon(
                   onPressed: () => _openDepartmentDialog(),

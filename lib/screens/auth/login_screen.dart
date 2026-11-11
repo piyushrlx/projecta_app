@@ -158,6 +158,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 runSpacing: 8,
                 children: [
                   _presetChip(
+                    'USB (localhost:8080)',
+                    'http://localhost:8080/projecta/api/v1',
+                    serverController,
+                  ),
+                  _presetChip(
                     'Wi-Fi (${ApiClient.defaultLanIp})',
                     'http://${ApiClient.defaultLanIp}/projecta/api/v1',
                     serverController,
@@ -244,21 +249,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Top-right subtle Server Settings icon button
-            Positioned(
-              top: 12,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.settings_outlined,
-                  color: AppTheme.mutedSlate,
-                  size: 22,
-                ),
-                tooltip: 'Configure Server URL',
-                onPressed: _showServerSettingsDialog,
-              ),
-            ),
-
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -334,21 +324,63 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(
-                                      Icons.error_outline,
-                                      color: AppTheme.dangerText,
-                                      size: 18,
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 2),
+                                          child: Icon(
+                                            Icons.error_outline,
+                                            color: AppTheme.dangerText,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            _errorMessage!,
+                                            style: AppTheme.body(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppTheme.dangerText,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: AppTheme.body(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppTheme.dangerText,
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: InkWell(
+                                        onTap: _showServerSettingsDialog,
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 2,
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.settings_outlined,
+                                                size: 15,
+                                                color: AppTheme.royalBlue,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Configure Server',
+                                                style: AppTheme.heading(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTheme.royalBlue,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -539,6 +571,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+
+            // Top-right Server Settings icon button (placed AFTER SingleChildScrollView to ensure top z-index and reliable tap gestures)
+            Positioned(
+              top: 12,
+              right: 16,
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.hardEdge,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: AppTheme.mutedSlate,
+                    size: 22,
+                  ),
+                  tooltip: 'Configure Server URL',
+                  onPressed: _showServerSettingsDialog,
                 ),
               ),
             ),

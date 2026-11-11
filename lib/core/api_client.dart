@@ -24,7 +24,7 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.7';
+  static const String defaultLanIp = '192.168.1.3';
   static const String _defaultAdbTunnelUrl =
       'http://localhost:8080/projecta/api/v1';
   static const String _defaultAndroidUrl =

@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import '../models/department_model.dart';
 import '../models/employee_detail_model.dart';
 
 class DirectoryService {
@@ -47,6 +48,13 @@ class DirectoryService {
       return (data['departments'] as List).cast<Map<String, dynamic>>();
     }
     return <Map<String, dynamic>>[];
+  }
+
+  Future<List<DepartmentModel>> getDepartmentModels({
+    String status = 'all',
+  }) async {
+    final list = await getDepartments(status: status);
+    return list.map((m) => DepartmentModel.fromJson(m)).toList();
   }
 
   Future<EmployeeDetailModel> getEmployeeDetail(int id) async {

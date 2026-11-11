@@ -11,6 +11,7 @@ import '../reports/report_submission_screen.dart';
 import '../reports/reports_list_screen.dart';
 import '../tasks/create_task_screen.dart';
 import '../tasks/tasks_screen.dart';
+import '../team/departments_screen.dart';
 import '../team/team_list_screen.dart';
 import 'admin_dashboard_view.dart';
 import 'staff_dashboard_view.dart';
@@ -227,6 +228,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 user: user,
                 initialFilter: 'pending_review',
               ),
+            ),
+          );
+        },
+        onDepartmentsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const DepartmentsScreen(),
             ),
           );
         },

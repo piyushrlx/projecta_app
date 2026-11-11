@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../api_client.dart';
 import '../theme.dart';
 import '../../models/user_model.dart';
+import '../../screens/team/departments_screen.dart';
 import 'projeqta_logo.dart';
 
 class AppSideDrawer extends StatelessWidget {
@@ -16,6 +17,7 @@ class AppSideDrawer extends StatelessWidget {
   final VoidCallback onOverdueTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onApprovalsTap;
+  final VoidCallback? onDepartmentsTap;
 
   const AppSideDrawer({
     super.key,
@@ -30,6 +32,7 @@ class AppSideDrawer extends StatelessWidget {
     required this.onOverdueTap,
     required this.onNotificationsTap,
     required this.onApprovalsTap,
+    this.onDepartmentsTap,
   });
 
   String _getInitials(String name) {
@@ -278,6 +281,23 @@ class AppSideDrawer extends StatelessWidget {
                           () {
                             Navigator.pop(context);
                             onTabSelected(3);
+                          },
+                        ),
+                        _buildSubMenuItem(
+                          'Departments',
+                          Icons.domain_outlined,
+                          () {
+                            Navigator.pop(context);
+                            if (onDepartmentsTap != null) {
+                              onDepartmentsTap!();
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const DepartmentsScreen(),
+                                ),
+                              );
+                            }
                           },
                         ),
                       ],

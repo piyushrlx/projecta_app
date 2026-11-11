@@ -3,15 +3,21 @@ import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../services/directory_service.dart';
-import 'departments_sheet.dart';
+import 'departments_screen.dart';
 import 'employee_detail_screen.dart';
 import 'employee_form_screen.dart';
 
 class TeamListScreen extends StatefulWidget {
   final int initialTab;
   final DirectoryService? directoryService;
+  final int? initialDepartmentId;
 
-  const TeamListScreen({super.key, this.initialTab = 0, this.directoryService});
+  const TeamListScreen({
+    super.key,
+    this.initialTab = 0,
+    this.directoryService,
+    this.initialDepartmentId,
+  });
 
   @override
   State<TeamListScreen> createState() => _TeamListScreenState();
@@ -29,6 +35,7 @@ class _TeamListScreenState extends State<TeamListScreen>
   bool _isLoading = true;
   String? _errorMessage;
   String _statusFilter = 'ALL';
+  int? _selectedDepartmentId;
 
   static const List<String> _statusFilters = [
     'ALL',
@@ -40,6 +47,7 @@ class _TeamListScreenState extends State<TeamListScreen>
   @override
   void initState() {
     super.initState();
+    _selectedDepartmentId = widget.initialDepartmentId;
     _tabController = TabController(
       length: 3,
       vsync: this,
@@ -61,7 +69,10 @@ class _TeamListScreenState extends State<TeamListScreen>
       _errorMessage = null;
     });
     try {
-      final list = await _directoryService.getEmployees(status: 'all');
+      final list = await _directoryService.getEmployees(
+        status: 'all',
+        departmentId: _selectedDepartmentId,
+      );
       if (mounted) {
         setState(() {
           _employees = list;
@@ -200,7 +211,13 @@ class _TeamListScreenState extends State<TeamListScreen>
                   IconButton(
                     icon: const Icon(Icons.domain_outlined, color: AppTheme.deepSlate, size: 22),
                     tooltip: 'Departments',
-                    onPressed: () => DepartmentsSheet.show(context, directoryService: _directoryService),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            DepartmentsScreen(directoryService: _directoryService),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 4),
                   // Notification Bell with Badge

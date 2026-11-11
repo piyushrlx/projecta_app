@@ -14,7 +14,13 @@ import 'project_form_screen.dart';
 
 class ProjectsListScreen extends StatefulWidget {
   final ProjectService? projectService;
-  const ProjectsListScreen({super.key, this.projectService});
+  final int? initialDepartmentId;
+
+  const ProjectsListScreen({
+    super.key,
+    this.projectService,
+    this.initialDepartmentId,
+  });
 
   @override
   State<ProjectsListScreen> createState() => _ProjectsListScreenState();
@@ -53,6 +59,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDepartmentId = widget.initialDepartmentId;
     _loadFilterOptions();
     _loadProjects();
   }
