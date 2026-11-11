@@ -155,5 +155,49 @@ class ReportService {
     }
     return {'success': true, 'message': 'Exemption granted.'};
   }
+
+  /// Fetches Reports & Analytics Hub dimensional data
+  Future<Map<String, dynamic>> getAnalyticsData({
+    required String type,
+    String? from,
+    String? to,
+    int? departmentId,
+    int? userId,
+    int? projectId,
+  }) async {
+    final queryParams = <String, String>{
+      'type': type,
+    };
+    if (from != null && from.isNotEmpty) {
+      queryParams['from'] = from;
+    }
+    if (to != null && to.isNotEmpty) {
+      queryParams['to'] = to;
+    }
+    if (departmentId != null) {
+      queryParams['department_id'] = departmentId.toString();
+    }
+    if (userId != null) {
+      queryParams['user_id'] = userId.toString();
+    }
+    if (projectId != null) {
+      queryParams['project_id'] = projectId.toString();
+    }
+
+    final uri = Uri(path: '/analytics', queryParameters: queryParams);
+    final response = await _client.get('${uri.path}?${uri.query}');
+    final dynamic decoded = _client.decodeJson(response);
+
+    if (decoded is Map<String, dynamic>) {
+      if (decoded['data'] is Map<String, dynamic>) {
+        return decoded['data'] as Map<String, dynamic>;
+      }
+      return decoded;
+    }
+    return <String, dynamic>{
+      'summary': <String, dynamic>{},
+      'rows': <dynamic>[],
+    };
+  }
 }
 

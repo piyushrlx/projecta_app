@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
 import '../models/user_model.dart';
@@ -8,6 +9,8 @@ class AuthService {
   factory AuthService() => _instance;
 
   AuthService._internal();
+
+  AuthService.forTesting();
 
   final ApiClient _apiClient = ApiClient();
 
@@ -127,8 +130,7 @@ class AuthService {
       );
     }
 
-    final bool isSuccess =
-        decoded['success'] == true || decoded['ok'] == true;
+    final bool isSuccess = decoded['success'] == true || decoded['ok'] == true;
     if (!isSuccess) {
       final errorMsg =
           decoded['error'] ?? decoded['message'] ?? 'Registration failed.';
@@ -170,12 +172,15 @@ class AuthService {
     );
 
     final dynamic decoded = _apiClient.decodeJson(response);
-    final bool isSuccess = decoded is Map<String, dynamic> &&
+    final bool isSuccess =
+        decoded is Map<String, dynamic> &&
         (decoded['ok'] == true || decoded['success'] == true);
 
     if (!isSuccess) {
       final errorMsg = decoded is Map<String, dynamic>
-          ? (decoded['error'] ?? decoded['message'] ?? 'Failed to update password')
+          ? (decoded['error'] ??
+                decoded['message'] ??
+                'Failed to update password')
           : 'Failed to update password';
       throw ApiException(
         statusCode: response.statusCode,
@@ -188,6 +193,88 @@ class AuthService {
       _currentUser = _currentUser!.copyWith(mustChangePassword: false);
       await _saveUserLocally(_currentUser!);
     }
+  }
+
+  /// Updates the user's personal profile (name, phone, optional photo upload or photo removal)
+  Future<UserModel> updateProfile({
+    required String fullName,
+    String? phone,
+    List<int>? photoBytes,
+    String? photoFileName,
+    String? photoPath,
+    bool removePhoto = false,
+  }) async {
+    http.Response response;
+
+    if ((photoBytes != null && photoFileName != null) ||
+        (photoPath != null && photoPath.isNotEmpty)) {
+      final fields = <String, String>{
+        'full_name': fullName.trim(),
+        'phone': phone?.trim() ?? '',
+      };
+      if (removePhoto) {
+        fields['remove_photo'] = '1';
+      }
+
+      response = await _apiClient.uploadMultipartFile(
+        '/auth/profile-update',
+        fieldName: 'profile_photo',
+        fileBytes: photoBytes,
+        filePath: photoPath,
+        fileName: photoFileName ?? 'avatar.jpg',
+        fields: fields,
+      );
+    } else {
+      final payload = <String, dynamic>{
+        'full_name': fullName.trim(),
+        'phone': phone?.trim() ?? '',
+        if (removePhoto) 'remove_photo': '1',
+      };
+
+      response = await _apiClient.post('/auth/profile-update', body: payload);
+    }
+
+    final dynamic decoded = _apiClient.decodeJson(response);
+    final bool isSuccess =
+        decoded is Map<String, dynamic> &&
+        (decoded['ok'] == true || decoded['success'] == true);
+
+    if (!isSuccess) {
+      final errorMsg = decoded is Map<String, dynamic>
+          ? (decoded['error'] ??
+                decoded['message'] ??
+                'Failed to update profile.')
+          : 'Failed to update profile.';
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: errorMsg.toString(),
+      );
+    }
+
+    final dynamic rawUser = (decoded is Map<String, dynamic>)
+        ? (decoded['data'] is Map<String, dynamic>
+              ? decoded['data']['user']
+              : decoded['user'])
+        : null;
+
+    if (_currentUser != null) {
+      final updatedPhotoUrl =
+          rawUser is Map<String, dynamic> &&
+              rawUser.containsKey('profile_photo_url')
+          ? rawUser['profile_photo_url']?.toString()
+          : (removePhoto ? null : _currentUser!.profilePhotoUrl);
+
+      _currentUser = _currentUser!.copyWith(
+        name: fullName.trim(),
+        phone: phone?.trim(),
+        profilePhotoUrl: updatedPhotoUrl,
+      );
+      await _saveUserLocally(_currentUser!);
+      return _currentUser!;
+    }
+
+    final freshUser = await getMe();
+    return freshUser;
   }
 
   /// Persists user model JSON string to SharedPreferences
@@ -309,11 +396,12 @@ class AuthService {
       );
     }
 
-    final bool isSuccess =
-        decoded['success'] == true || decoded['ok'] == true;
+    final bool isSuccess = decoded['success'] == true || decoded['ok'] == true;
     if (!isSuccess) {
       final errorMsg =
-          decoded['error'] ?? decoded['message'] ?? 'Failed to request password reset.';
+          decoded['error'] ??
+          decoded['message'] ??
+          'Failed to request password reset.';
       throw ApiException(
         statusCode: response.statusCode,
         message: errorMsg.toString(),
@@ -323,5 +411,3 @@ class AuthService {
     return decoded;
   }
 }
-
-

@@ -13,6 +13,11 @@ class UserModel {
   final String? departmentName;
   final String? profilePhotoUrl;
   final String? expiresAt;
+  final String? employeeCode;
+  final String? reportingManagerName;
+  final String? joiningDate;
+  final bool reportingRequired;
+  final String? lastLoginAt;
 
   const UserModel({
     required this.id,
@@ -29,12 +34,24 @@ class UserModel {
     this.departmentName,
     this.profilePhotoUrl,
     this.expiresAt,
+    this.employeeCode,
+    this.reportingManagerName,
+    this.joiningDate,
+    this.reportingRequired = true,
+    this.lastLoginAt,
   });
 
   bool get isAdmin => role == 'admin' || role == 'super_admin';
   bool get isSuperAdmin => role == 'super_admin';
   bool get isStaff => role == 'staff';
   String get fullName => name;
+
+  String get roleLabel {
+    if (role == 'super_admin') return 'Super Admin';
+    if (role == 'admin') return 'Admin';
+    if (role == 'staff') return 'Staff';
+    return role;
+  }
 
   /// Dynamic map indexer for backward compatibility with raw JSON access
   dynamic operator [](String key) {
@@ -58,6 +75,13 @@ class UserModel {
         ? deptIdVal
         : int.tryParse(deptIdVal?.toString() ?? '');
 
+    final dynamic reportingReqVal = json['reporting_required'];
+    final bool parsedReportingRequired = reportingReqVal == null
+        ? true
+        : (reportingReqVal == true ||
+              reportingReqVal == 1 ||
+              reportingReqVal == '1');
+
     return UserModel(
       id: parsedId,
       name: (json['name'] ?? json['full_name'] ?? json['username'] ?? '')
@@ -73,8 +97,15 @@ class UserModel {
       designation: json['designation']?.toString(),
       departmentId: parsedDeptId,
       departmentName: json['department_name']?.toString(),
-      profilePhotoUrl: json['profile_photo_url']?.toString(),
+      profilePhotoUrl: (json['profile_photo_url'] ?? json['profile_photo'])
+          ?.toString(),
       expiresAt: json['expires_at']?.toString(),
+      employeeCode: json['employee_code']?.toString(),
+      reportingManagerName:
+          (json['reporting_manager_name'] ?? json['manager_name'])?.toString(),
+      joiningDate: json['joining_date']?.toString(),
+      reportingRequired: parsedReportingRequired,
+      lastLoginAt: (json['last_login_at'] ?? json['last_login'])?.toString(),
     );
   }
 
@@ -95,6 +126,11 @@ class UserModel {
       'department_name': departmentName,
       'profile_photo_url': profilePhotoUrl,
       'expires_at': expiresAt,
+      'employee_code': employeeCode,
+      'reporting_manager_name': reportingManagerName,
+      'joining_date': joiningDate,
+      'reporting_required': reportingRequired,
+      'last_login_at': lastLoginAt,
     };
   }
 
@@ -113,6 +149,11 @@ class UserModel {
     String? departmentName,
     String? profilePhotoUrl,
     String? expiresAt,
+    String? employeeCode,
+    String? reportingManagerName,
+    String? joiningDate,
+    bool? reportingRequired,
+    String? lastLoginAt,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -129,6 +170,11 @@ class UserModel {
       departmentName: departmentName ?? this.departmentName,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       expiresAt: expiresAt ?? this.expiresAt,
+      employeeCode: employeeCode ?? this.employeeCode,
+      reportingManagerName: reportingManagerName ?? this.reportingManagerName,
+      joiningDate: joiningDate ?? this.joiningDate,
+      reportingRequired: reportingRequired ?? this.reportingRequired,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
     );
   }
 
@@ -149,4 +195,3 @@ class UserModel {
   @override
   int get hashCode => Object.hash(id, email, role);
 }
-

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import '../api_client.dart';
 import '../theme.dart';
 import '../../models/user_model.dart';
+import '../../screens/analytics/analytics_hub_screen.dart';
+import '../../screens/audit/audit_log_screen.dart';
+import '../../screens/calendar/calendar_screen.dart';
+import '../../screens/contact/contact_messages_screen.dart';
+import '../../screens/profile/profile_screen.dart';
+import '../../screens/settings/settings_screen.dart';
 import '../../screens/team/departments_screen.dart';
 import 'projeqta_logo.dart';
 
@@ -18,6 +24,7 @@ class AppSideDrawer extends StatelessWidget {
   final VoidCallback onNotificationsTap;
   final VoidCallback onApprovalsTap;
   final VoidCallback? onDepartmentsTap;
+  final VoidCallback? onProfileTap;
   final int unreadNotifications;
 
   const AppSideDrawer({
@@ -34,8 +41,23 @@ class AppSideDrawer extends StatelessWidget {
     required this.onNotificationsTap,
     required this.onApprovalsTap,
     this.onDepartmentsTap,
+    this.onProfileTap,
     this.unreadNotifications = 0,
   });
+
+  void _openProfile(BuildContext context) {
+    Navigator.pop(context);
+    if (onProfileTap != null) {
+      onProfileTap!();
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProfileScreen(user: user),
+        ),
+      );
+    }
+  }
 
   String _getInitials(String name) {
     final trimmed = name.trim();
@@ -47,26 +69,13 @@ class AppSideDrawer extends StatelessWidget {
     return trimmed[0].toUpperCase();
   }
 
-  void _handleCalendarTap(BuildContext context) async {
+  void _handleCalendarTap(BuildContext context) {
     Navigator.pop(context);
-    final now = DateTime.now();
-    await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 2),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.royalBlue,
-              onPrimary: AppTheme.pureWhite,
-              onSurface: AppTheme.deepSlate,
-            ),
-          ),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CalendarScreen(currentUser: user),
+      ),
     );
   }
 
@@ -319,6 +328,20 @@ class AppSideDrawer extends StatelessWidget {
                     },
                   ),
                   _buildMenuItem(
+                    icon: Icons.analytics_outlined,
+                    label: 'Reports & Analytics',
+                    isActive: false,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AnalyticsHubScreen(currentUser: user),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
                     icon: Icons.fact_check_outlined,
                     label: 'Approvals',
                     isActive: false,
@@ -335,7 +358,7 @@ class AppSideDrawer extends StatelessWidget {
                     isActive: false,
                     onTap: () {
                       Navigator.pop(context);
-                      _showComingSoon(context, 'Attendance & Activities');
+                      onTabSelected(3);
                     },
                   ),
                   _buildMenuItem(
@@ -401,10 +424,12 @@ class AppSideDrawer extends StatelessWidget {
                     label: 'Settings',
                     isActive: false,
                     onTap: () {
-                      _showInfoDialog(
+                      Navigator.pop(context);
+                      Navigator.push(
                         context,
-                        'Settings',
-                        'System configurations and workspace settings are managed locally in this app build.',
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(currentUser: user),
+                        ),
                       );
                     },
                   ),
@@ -413,13 +438,30 @@ class AppSideDrawer extends StatelessWidget {
                     label: 'Audit Log',
                     isActive: false,
                     onTap: () {
-                      _showInfoDialog(
+                      Navigator.pop(context);
+                      Navigator.push(
                         context,
-                        'Audit Log',
-                        'Audit logs record all project updates, submissions, and task management actions.',
+                        MaterialPageRoute(
+                          builder: (_) => AuditLogScreen(currentUser: user),
+                        ),
                       );
                     },
                   ),
+                  if (user.isSuperAdmin)
+                    _buildMenuItem(
+                      icon: Icons.mark_email_unread_outlined,
+                      label: 'Contact Messages',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ContactMessagesScreen(currentUser: user),
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
@@ -436,39 +478,53 @@ class AppSideDrawer extends StatelessWidget {
               color: const Color(0xFFF8FAFC),
               child: Row(
                 children: [
-                  // Avatar with initials fallback
-                  _buildUserAvatar(),
-                  const SizedBox(width: 12),
-                  // User info
+                  // Clickable User Profile Area
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          user.isAdmin ? 'Administrator' : user.fullName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.heading(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.deepSlate,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _openProfile(context),
+                      child: Row(
+                        children: [
+                          // Avatar with initials fallback
+                          _buildUserAvatar(),
+                          const SizedBox(width: 12),
+                          // User info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  user.fullName.isNotEmpty
+                                      ? user.fullName
+                                      : (user.isAdmin ? 'Administrator' : 'Staff'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.heading(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.deepSlate,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  user.roleLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.body(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.mutedSlate,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'View Profile',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.body(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.mutedSlate,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   // Logout Action
                   IconButton(
                     icon: const Icon(

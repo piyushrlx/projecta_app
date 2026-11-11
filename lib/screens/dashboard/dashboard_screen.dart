@@ -6,9 +6,11 @@ import '../../services/dashboard_service.dart';
 import '../../services/notification_service.dart';
 import '../auth/login_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../profile/profile_screen.dart';
 import '../projects/projects_list_screen.dart';
 import '../reports/report_submission_screen.dart';
 import '../reports/reports_list_screen.dart';
+import '../search/global_search_screen.dart';
 import '../tasks/create_task_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../team/departments_screen.dart';
@@ -46,12 +48,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int? _selectedProjectId;
   int? _selectedDepartmentId;
   int? _selectedUserId;
+  late UserModel _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _currentUser = widget.user;
     _loadDashboard();
     _loadNotificationCount();
+  }
+
+  Future<void> _openProfile() async {
+    final updated = await Navigator.push<UserModel>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(user: _currentUser),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() {
+        _currentUser = updated;
+      });
+    }
   }
 
   Future<void> _loadDashboard() async {
@@ -170,7 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
+    final user = _currentUser;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -179,6 +197,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         user: user,
         unreadNotifications: _unreadNotifications,
         currentTabIndex: _selectedTabIndex,
+        onProfileTap: _openProfile,
         onTabSelected: (index) {
           setState(() {
             _selectedTabIndex = index;
@@ -314,6 +333,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _loadNotificationCount();
                     },
                   ),
+                  // Global Omnibar Search Action
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    icon: const Icon(
+                      Icons.search,
+                      color: AppTheme.deepSlate,
+                      size: 22,
+                    ),
+                    tooltip: 'Global Search',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => GlobalSearchScreen(user: user),
+                        ),
+                      );
+                    },
+                  ),
                   // Notification Bell with Badge
                   Stack(
                     clipBehavior: Clip.none,
@@ -368,35 +409,200 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                     ],
                   ),
-                  // Logout Action (Compact)
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    icon: const Icon(
-                      Icons.logout,
-                      color: AppTheme.mutedSlate,
-                      size: 20,
-                    ),
-                    tooltip: 'Sign Out',
-                    onPressed: _handleLogout,
-                  ),
                   const SizedBox(width: 4),
-                  // User Avatar Circle
-                  GestureDetector(
-                    onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: const Color(0xFF64748B),
-                      child: Text(
-                        _getInitials(user.fullName),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.pureWhite,
+                  // User Profile Dropdown Menu (Avatar + Down Arrow Matching Web Header)
+                  PopupMenuButton<String>(
+                    tooltip: 'Account Menu',
+                    offset: const Offset(0, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(
+                        color: AppTheme.borderSubtle,
+                        width: 1.0,
+                      ),
+                    ),
+                    color: AppTheme.pureWhite,
+                    elevation: 8,
+                    onSelected: (value) async {
+                      if (value == 'profile') {
+                        _openProfile();
+                      } else if (value == 'notifications') {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NotificationsScreen(user: user),
+                          ),
+                        );
+                        _loadNotificationCount();
+                      } else if (value == 'logout') {
+                        _handleLogout();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      // Header: Full Name (bold) + Role (badge/gray)
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                user.fullName,
+                                style: AppTheme.heading(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.deepSlate,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              user.designation != null &&
+                                      user.designation!.isNotEmpty
+                                  ? user.designation!
+                                  : (user.isSuperAdmin
+                                      ? 'Super Admin'
+                                      : user.isAdmin
+                                          ? 'Admin'
+                                          : 'Staff'),
+                              style: AppTheme.body(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.mutedSlate,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(height: 1),
+                      // Option 1: My profile
+                      PopupMenuItem<String>(
+                        value: 'profile',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.person_outline,
+                              size: 18,
+                              color: AppTheme.deepSlate,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'My profile',
+                              style: AppTheme.body(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.deepSlate,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Option 2: Notifications
+                      PopupMenuItem<String>(
+                        value: 'notifications',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.notifications_outlined,
+                              size: 18,
+                              color: AppTheme.deepSlate,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Notifications',
+                                style: AppTheme.body(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTheme.deepSlate,
+                                ),
+                              ),
+                            ),
+                            if (_unreadNotifications > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.dangerText,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  _unreadNotifications.toString(),
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    color: AppTheme.pureWhite,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // Option 3: Log out
+                      PopupMenuItem<String>(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.logout,
+                              size: 18,
+                              color: AppTheme.dangerText,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Log out',
+                              style: AppTheme.body(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.dangerText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppTheme.borderSubtle,
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: const Color(0xFF64748B),
+                            child: Text(
+                              _getInitials(user.fullName),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.pureWhite,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 18,
+                            color: AppTheme.deepSlate,
+                          ),
+                        ],
                       ),
                     ),
                   ),

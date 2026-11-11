@@ -271,10 +271,16 @@ void main() {
         ),
       );
 
-      // Verify app bar displays user designation and logout button
+      // Verify app bar displays user designation and profile dropdown with down arrow
       expect(find.text('Aman Admin'), findsOneWidget);
-      expect(find.byIcon(Icons.logout), findsOneWidget);
+      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
       expect(find.byIcon(Icons.refresh), findsOneWidget);
+
+      // Verify tapping profile dropdown displays options (My profile, Notifications, Log out)
+      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      await tester.pumpAndSettle();
+      expect(find.text('My profile'), findsOneWidget);
+      expect(find.byIcon(Icons.logout), findsOneWidget);
     });
   });
 
