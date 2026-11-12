@@ -468,5 +468,39 @@ class TaskDetailModel {
       commentsCount: _asInt(json['comments_count']),
     );
   }
+
+  TaskDetailModel copyWith({
+    TaskModel? task,
+    String? description,
+    String? instructions,
+    String? completionNotes,
+    bool? canManage,
+    bool? canWork,
+    List<String>? allowedStatuses,
+    List<TaskAssigneeModel>? assignees,
+    List<SubtaskModel>? subtasks,
+    List<TaskDependencyModel>? dependsOn,
+    List<TaskDependencyModel>? dependentTasks,
+    List<TaskExtensionRequestModel>? extensionRequests,
+    List<TaskStatusHistoryModel>? statusHistory,
+    int? commentsCount,
+  }) {
+    return TaskDetailModel(
+      task: task ?? this.task,
+      description: description ?? this.description,
+      instructions: instructions ?? this.instructions,
+      completionNotes: completionNotes ?? this.completionNotes,
+      canManage: canManage ?? this.canManage,
+      canWork: canWork ?? this.canWork,
+      allowedStatuses: allowedStatuses ?? this.allowedStatuses,
+      assignees: assignees ?? this.assignees,
+      subtasks: subtasks ?? this.subtasks,
+      dependsOn: dependsOn ?? this.dependsOn,
+      dependentTasks: dependentTasks ?? this.dependentTasks,
+      extensionRequests: extensionRequests ?? this.extensionRequests,
+      statusHistory: statusHistory ?? this.statusHistory,
+      commentsCount: commentsCount ?? this.commentsCount,
+    );
+  }
 }
 

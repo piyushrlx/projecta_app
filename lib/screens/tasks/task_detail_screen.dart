@@ -21,6 +21,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   TaskDetailModel? _detail;
   bool _hasChanges = false;
   bool _isActionInProgress = false;
+  int? _localProgress;
+  bool _isSavingProgress = false;
 
   @override
   void initState() {
@@ -28,24 +30,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _loadTaskDetail();
   }
 
-  Future<void> _loadTaskDetail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _loadTaskDetail({bool silent = false}) async {
+    if (!silent && _detail == null) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final res = await _taskService.getTaskDetails(widget.taskId);
       if (mounted) {
         setState(() {
           _detail = res;
+          _localProgress = res.task.progress;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString().replaceAll('ApiException', '').trim();
+          if (_detail == null) {
+            _errorMessage = e.toString().replaceAll('ApiException', '').trim();
+          }
           _isLoading = false;
         });
       }
@@ -132,7 +139,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           content: Text('Status updated to ${newStatus.replaceAll('_', ' ')}'),
         ),
       );
-      await _loadTaskDetail();
+      await _loadTaskDetail(silent: true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,20 +157,45 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  Future<void> _handleProgressUpdate(double val) async {
-    final progress = val.round();
+  Future<void> _handleProgressCommit(int progress) async {
+    if (_detail == null) return;
+    final oldProgress = _detail!.task.progress;
+    if (progress == oldProgress) return;
+
+    setState(() {
+      _isSavingProgress = true;
+      _localProgress = progress;
+      _detail = _detail!.copyWith(
+        task: _detail!.task.copyWith(progress: progress),
+      );
+    });
+
     try {
       await _taskService.updateProgress(widget.taskId, progress);
       _hasChanges = true;
-      await _loadTaskDetail();
+      await _loadTaskDetail(silent: true);
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _localProgress = oldProgress;
+        if (_detail != null) {
+          _detail = _detail!.copyWith(
+            task: _detail!.task.copyWith(progress: oldProgress),
+          );
+        }
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll('ApiException', '').trim()),
           backgroundColor: AppTheme.dangerText,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingProgress = false;
+        });
+      }
     }
   }
 
@@ -817,6 +849,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Widget _buildProgressSlider(TaskModel task) {
+    final currentProgress = (_localProgress ?? task.progress).clamp(0, 100);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -839,18 +873,34 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   color: AppTheme.deepSlate,
                 ),
               ),
-              Text(
-                '${task.progress}%',
-                style: AppTheme.mono(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.deepSlate,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isSavingProgress) ...[
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.royalBlue,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    '$currentProgress%',
+                    style: AppTheme.mono(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           Slider(
-            value: task.progress.toDouble(),
+            value: currentProgress.toDouble(),
             min: 0,
             max: 100,
             divisions: 20,
@@ -858,9 +908,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ? AppTheme.dangerText
                 : AppTheme.royalBlue,
             inactiveColor: const Color(0xFFE2E8F0),
-            onChanged: (val) {
-              _handleProgressUpdate(val);
-            },
+            onChanged: task.isLocked
+                ? null
+                : (val) {
+                    setState(() {
+                      _localProgress = val.round();
+                    });
+                  },
+            onChangeEnd: task.isLocked
+                ? null
+                : (val) {
+                    _handleProgressCommit(val.round());
+                  },
           ),
         ],
       ),
