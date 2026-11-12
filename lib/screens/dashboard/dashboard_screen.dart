@@ -296,42 +296,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  // Hamburger Menu Button (Matching Reference Step 2 & 3)
-                  InkWell(
-                    onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.pureWhite,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppTheme.borderSubtle,
-                          width: 1.0,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.menu_rounded,
-                          color: AppTheme.deepSlate,
-                          size: 22,
-                        ),
-                      ),
+                  // Clean Unboxed Hamburger Menu Button (Compact for 360px safety)
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
                     ),
+                    icon: const Icon(
+                      Icons.menu_rounded,
+                      color: AppTheme.deepSlate,
+                      size: 22,
+                    ),
+                    tooltip: 'Menu',
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
-                  const SizedBox(width: 12),
-                  // Title: user.fullName ("Aman Admin" / "Admin Executive")
+                  const SizedBox(width: 6),
+                  // Brand Title: Projeqta + AppTheme.royalBlue status dot
                   Expanded(
-                    child: Text(
-                      user.fullName,
-                      style: AppTheme.heading(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Projeqta',
+                            style: AppTheme.heading(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.navyBlue,
+                              letterSpacing: -0.4,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.royalBlue,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   // Refresh Action (Compact to prevent header overflow)
@@ -587,42 +594,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ],
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppTheme.borderSubtle,
-                          width: 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: const Color(0xFF64748B),
-                            child: Text(
-                              _getInitials(user.fullName),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.pureWhite,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: AppTheme.navyBlue,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _getInitials(user.fullName),
+                                  style: AppTheme.heading(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.pureWhite,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 2),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 18,
-                            color: AppTheme.deepSlate,
-                          ),
-                        ],
-                      ),
+                            Positioned(
+                              bottom: -2,
+                              right: -2,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.royalBlue,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppTheme.pureWhite,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 18,
+                          color: AppTheme.deepSlate,
+                        ),
+                      ],
                     ),
                   ),
                 ],

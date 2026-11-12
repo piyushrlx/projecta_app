@@ -241,7 +241,7 @@ void main() {
         );
 
         expect(find.text('Admin Executive Control'), findsOneWidget);
-        expect(find.text('Reports Awaiting Review'), findsOneWidget);
+        expect(find.textContaining('Reports Awaiting Review'), findsOneWidget);
         expect(find.text('Core Metrics Pulse'), findsOneWidget);
         expect(find.text('Active Projects'), findsOneWidget);
         expect(find.text('Tasks In Motion'), findsOneWidget);
@@ -279,8 +279,8 @@ void main() {
         ),
       );
 
-      // Verify app bar displays user designation and profile dropdown with down arrow
-      expect(find.text('Aman Admin'), findsOneWidget);
+      // Verify app bar displays brand title and profile dropdown with down arrow
+      expect(find.text('Projeqta'), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
       expect(find.byIcon(Icons.refresh), findsOneWidget);
 

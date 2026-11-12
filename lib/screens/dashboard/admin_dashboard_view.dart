@@ -205,54 +205,77 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.infoBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.infoBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        size: 12,
                         color: AppTheme.royalBlue,
-                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Admin Executive Control',
-                      style: AppTheme.heading(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.infoText,
+                      const SizedBox(width: 4),
+                      Text(
+                        'Admin Executive Control',
+                        style: AppTheme.heading(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.infoText,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if ((widget.data['date']?.toString() ?? '').isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    widget.data['date']?.toString() ?? '',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      color: AppTheme.mutedSlate,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    ],
                   ),
                 ),
+                if ((widget.data['date']?.toString() ?? '').isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.pureWhite,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 11,
+                          color: AppTheme.mutedSlate,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.data['date']?.toString() ?? '',
+                          style: AppTheme.heading(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.deepSlate,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         if (widget.onFilterChanged != null) ...[
@@ -292,7 +315,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.filter_list,
+                    Icons.tune_rounded,
                     size: 13,
                     color: hasActiveFilters
                         ? AppTheme.pureWhite
@@ -1108,25 +1131,53 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'Overdue Tasks',
-                              style: AppTheme.heading(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: overdueTasksCount > 0
-                                    ? AppTheme.dangerText
-                                    : AppTheme.mutedSlate,
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: 14,
+                                    color: AppTheme.dangerText,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'OVERDUE',
+                                    style: AppTheme.heading(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: AppTheme.dangerText,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 18,
-                            color: AppTheme.dangerText,
-                          ),
+                          if (overdueTasksCount > 0) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'Urgent',
+                                style: AppTheme.heading(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.dangerText,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -1143,10 +1194,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       const SizedBox(height: 2),
                       Text(
                         overdueTasksCount > 0
-                            ? 'Tap to resolve'
+                            ? 'Requires resolution ›'
                             : 'All on schedule',
                         style: AppTheme.body(
-                          fontSize: 10,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: AppTheme.mutedSlate,
                         ),
                       ),
@@ -1191,24 +1243,50 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'Pending Reports',
-                              style: AppTheme.heading(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: reportsPendingCount > 0
-                                    ? AppTheme.warningText
-                                    : AppTheme.mutedSlate,
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.assignment_outlined,
+                                    size: 14,
+                                    color: AppTheme.warningText,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'PENDING',
+                                    style: AppTheme.heading(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: AppTheme.warningText,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Icon(
-                            Icons.description_outlined,
-                            size: 18,
-                            color: AppTheme.warningText,
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Today',
+                              style: AppTheme.heading(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.warningText,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1226,12 +1304,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       const SizedBox(height: 2),
                       Text(
                         reportsPendingCount > 0
-                            ? (awaitingReviewCount > 0
-                                  ? '$awaitingReviewCount awaiting approval'
-                                  : 'Awaiting submission')
+                            ? 'Awaiting submission ›'
                             : 'Team up to date',
                         style: AppTheme.body(
-                          fontSize: 10,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: AppTheme.mutedSlate,
                         ),
                       ),
@@ -1257,56 +1334,66 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7).withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFFDE68A), width: 1.0),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
-                const Icon(
-                  Icons.assignment_late_outlined,
-                  color: AppTheme.warningText,
-                  size: 18,
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF92400E),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.bolt_rounded,
+                      color: AppTheme.pureWhite,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$awaitingReviewCount ${awaitingReviewCount == 1 ? 'Report' : 'Reports'} Awaiting Review',
+                        style: AppTheme.heading(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF78350F),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        awaitingReviewCount > 0
+                            ? 'Tap to review and approve pending submissions'
+                            : 'All submitted reports have been reviewed',
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: const Color(0xFF92400E),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Reports Awaiting Review',
-                    style: AppTheme.heading(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.warningText,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB45309),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${awaitingReviewCount > 0 ? awaitingReviewCount : (reportsPendingCount > 0 ? reportsPendingCount : 1)}',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.pureWhite,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
                 const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: AppTheme.warningText,
-                  size: 12,
+                  Icons.arrow_forward_rounded,
+                  color: Color(0xFF92400E),
+                  size: 16,
                 ),
               ],
             ),
@@ -1322,11 +1409,12 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Actions',
+          'QUICK ACTIONS',
           style: AppTheme.heading(
-            fontSize: 14,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: AppTheme.deepSlate,
+            letterSpacing: 0.8,
+            color: AppTheme.mutedSlate,
           ),
         ),
         const SizedBox(height: 10),
@@ -1373,14 +1461,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        '+ Assign\nTask',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.heading(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate,
-                          height: 1.2,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Assign Task',
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: AppTheme.heading(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.deepSlate,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ],
@@ -1401,7 +1493,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   );
                   if (res == true) widget.onRefresh();
                 },
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 14,
@@ -1409,7 +1501,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppTheme.borderSubtle),
                     boxShadow: const [AppTheme.softShadow],
                   ),
@@ -1432,14 +1524,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'New\nProject',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.heading(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate,
-                          height: 1.2,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'New Project',
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: AppTheme.heading(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.deepSlate,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ],
@@ -1493,14 +1589,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Review\nReports',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.heading(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate,
-                          height: 1.2,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Review Reports',
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: AppTheme.heading(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.deepSlate,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                     ],

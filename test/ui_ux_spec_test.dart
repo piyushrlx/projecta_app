@@ -239,11 +239,11 @@ void main() {
         // Verify Action Strip at top
         expect(find.text('Admin Executive Control'), findsOneWidget);
         expect(
-          find.text('Overdue Tasks'),
+          find.text('OVERDUE'),
           findsOneWidget,
         ); // Top strip & KPI card
-        expect(find.text('Pending Reports'), findsOneWidget);
-        expect(find.text('Reports Awaiting Review'), findsOneWidget);
+        expect(find.text('PENDING'), findsOneWidget);
+        expect(find.textContaining('Reports Awaiting Review'), findsOneWidget);
       },
     );
   });
