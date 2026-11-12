@@ -30,6 +30,7 @@ class AppSideDrawer extends StatelessWidget {
   final VoidCallback? onProfileTap;
   final VoidCallback? onSubmitReportTap;
   final int unreadNotifications;
+  final int pendingApprovals;
 
   const AppSideDrawer({
     super.key,
@@ -48,6 +49,7 @@ class AppSideDrawer extends StatelessWidget {
     this.onProfileTap,
     this.onSubmitReportTap,
     this.unreadNotifications = 0,
+    this.pendingApprovals = 0,
   });
 
   void _openProfile(BuildContext context) {
@@ -401,7 +403,11 @@ class AppSideDrawer extends StatelessWidget {
                       icon: Icons.fact_check_outlined,
                       label: 'Approvals',
                       isActive: false,
-                      badgeText: '7',
+                      badgeText: pendingApprovals > 0
+                          ? (pendingApprovals > 99
+                                ? '99+'
+                                : pendingApprovals.toString())
+                          : null,
                       badgeColor: const Color(0xFFF59E0B),
                       onTap: () {
                         Navigator.pop(context);

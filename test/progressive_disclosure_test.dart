@@ -159,6 +159,58 @@ void main() {
       await tester.pumpAndSettle();
       expect(overdueTapped, isTrue);
     });
+
+    testWidgets('Displays dynamic pendingApprovals badge when > 0 and hides when 0', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.themeData,
+          home: Scaffold(
+            body: AppSideDrawer(
+              user: testAdminUser,
+              currentTabIndex: 0,
+              pendingApprovals: 0,
+              onTabSelected: (_) {},
+              onLogout: () {},
+              onComplianceTap: () {},
+              onFilterTap: () {},
+              onTeamListTap: () {},
+              onOverdueTap: () {},
+              onNotificationsTap: () {},
+              onApprovalsTap: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('7'), findsNothing);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.themeData,
+          home: Scaffold(
+            body: AppSideDrawer(
+              user: testAdminUser,
+              currentTabIndex: 0,
+              pendingApprovals: 12,
+              onTabSelected: (_) {},
+              onLogout: () {},
+              onComplianceTap: () {},
+              onFilterTap: () {},
+              onTeamListTap: () {},
+              onOverdueTap: () {},
+              onNotificationsTap: () {},
+              onApprovalsTap: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('12'), findsOneWidget);
+    });
   });
 
   group('Progressive Disclosure UX: TeamListScreen', () {

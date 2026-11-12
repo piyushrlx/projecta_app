@@ -193,6 +193,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _currentUser;
+    final alerts =
+        (_dashboardData?['alerts'] as Map<String, dynamic>?) ?? const {};
+    final pendingApprovals =
+        (alerts['reports_awaiting_review'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -200,6 +204,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       drawer: AppSideDrawer(
         user: user,
         unreadNotifications: _unreadNotifications,
+        pendingApprovals: pendingApprovals,
         currentTabIndex: _selectedTabIndex,
         onProfileTap: _openProfile,
         onSubmitReportTap: () async {
@@ -255,8 +260,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
           _loadNotificationCount();
         },
-        onApprovalsTap: () {
-          Navigator.push(
+        onApprovalsTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => ReportsListScreen(
@@ -265,6 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           );
+          _loadDashboard();
         },
         onDepartmentsTap: () {
           Navigator.push(
