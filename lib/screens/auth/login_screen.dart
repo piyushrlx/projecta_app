@@ -374,324 +374,329 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Error Alert Box
-                            if (_errorMessage != null) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.dangerBg,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.dangerText.withValues(
-                                      alpha: 0.3,
-                                    ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Error Alert Box
+                              if (_errorMessage != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
                                   ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Padding(
-                                          padding: EdgeInsets.only(top: 2),
-                                          child: Icon(
-                                            Icons.error_outline,
-                                            color: AppTheme.dangerText,
-                                            size: 18,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            _errorMessage!,
-                                            style: AppTheme.body(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppTheme.dangerText,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: InkWell(
-                                        onTap: _showServerSettingsDialog,
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 2,
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.settings_outlined,
-                                                size: 15,
-                                                color: AppTheme.royalBlue,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Configure Server',
-                                                style: AppTheme.heading(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppTheme.royalBlue,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.dangerBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.dangerText.withValues(
+                                        alpha: 0.3,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-
-                            // Username or Email Input
-                            Text(
-                              'Username or Email',
-                              style: AppTheme.heading(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.deepSlate,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _usernameController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: AppTheme.body(fontSize: 14),
-                              decoration: const InputDecoration(
-                                hintText: 'e.g. employee or name@company.com',
-                                prefixIcon: Icon(
-                                  Icons.person_outline,
-                                  size: 20,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter username or email.';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Password Header with Label & Forgot Password Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Password',
-                                  style: AppTheme.heading(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.deepSlate,
                                   ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => ForgotPasswordScreen(
-                                          initialEmail:
-                                              _usernameController.text.contains(
-                                                '@',
-                                              )
-                                              ? _usernameController.text.trim()
-                                              : null,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Forgot password?',
-                                    style: AppTheme.body(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.royalBlue,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              style: AppTheme.body(fontSize: 14),
-                              decoration: InputDecoration(
-                                hintText: 'Enter your password',
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline,
-                                  size: 20,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password.';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 28),
-
-                            // Full-width 52px-tall Crisp Royal Blue button with soft blue glow
-                            Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x332563EB),
-                                    blurRadius: 16,
-                                    offset: Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.royalBlue,
-                                  foregroundColor: AppTheme.pureWhite,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 22,
-                                        width: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: AppTheme.pureWhite,
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            'Sign In',
-                                            style: AppTheme.heading(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppTheme.pureWhite,
+                                          const Padding(
+                                            padding: EdgeInsets.only(top: 2),
+                                            child: Icon(
+                                              Icons.error_outline,
+                                              color: AppTheme.dangerText,
+                                              size: 18,
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
-                                          const Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: 18,
-                                            color: AppTheme.pureWhite,
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              _errorMessage!,
+                                              style: AppTheme.body(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppTheme.dangerText,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-
-                            // User-requested placement: right below Sign In button with balanced spacing
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  'New here? ',
-                                  style: AppTheme.body(
-                                    fontSize: 13.5,
-                                    color: AppTheme.mutedSlate,
+                                      const SizedBox(height: 8),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: InkWell(
+                                          onTap: _showServerSettingsDialog,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.settings_outlined,
+                                                  size: 15,
+                                                  color: AppTheme.royalBlue,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'Configure Server',
+                                                  style: AppTheme.heading(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppTheme.royalBlue,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () async {
-                                    final registeredEmail =
-                                        await Navigator.push<String>(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const RegisterScreen(),
-                                          ),
-                                        );
-                                    if (registeredEmail != null &&
-                                        registeredEmail.isNotEmpty &&
-                                        mounted) {
-                                      setState(() {
-                                        _usernameController.text =
-                                            registeredEmail;
-                                        _passwordController.clear();
-                                      });
-                                    }
-                                  },
-                                  child: Text(
-                                    'Create a free admin account',
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Username or Email Input
+                              Text(
+                                'Username or Email',
+                                style: AppTheme.heading(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.deepSlate,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _usernameController,
+                                keyboardType: TextInputType.emailAddress,
+                                style: AppTheme.body(fontSize: 14),
+                                decoration: const InputDecoration(
+                                  hintText: 'e.g. employee or name@company.com',
+                                  prefixIcon: Icon(
+                                    Icons.person_outline,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter username or email.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Password Header with Label & Forgot Password Link
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Password',
                                     style: AppTheme.heading(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.royalBlue,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.deepSlate,
                                     ),
                                   ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => ForgotPasswordScreen(
+                                            initialEmail:
+                                                _usernameController.text
+                                                    .contains('@')
+                                                ? _usernameController.text
+                                                      .trim()
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      'Forgot password?',
+                                      style: AppTheme.body(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.royalBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: _obscurePassword,
+                                style: AppTheme.body(fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter your password',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    size: 20,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 28),
 
-            // Top-right Server Settings icon button (placed AFTER SingleChildScrollView to ensure top z-index and reliable tap gestures)
-            Positioned(
-              top: 12,
-              right: 16,
-              child: Material(
-                color: Colors.transparent,
-                shape: const CircleBorder(),
-                clipBehavior: Clip.hardEdge,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.settings_outlined,
-                    color: AppTheme.mutedSlate,
-                    size: 22,
+                              // Full-width 52px-tall Crisp Royal Blue button with soft blue glow
+                              Container(
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x332563EB),
+                                      blurRadius: 16,
+                                      offset: Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.royalBlue,
+                                    foregroundColor: AppTheme.pureWhite,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 22,
+                                          width: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: AppTheme.pureWhite,
+                                          ),
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Sign In',
+                                              style: AppTheme.heading(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppTheme.pureWhite,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Icon(
+                                              Icons.arrow_forward_rounded,
+                                              size: 18,
+                                              color: AppTheme.pureWhite,
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // User-requested placement: right below Sign In button with balanced spacing
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(
+                                    'New here? ',
+                                    style: AppTheme.body(
+                                      fontSize: 13.5,
+                                      color: AppTheme.mutedSlate,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final registeredEmail =
+                                          await Navigator.push<String>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const RegisterScreen(),
+                                            ),
+                                          );
+                                      if (registeredEmail != null &&
+                                          registeredEmail.isNotEmpty &&
+                                          mounted) {
+                                        setState(() {
+                                          _usernameController.text =
+                                              registeredEmail;
+                                          _passwordController.clear();
+                                        });
+                                      }
+                                    },
+                                    child: Text(
+                                      'Create a free admin account',
+                                      style: AppTheme.heading(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.royalBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  tooltip: 'Configure Server URL',
-                  onPressed: _showServerSettingsDialog,
                 ),
               ),
-            ),
-          ],
+
+              // Top-right Server Settings icon button (placed AFTER SingleChildScrollView to ensure top z-index and reliable tap gestures)
+              Positioned(
+                top: 12,
+                right: 16,
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.hardEdge,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.settings_outlined,
+                      color: AppTheme.mutedSlate,
+                      size: 22,
+                    ),
+                    tooltip: 'Configure Server URL',
+                    onPressed: _showServerSettingsDialog,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

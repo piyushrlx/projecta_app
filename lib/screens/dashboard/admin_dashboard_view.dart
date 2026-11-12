@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
 import '../projects/project_detail_screen.dart';
+import '../projects/project_form_screen.dart';
 import '../projects/projects_list_screen.dart';
 import '../reports/reports_list_screen.dart';
 import '../tasks/create_task_screen.dart';
@@ -44,6 +45,7 @@ class AdminDashboardView extends StatefulWidget {
 class _AdminDashboardViewState extends State<AdminDashboardView> {
   late int _selectedSubTabIndex;
   String _projectSearchQuery = '';
+  bool _showAllMetrics = false;
 
   @override
   void initState() {
@@ -85,9 +87,11 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       children: [
-        // PART A: GREETING HEADER (Matching Reference Step 2)
+        // PART A: EXECUTIVE META BAR & PERSONALIZED GREETING
+        _buildExecutiveMetaRow(context, filterOptions, hasActiveFilters),
+        const SizedBox(height: 10),
         _buildGreetingHeader(),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
         // PART B: URGENT ACTION STATUS CARDS & BANNER
         _buildUrgentActionStrip(
@@ -98,14 +102,68 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           filterOptions,
           hasActiveFilters,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         // PART C: QUICK ACTIONS (3 Distinct Cards Row)
         _buildQuickActions(context),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // PART D: SEGMENTED PILL TAB BAR
-        _buildSegmentedPills(),
+        // PART D: CORE METRICS PULSE HEADER & SEGMENTED PILLS
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Core Metrics Pulse',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.infoBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '10 Live',
+                      style: AppTheme.mono(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.infoText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Real-time sync',
+              style: AppTheme.body(
+                fontSize: 11,
+                color: AppTheme.mutedSlate,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        _buildSegmentedPills(
+          projectCount: activeProjects.length,
+          teamCount: employees.length,
+        ),
         const SizedBox(height: 16),
 
         // SUB-TAB CONTENT
@@ -139,7 +197,128 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     );
   }
 
-  // Greeting Header (Matching Reference Image 1, Step 2)
+  Widget _buildExecutiveMetaRow(
+    BuildContext context,
+    Map<String, dynamic> filterOptions,
+    bool hasActiveFilters,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.infoBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppTheme.royalBlue,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Admin Executive Control',
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.infoText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if ((widget.data['date']?.toString() ?? '').isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    widget.data['date']?.toString() ?? '',
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      color: AppTheme.mutedSlate,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (widget.onFilterChanged != null) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => DashboardFilterSheet(
+                  filterOptions: filterOptions,
+                  selectedProjectId: widget.selectedProjectId,
+                  selectedDepartmentId: widget.selectedDepartmentId,
+                  selectedUserId: widget.selectedUserId,
+                  onApply: (p, d, u) {
+                    widget.onFilterChanged?.call(p, d, u);
+                  },
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: hasActiveFilters
+                    ? AppTheme.royalBlue
+                    : AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasActiveFilters
+                      ? AppTheme.royalBlue
+                      : AppTheme.borderSubtle,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.filter_list,
+                    size: 13,
+                    color: hasActiveFilters
+                        ? AppTheme.pureWhite
+                        : AppTheme.mutedSlate,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    hasActiveFilters ? 'Active' : 'Filter',
+                    style: AppTheme.heading(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: hasActiveFilters
+                          ? AppTheme.pureWhite
+                          : AppTheme.deepSlate,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Personalized Greeting Header (Matching Stitch Executive Design)
   Widget _buildGreetingHeader() {
     final hour = DateTime.now().hour;
     String greeting = 'Good Morning';
@@ -149,13 +328,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       greeting = 'Good Evening';
     }
 
+    final fullName = widget.user.fullName.trim();
+    final firstName = fullName.isNotEmpty ? fullName.split(' ').first : '';
+    final greetingText =
+        firstName.isNotEmpty ? '$greeting, $firstName 👋' : '$greeting 👋';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$greeting 👋',
+          greetingText,
           style: AppTheme.heading(
-            fontSize: 22,
+            fontSize: 23,
             fontWeight: FontWeight.w800,
             color: AppTheme.deepSlate,
             letterSpacing: -0.5,
@@ -163,7 +347,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ),
         const SizedBox(height: 3),
         Text(
-          "Here's what's happening today",
+          "Here's what needs your executive focus today",
           style: AppTheme.body(
             fontSize: 13,
             color: AppTheme.mutedSlate,
@@ -175,12 +359,18 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   }
 
   // Segmented Pill TabBar
-  Widget _buildSegmentedPills() {
+  Widget _buildSegmentedPills({int projectCount = 0, int teamCount = 0}) {
     final tabs = [
       {'label': 'Overview', 'icon': Icons.dashboard_outlined},
-      {'label': 'Projects', 'icon': Icons.folder_outlined},
-      {'label': 'Team', 'icon': Icons.people_outline},
-      {'label': 'Risks & Logs', 'icon': Icons.warning_amber_rounded},
+      {
+        'label': projectCount > 0 ? 'Projects ($projectCount)' : 'Projects',
+        'icon': Icons.folder_outlined,
+      },
+      {
+        'label': teamCount > 0 ? 'Team ($teamCount)' : 'Team',
+        'icon': Icons.people_outline,
+      },
+      {'label': 'Risks', 'icon': Icons.warning_amber_rounded},
     ];
 
     return Container(
@@ -245,7 +435,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     );
   }
 
-  // SUB-TAB 1: OVERVIEW (Compact KPIs + Previews of Risks and Projects)
+  // SUB-TAB 1: OVERVIEW (Clean 2x2 Bento KPIs + Expandable All-10 Toggle + Previews)
   Widget _buildOverviewTab(
     BuildContext context,
     Map<String, dynamic> kpis,
@@ -257,60 +447,46 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     List<dynamic> blockedList,
     List<dynamic> activeProjects,
   ) {
+    final activeProjCount = (kpis['active_projects'] as num?)?.toInt() ?? 0;
+    final completedProjCount = (kpis['completed_projects'] as num?)?.toInt() ?? 0;
+    final openTasksCount = (kpis['open_tasks'] as num?)?.toInt() ?? 0;
+    final inProgressCount = (kpis['tasks_in_progress'] as num?)?.toInt() ?? 0;
+    final completedTasksCount = (kpis['completed_tasks'] as num?)?.toInt() ?? 0;
+    final pendingTasksCount = (kpis['pending_tasks'] as num?)?.toInt() ?? 0;
+    final activeStaffCount = (kpis['active_employees'] as num?)?.toInt() ?? 0;
+    final submittedTodayCount =
+        (kpis['reports_submitted_today'] as num?)?.toInt() ?? 0;
+
+    final double taskMotionProgress =
+        openTasksCount > 0 ? (inProgressCount / openTasksCount) : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 10 Core Metrics Header
-        Text(
-          '10 Core Metrics',
-          style: AppTheme.heading(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.deepSlate,
-          ),
-        ),
-        const SizedBox(height: 10),
-
+        // Row 1: Active Projects & Tasks In Motion
         Row(
           children: [
             Expanded(
               child: KpiCard(
                 label: 'Active Projects',
-                value: '${kpis['active_projects'] ?? 0}',
+                value: '$activeProjCount',
+                icon: Icons.folder_outlined,
+                badgeText: completedProjCount > 0
+                    ? '$completedProjCount done'
+                    : 'On track',
+                subtitle: '$completedProjCount Completed Projects',
                 onTap: () => setState(() => _selectedSubTabIndex = 1),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: KpiCard(
-                label: 'Completed Projects',
-                value: '${kpis['completed_projects'] ?? 0}',
-                onTap: () => setState(() => _selectedSubTabIndex = 1),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Row 2: Open Tasks Assigned & Tasks In Progress
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                label: 'Open Tasks Assigned',
-                value: '${kpis['open_tasks'] ?? 0}',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TasksScreen()),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: KpiCard(
-                label: 'Tasks In Progress',
-                value: '${kpis['tasks_in_progress'] ?? 0}',
+                label: 'Tasks In Motion',
+                value: '$inProgressCount / $openTasksCount',
+                icon: Icons.trending_up_rounded,
+                progressValue: taskMotionProgress,
+                subtitle:
+                    '$completedTasksCount done • $pendingTasksCount pending',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -322,92 +498,39 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           ],
         ),
         const SizedBox(height: 10),
+        // Row 2: Active Staff & Compliance
         Row(
           children: [
-            Expanded(
-              child: KpiCard(
-                label: 'Completed Tasks',
-                value: '${kpis['completed_tasks'] ?? 0}',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TasksScreen()),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: KpiCard(
-                label: 'Pending Tasks',
-                value: '${kpis['pending_tasks'] ?? 0}',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TasksScreen()),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                label: 'Overdue Tasks',
-                value: '$overdueTasksCount',
-                isUrgent: overdueTasksCount > 0,
-                subtitle: overdueTasksCount > 0
-                    ? 'Requires attention'
-                    : 'Clear',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const TasksScreen(initialFilter: 'OVERDUE'),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
             Expanded(
               child: KpiCard(
                 label: 'Active Staff',
-                value: '${kpis['active_employees'] ?? 0}',
+                value: '$activeStaffCount',
+                icon: Icons.badge_outlined,
+                badgeText: 'Online',
+                badgeBgColor: AppTheme.successBg,
+                badgeColor: AppTheme.successText,
+                subtitle: '$submittedTodayCount reports today',
                 onTap: () => setState(() => _selectedSubTabIndex = 2),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Row 5: Reports Submitted Today & Reports Pending Today
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                label: 'Reports Submitted Today',
-                value: '${kpis['reports_submitted_today'] ?? 0}',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ReportsListScreen(user: widget.user),
-                    ),
-                  );
-                },
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: KpiCard(
-                label: 'Reports Pending Today',
-                value: '$reportsPendingCount',
-                isUrgent: reportsPendingCount > 0,
-                subtitle: '$compliancePercent% compliance',
+                label: 'Compliance',
+                value: '$compliancePercent%',
+                icon: Icons.verified_outlined,
+                valueColor: compliancePercent >= 80
+                    ? AppTheme.successText
+                    : AppTheme.dangerText,
+                badgeText: compliancePercent >= 80 ? 'On Track' : 'Lagging',
+                badgeBgColor: compliancePercent >= 80
+                    ? AppTheme.successBg
+                    : AppTheme.dangerBg,
+                badgeColor: compliancePercent >= 80
+                    ? AppTheme.successText
+                    : AppTheme.dangerText,
+                subtitle:
+                    '$submittedTodayCount of ${submittedTodayCount + reportsPendingCount} Submitted',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -420,6 +543,140 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+
+        // Progressive Disclosure Toggle for remaining detailed metrics
+        Center(
+          child: InkWell(
+            onTap: () => setState(() => _showAllMetrics = !_showAllMetrics),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _showAllMetrics
+                        ? 'Hide detailed metrics'
+                        : 'View all 10 metrics',
+                    style: AppTheme.heading(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.royalBlue,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _showAllMetrics
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: AppTheme.royalBlue,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        if (_showAllMetrics) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: KpiCard(
+                  label: 'Completed Projects',
+                  value: '$completedProjCount',
+                  onTap: () => setState(() => _selectedSubTabIndex = 1),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: KpiCard(
+                  label: 'Open Tasks Assigned',
+                  value: '$openTasksCount',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TasksScreen()),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: KpiCard(
+                  label: 'Completed Tasks',
+                  value: '$completedTasksCount',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TasksScreen()),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: KpiCard(
+                  label: 'Pending Tasks',
+                  value: '$pendingTasksCount',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TasksScreen()),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: KpiCard(
+                  label: 'Reports Submitted Today',
+                  value: '$submittedTodayCount',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReportsListScreen(user: widget.user),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: KpiCard(
+                  label: 'Reports Pending Today',
+                  value: '$reportsPendingCount',
+                  isUrgent: reportsPendingCount > 0,
+                  subtitle: '$compliancePercent% compliance',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReportsListScreen(user: widget.user),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 18),
 
         // Risk & Alert Center Preview
@@ -815,109 +1072,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Sub-header Row with Admin Executive Control & Filter
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.infoBg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'Admin Executive Control',
-                  style: AppTheme.heading(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.infoText,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      widget.data['date']?.toString() ?? '',
-                      style: AppTheme.mono(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (widget.onFilterChanged != null) ...[
-                    const SizedBox(width: 6),
-                    InkWell(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => DashboardFilterSheet(
-                            filterOptions: filterOptions,
-                            selectedProjectId: widget.selectedProjectId,
-                            selectedDepartmentId: widget.selectedDepartmentId,
-                            selectedUserId: widget.selectedUserId,
-                            onApply: (p, d, u) {
-                              widget.onFilterChanged?.call(p, d, u);
-                            },
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: hasActiveFilters
-                              ? AppTheme.royalBlue
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.filter_list,
-                              size: 12,
-                              color: hasActiveFilters
-                                  ? AppTheme.pureWhite
-                                  : AppTheme.mutedSlate,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              hasActiveFilters ? 'Active' : 'Filter',
-                              style: AppTheme.heading(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: hasActiveFilters
-                                    ? AppTheme.pureWhite
-                                    : AppTheme.mutedSlate,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
         // Two Side-by-Side Status Cards
         Row(
           children: [
@@ -1235,11 +1389,19 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               ),
             ),
             const SizedBox(width: 10),
-            // 2. Projects Card
+            // 2. New Project Card
             Expanded(
               child: InkWell(
-                onTap: () => setState(() => _selectedSubTabIndex = 1),
-                borderRadius: BorderRadius.circular(12),
+                onTap: () async {
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProjectFormScreen(),
+                    ),
+                  );
+                  if (res == true) widget.onRefresh();
+                },
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 14,
@@ -1247,7 +1409,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.borderSubtle),
                     boxShadow: const [AppTheme.softShadow],
                   ),
@@ -1263,7 +1425,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         ),
                         child: const Center(
                           child: Icon(
-                            Icons.folder_outlined,
+                            Icons.create_new_folder_outlined,
                             color: AppTheme.deepSlate,
                             size: 20,
                           ),
@@ -1271,7 +1433,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Projects\n ',
+                        'New\nProject',
                         textAlign: TextAlign.center,
                         style: AppTheme.heading(
                           fontSize: 11,

@@ -242,8 +242,16 @@ void main() {
 
         expect(find.text('Admin Executive Control'), findsOneWidget);
         expect(find.text('Reports Awaiting Review'), findsOneWidget);
-        expect(find.text('10 Core Metrics'), findsOneWidget);
+        expect(find.text('Core Metrics Pulse'), findsOneWidget);
         expect(find.text('Active Projects'), findsOneWidget);
+        expect(find.text('Tasks In Motion'), findsOneWidget);
+        expect(find.text('Active Staff'), findsOneWidget);
+        expect(find.text('Compliance'), findsOneWidget);
+
+        // Expand progressive disclosure toggle to verify all 10 metrics
+        await tester.scrollUntilVisible(find.text('View all 10 metrics'), 150);
+        await tester.tap(find.text('View all 10 metrics'));
+        await tester.pumpAndSettle();
         expect(find.text('Completed Projects'), findsOneWidget);
         expect(find.text('Completed Tasks'), findsOneWidget);
         expect(find.text('Pending Tasks'), findsOneWidget);
@@ -450,23 +458,23 @@ void main() {
 
         // Sub-tab 0: Overview
         expect(find.text('Overview'), findsOneWidget);
-        expect(find.text('10 Core Metrics'), findsOneWidget);
+        expect(find.text('Core Metrics Pulse'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
         // Switch to Sub-tab 1: Projects
-        await tester.tap(find.widgetWithText(InkWell, 'Projects').last);
+        await tester.tap(find.textContaining('Projects ('));
         await tester.pumpAndSettle();
         expect(find.text('Search projects by name or code...'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
         // Switch to Sub-tab 2: Team
-        await tester.tap(find.widgetWithText(InkWell, 'Team').last);
+        await tester.tap(find.textContaining('Team ('));
         await tester.pumpAndSettle();
         expect(find.text('Rahul Dhiman'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // Switch to Sub-tab 3: Risks & Logs
-        await tester.tap(find.widgetWithText(InkWell, 'Risks & Logs').last);
+        // Switch to Sub-tab 3: Risks
+        await tester.tap(find.text('Risks'));
         await tester.pumpAndSettle();
         expect(find.text('Recent Activity'), findsOneWidget);
         expect(tester.takeException(), isNull);

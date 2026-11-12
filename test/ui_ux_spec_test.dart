@@ -240,7 +240,7 @@ void main() {
         expect(find.text('Admin Executive Control'), findsOneWidget);
         expect(
           find.text('Overdue Tasks'),
-          findsNWidgets(2),
+          findsOneWidget,
         ); // Top strip & KPI card
         expect(find.text('Pending Reports'), findsOneWidget);
         expect(find.text('Reports Awaiting Review'), findsOneWidget);

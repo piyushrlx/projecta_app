@@ -62,7 +62,9 @@ void main() {
   });
 
   group('Phase 3: Widget Rendering & Validation Tests', () {
-    testWidgets('SplashScreen displays projeqta branding and copy', (tester) async {
+    testWidgets('SplashScreen displays projeqta branding and copy', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(theme: AppTheme.themeData, home: const SplashScreen()),
       );
@@ -77,27 +79,30 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('LoginScreen displays Enterprise elements, branding, and inputs', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(theme: AppTheme.themeData, home: const LoginScreen()),
-      );
+    testWidgets(
+      'LoginScreen displays Enterprise elements, branding, and inputs',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(theme: AppTheme.themeData, home: const LoginScreen()),
+        );
 
-      expect(find.text('projeqta'), findsOneWidget);
-      expect(find.text('WORKFORCE SYNC 2.4'), findsOneWidget);
-      expect(find.text('Know what your team did today.'), findsOneWidget);
-      expect(
-        find.text('Projects, tasks and daily reports — reviewed in one place.'),
-        findsOneWidget,
-      );
-      expect(find.text('Username or Email'), findsOneWidget);
-      expect(find.text('Password'), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Sign In'), findsOneWidget);
-      expect(find.text('Create a free admin account'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNWidgets(2));
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    });
+        expect(find.text('projeqta'), findsOneWidget);
+        expect(find.text('WORKFORCE SYNC 2.4'), findsOneWidget);
+        expect(find.text('Know what your team did today.'), findsOneWidget);
+        expect(
+          find.text(
+            'Projects, tasks and daily reports — reviewed in one place.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Username or Email'), findsOneWidget);
+        expect(find.text('Password'), findsOneWidget);
+        expect(find.widgetWithText(ElevatedButton, 'Sign In'), findsOneWidget);
+        expect(find.text('Create a free admin account'), findsOneWidget);
+        expect(find.byType(TextFormField), findsNWidgets(2));
+        expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'MustChangePasswordScreen displays compliance reset banner and inputs',
@@ -202,7 +207,9 @@ void main() {
         // Should now be on RegisterScreen
         expect(find.text('Create your admin account'), findsOneWidget);
         expect(
-          find.text("Free, no card needed. You'll add employees after signing in."),
+          find.text(
+            "Free, no card needed. You'll add employees after signing in.",
+          ),
           findsOneWidget,
         );
       },
@@ -222,7 +229,9 @@ void main() {
         // Core UI elements
         expect(find.text('Create your admin account'), findsOneWidget);
         expect(
-          find.text("Free, no card needed. You'll add employees after signing in."),
+          find.text(
+            "Free, no card needed. You'll add employees after signing in.",
+          ),
           findsOneWidget,
         );
         expect(find.text('Your name'), findsOneWidget);
@@ -232,7 +241,10 @@ void main() {
           find.text('At least 8 characters with letters and numbers.'),
           findsOneWidget,
         );
-        expect(find.widgetWithText(ElevatedButton, 'Create account'), findsOneWidget);
+        expect(
+          find.widgetWithText(ElevatedButton, 'Create account'),
+          findsOneWidget,
+        );
         expect(find.text('Terms of service'), findsOneWidget);
         expect(find.text('Privacy policy'), findsOneWidget);
         expect(find.text('Already have an account? '), findsOneWidget);
@@ -242,7 +254,10 @@ void main() {
         expect(find.textContaining('Back to website'), findsNothing);
 
         // Test form validation upon tapping "Create account" with empty fields
-        final submitButton = find.widgetWithText(ElevatedButton, 'Create account');
+        final submitButton = find.widgetWithText(
+          ElevatedButton,
+          'Create account',
+        );
         await tester.ensureVisible(submitButton);
         await tester.tap(submitButton);
         await tester.pump();
@@ -307,27 +322,26 @@ void main() {
       },
     );
 
-    testWidgets(
-      'RegisterScreen password visibility toggle works correctly',
-      (tester) async {
-        tester.view.physicalSize = const Size(1080, 2400);
-        tester.view.devicePixelRatio = 2.0;
-        addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets('RegisterScreen password visibility toggle works correctly', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
 
-        await tester.pumpWidget(
-          MaterialApp(theme: AppTheme.themeData, home: const RegisterScreen()),
-        );
+      await tester.pumpWidget(
+        MaterialApp(theme: AppTheme.themeData, home: const RegisterScreen()),
+      );
 
-        // Initially password is obscured and shows visibility toggle icon
-        expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
+      // Initially password is obscured and shows visibility toggle icon
+      expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
 
-        // Tap eye toggle
-        await tester.tap(find.byIcon(Icons.visibility_outlined));
-        await tester.pumpAndSettle();
+      // Tap eye toggle
+      await tester.tap(find.byIcon(Icons.visibility_outlined));
+      await tester.pumpAndSettle();
 
-        // Icon should switch to visibility_off
-        expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
-      },
-    );
+      // Icon should switch to visibility_off
+      expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
+    });
   });
 }
