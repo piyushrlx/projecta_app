@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projecta_app/core/company_settings.dart';
@@ -111,6 +114,47 @@ void main() {
       // ensureLogoCached handles empty or invalid URLs without throwing
       await CompanySettings.instance.ensureLogoCached('');
       expect(CompanySettings.instance.companyName, 'Test Corp');
+    });
+
+    test('CompanySettings migrates legacy Base64 logo out of SharedPreferences to binary file', () async {
+      final tempDir = await Directory.systemTemp.createTemp('company_logo_test_');
+      addTearDown(() async {
+        CompanySettings.instance.cacheDirectoryProvider = null;
+        CompanySettings.instance.resetForTesting();
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final sampleBytes = Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4]);
+      final encoded = base64Encode(sampleBytes);
+
+      SharedPreferences.setMockInitialValues({
+        'cached_company_name': 'Migrated Corp',
+        'cached_company_logo_url': 'http://192.168.1.2/projecta/uploads/logos/logo.png',
+        'cached_company_logo_bytes': encoded,
+      });
+
+      CompanySettings.instance.resetForTesting();
+      CompanySettings.instance.cacheDirectoryProvider = () async => tempDir;
+
+      await CompanySettings.instance.loadFromPrefs();
+
+      // Wait briefly for unawaited binary file write
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('cached_company_logo_bytes'), isNull);
+      expect(CompanySettings.instance.logoBytes, equals(sampleBytes));
+
+      final binFile = File('${tempDir.path}/company_logo_cache.bin');
+      expect(await binFile.exists(), isTrue);
+      expect(await binFile.readAsBytes(), equals(sampleBytes));
+
+      // Verify subsequent cold load reads from binary file with zero SharedPreferences blob
+      CompanySettings.instance.resetForTesting();
+      await CompanySettings.instance.loadFromPrefs();
+      expect(CompanySettings.instance.logoBytes, equals(sampleBytes));
     });
   });
 }
