@@ -209,12 +209,12 @@ void main() {
 
       expect(find.text('My Metrics'), findsOneWidget);
       expect(find.text('Active Projects'), findsOneWidget);
-      expect(find.text('Open Tasks'), findsOneWidget);
+      expect(find.text('My Open Tasks'), findsOneWidget);
       expect(find.text('What should I work on next?'), findsOneWidget);
       expect(find.text('Implement API Authentication Bridge'), findsOneWidget);
       expect(find.text('Design Neo-Brutalist Layout'), findsOneWidget);
       expect(find.text('75%'), findsOneWidget);
-      expect(find.text('Supervisor Feedback'), findsOneWidget);
+      expect(find.text('Recent feedback'), findsOneWidget);
       expect(find.text('Great progress on the sprint tasks!'), findsOneWidget);
     });
   });

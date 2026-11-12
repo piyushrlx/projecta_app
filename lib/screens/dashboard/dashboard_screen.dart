@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/company_settings.dart';
 import '../../core/theme.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -54,6 +56,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _currentUser = widget.user;
+    CompanySettings.instance.loadFromPrefs();
+    unawaited(CompanySettings.instance.fetchFromApi());
     _loadDashboard();
     _loadNotificationCount();
   }
@@ -198,6 +202,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         unreadNotifications: _unreadNotifications,
         currentTabIndex: _selectedTabIndex,
         onProfileTap: _openProfile,
+        onSubmitReportTap: () async {
+          final submitted = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (_) => const ReportSubmissionScreen()),
+          );
+          if (submitted == true) {
+            _loadDashboard();
+          }
+        },
         onTabSelected: (index) {
           setState(() {
             _selectedTabIndex = index;

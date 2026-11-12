@@ -7,6 +7,7 @@ class KpiCard extends StatelessWidget {
   final String value;
   final String? subtitle;
   final bool isUrgent;
+  final Color? valueColor;
   final VoidCallback? onTap;
 
   const KpiCard({
@@ -15,6 +16,7 @@ class KpiCard extends StatelessWidget {
     required this.value,
     this.subtitle,
     this.isUrgent = false,
+    this.valueColor,
     this.onTap,
   });
 
@@ -73,7 +75,9 @@ class KpiCard extends StatelessWidget {
             style: AppTheme.heading(
               fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: isUrgent ? AppTheme.dangerText : AppTheme.deepSlate,
+              color:
+                  valueColor ??
+                  (isUrgent ? AppTheme.dangerText : AppTheme.deepSlate),
             ),
           ),
           if (subtitle != null) ...[

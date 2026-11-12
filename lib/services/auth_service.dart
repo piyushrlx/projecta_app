@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
+import '../core/company_settings.dart';
 import '../models/user_model.dart';
 
 class AuthService {
@@ -77,6 +79,7 @@ class AuthService {
 
       // Save user profile locally
       await _saveUserLocally(user);
+      unawaited(CompanySettings.instance.fetchFromApi());
 
       return user;
     } on ApiException catch (e) {
@@ -97,6 +100,7 @@ class AuthService {
             final user = UserModel.fromJson(userMap, token: token);
             _currentUser = user;
             await _saveUserLocally(user);
+            unawaited(CompanySettings.instance.fetchFromApi());
             return user;
           }
         }

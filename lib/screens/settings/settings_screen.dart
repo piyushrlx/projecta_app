@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/company_settings.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
 import '../../services/dashboard_service.dart';
 
@@ -42,6 +45,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _staffCanSetProgress = true;
   bool _staffCanUpload = true;
   bool _requireCompletionNotes = true;
+
+  // Company logo state (web-parity)
+  String? _currentLogoUrl;
+  String? _selectedLogoName;
+  String? _selectedLogoPath;
+  List<int>? _selectedLogoBytes;
+  bool _removeLogo = false;
 
   @override
   void initState() {
@@ -85,6 +95,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _deadlineController.text = (s['report_deadline_time'] ?? '19:00').toString();
           _graceController.text = (s['report_grace_minutes'] ?? '60').toString();
 
+          _currentLogoUrl = s['logo_url']?.toString();
+          if (_currentLogoUrl != null && _currentLogoUrl!.isNotEmpty) {
+            CompanySettings.instance.update(
+              companyName: _companyNameController.text,
+              logoUrl: _currentLogoUrl,
+            );
+          }
+
           _staffCanSetProgress = s['staff_can_set_progress'] == '1' || s['staff_can_set_progress'] == true;
           _staffCanUpload = s['staff_can_upload'] == '1' || s['staff_can_upload'] == true;
           _requireCompletionNotes = s['require_completion_notes'] == '1' || s['require_completion_notes'] == true;
@@ -98,6 +116,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _errorMessage = e.toString().replaceAll('ApiException:', '').trim();
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _handlePickLogo() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      );
+
+      if (result.isEmpty) return;
+
+      final file = result.first;
+      final fileLength = await file.xFile.length();
+      if (fileLength > 2 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Company logo must not exceed 2 MB.'),
+              backgroundColor: AppTheme.dangerText,
+            ),
+          );
+        }
+        return;
+      }
+
+      final fileBytes = await file.xFile.readAsBytes();
+      if (!mounted) return;
+
+      setState(() {
+        _selectedLogoName = file.name;
+        _selectedLogoPath = file.path;
+        _selectedLogoBytes = fileBytes;
+        _removeLogo = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick logo: $e'),
+            backgroundColor: AppTheme.dangerText,
+          ),
+        );
       }
     }
   }
@@ -120,9 +182,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     };
 
     try {
-      await _service.saveSettings(payload);
+      final res = await _service.saveSettings(
+        payload,
+        logoBytes: _selectedLogoBytes,
+        logoFileName: _selectedLogoName,
+        logoPath: _selectedLogoPath,
+        removeLogo: _removeLogo,
+      );
+
+      // Extract updated logo_url if returned
+      String? updatedLogoUrl = _currentLogoUrl;
+      if (res['settings'] is Map<String, dynamic>) {
+        final s = res['settings'] as Map<String, dynamic>;
+        if (s.containsKey('logo_url')) {
+          updatedLogoUrl = s['logo_url']?.toString();
+        }
+      }
+
+      await CompanySettings.instance.update(
+        companyName: _companyNameController.text.trim(),
+        logoUrl: _removeLogo ? null : (updatedLogoUrl ?? _currentLogoUrl),
+        logoBytes: _removeLogo
+            ? null
+            : (_selectedLogoBytes != null
+                ? Uint8List.fromList(_selectedLogoBytes!)
+                : null),
+      );
+
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          if (_removeLogo) {
+            _currentLogoUrl = null;
+          } else if (updatedLogoUrl != null) {
+            _currentLogoUrl = updatedLogoUrl;
+          }
+          _selectedLogoName = null;
+          _selectedLogoPath = null;
+          _selectedLogoBytes = null;
+          _removeLogo = false;
+          _isSaving = false;
+        });
         scaffold.showSnackBar(
           const SnackBar(
             content: Text('Settings saved successfully.'),
@@ -361,13 +460,198 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Company & Display', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+          Text(
+            'Company & Display',
+            style: AppTheme.heading(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildField('Company name', _companyNameController),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          _buildCompanyLogoSection(),
+          const SizedBox(height: 16),
           _buildField('Company timezone', _timezoneController),
           const SizedBox(height: 12),
           _buildField('Currency code', _currencyController),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompanyLogoSection() {
+    final hasExistingLogo =
+        _currentLogoUrl != null && _currentLogoUrl!.trim().isNotEmpty && !_removeLogo;
+    final hasNewLogo = _selectedLogoBytes != null && _selectedLogoBytes!.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.business_outlined, size: 18, color: AppTheme.royalBlue),
+              const SizedBox(width: 8),
+              Text(
+                'Company logo',
+                style: AppTheme.heading(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Logo Preview Container with sleek dark background (#0F172A)
+          Container(
+            width: double.infinity,
+            height: 76,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF1E293B)),
+            ),
+            child: Center(
+              child: hasNewLogo
+                  ? Image.memory(
+                      Uint8List.fromList(_selectedLogoBytes!),
+                      fit: BoxFit.contain,
+                    )
+                  : hasExistingLogo
+                      ? Image.network(
+                          ApiClient().resolveMediaUrl(_currentLogoUrl!) ?? _currentLogoUrl!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildLogoPlaceholder(),
+                        )
+                      : _buildLogoPlaceholder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Remove logo checkbox (when a logo exists or is chosen)
+          if (hasExistingLogo || hasNewLogo) ...[
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _removeLogo = !_removeLogo;
+                  if (_removeLogo) {
+                    _selectedLogoName = null;
+                    _selectedLogoPath = null;
+                    _selectedLogoBytes = null;
+                  }
+                });
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _removeLogo,
+                        activeColor: AppTheme.dangerText,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onChanged: (val) {
+                          setState(() {
+                            _removeLogo = val ?? false;
+                            if (_removeLogo) {
+                              _selectedLogoName = null;
+                              _selectedLogoPath = null;
+                              _selectedLogoBytes = null;
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Remove company logo',
+                      style: AppTheme.body(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _removeLogo ? AppTheme.dangerText : AppTheme.deepSlate,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Upload button & selected file row
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: _handlePickLogo,
+                icon: const Icon(Icons.upload_file, size: 16),
+                label: const Text('Choose File'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.deepSlate,
+                  side: const BorderSide(color: AppTheme.borderSubtle),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _selectedLogoName ??
+                      (hasExistingLogo ? 'Current logo active' : 'No file chosen'),
+                  style: AppTheme.body(
+                    fontSize: 12,
+                    color: _selectedLogoName != null ? AppTheme.royalBlue : AppTheme.mutedSlate,
+                    fontWeight: _selectedLogoName != null ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Guideline text matching website
+          Text(
+            'Replaces the Projeqta logo in the sidebar for your workspace. Shown on a dark background, so a white or light logo works best. JPG, PNG or WebP, max 2 MB.',
+            style: AppTheme.body(
+              fontSize: 11,
+              color: AppTheme.mutedSlate,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoPlaceholder() {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.image_outlined, size: 18, color: Color(0xFF64748B)),
+          const SizedBox(width: 8),
+          Text(
+            'No company logo (default Projeqta)',
+            style: AppTheme.mono(fontSize: 12, color: const Color(0xFF94A3B8)),
+          ),
         ],
       ),
     );

@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import '../core/api_client.dart';
+import '../core/company_settings.dart';
 
 class DashboardService {
   final ApiClient _client = ApiClient();
@@ -61,9 +64,7 @@ class DashboardService {
     int? projectId,
     int? userId,
   }) async {
-    final queryParams = <String, String>{
-      'view': view,
-    };
+    final queryParams = <String, String>{'view': view};
     if (date != null) {
       queryParams['date'] =
           '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -103,15 +104,74 @@ class DashboardService {
     return {'settings': {}, 'holidays': []};
   }
 
-  Future<void> saveSettings(Map<String, dynamic> data) async {
-    await _client.post('/settings/save', body: data);
+  Future<Map<String, dynamic>> saveSettings(
+    Map<String, dynamic> data, {
+    List<int>? logoBytes,
+    String? logoFileName,
+    String? logoPath,
+    bool removeLogo = false,
+  }) async {
+    http.Response response;
+    if ((logoBytes != null && logoBytes.isNotEmpty) ||
+        (logoPath != null && logoPath.isNotEmpty)) {
+      final fields = data.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+      if (removeLogo) {
+        fields['remove_logo'] = '1';
+      }
+      response = await _client.uploadMultipartFile(
+        '/settings/save',
+        fieldName: 'logo',
+        fileBytes: logoBytes,
+        filePath: logoPath,
+        fileName: logoFileName ?? 'company_logo.png',
+        fields: fields,
+      );
+    } else {
+      final payload = Map<String, dynamic>.from(data);
+      if (removeLogo) {
+        payload['remove_logo'] = '1';
+      }
+      response = await _client.post('/settings/save', body: payload);
+    }
+
+    final dynamic decoded = _client.decodeJson(response);
+    if (decoded is Map<String, dynamic>) {
+      if (decoded['settings'] is Map<String, dynamic>) {
+        final s = decoded['settings'] as Map<String, dynamic>;
+        final cName =
+            s['company_name']?.toString() ??
+            (data['company_name']?.toString() ?? '');
+        final lUrl = s['logo_url']?.toString();
+        CompanySettings.instance.update(
+          companyName: cName.isNotEmpty
+              ? cName
+              : CompanySettings.instance.companyName,
+          logoUrl: removeLogo
+              ? null
+              : (lUrl ?? CompanySettings.instance.logoUrl),
+          logoBytes: removeLogo
+              ? null
+              : (logoBytes != null ? Uint8List.fromList(logoBytes) : null),
+        );
+      } else if (data['company_name'] != null) {
+        CompanySettings.instance.update(
+          companyName: data['company_name'].toString(),
+          logoUrl: removeLogo ? null : CompanySettings.instance.logoUrl,
+          logoBytes: removeLogo
+              ? null
+              : (logoBytes != null ? Uint8List.fromList(logoBytes) : null),
+        );
+      }
+      return decoded;
+    }
+    return <String, dynamic>{'message': 'Settings saved successfully.'};
   }
 
   Future<int> addHoliday(String date, String name) async {
-    final response = await _client.post('/settings/holidays', body: {
-      'holiday_date': date,
-      'name': name,
-    });
+    final response = await _client.post(
+      '/settings/holidays',
+      body: {'holiday_date': date, 'name': name},
+    );
     final dynamic decoded = _client.decodeJson(response);
     if (decoded is Map<String, dynamic> && decoded['id'] != null) {
       return (decoded['id'] as num).toInt();
@@ -134,12 +194,18 @@ class DashboardService {
     final queryParams = <String, String>{};
     if (userId != null) queryParams['user_id'] = userId.toString();
     if (action != null && action.isNotEmpty) queryParams['action'] = action;
-    if (entityType != null && entityType.isNotEmpty) queryParams['entity_type'] = entityType;
+    if (entityType != null && entityType.isNotEmpty)
+      queryParams['entity_type'] = entityType;
     if (from != null && from.isNotEmpty) queryParams['from'] = from;
     if (to != null && to.isNotEmpty) queryParams['to'] = to;
 
-    final uri = Uri(path: '/audit-logs', queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    final response = await _client.get(uri.query.isNotEmpty ? '${uri.path}?${uri.query}' : uri.path);
+    final uri = Uri(
+      path: '/audit-logs',
+      queryParameters: queryParams.isNotEmpty ? queryParams : null,
+    );
+    final response = await _client.get(
+      uri.query.isNotEmpty ? '${uri.path}?${uri.query}' : uri.path,
+    );
     final dynamic decoded = _client.decodeJson(response);
     if (decoded is Map<String, dynamic> && decoded['logs'] is List) {
       return decoded['logs'] as List<dynamic>;
@@ -148,8 +214,12 @@ class DashboardService {
   }
 
   /// Contact Messages Inquiry Inbox (Super Admin)
-  Future<Map<String, dynamic>> getContactMessages({bool unreadOnly = false}) async {
-    final path = unreadOnly ? '/contact-messages?unread=1' : '/contact-messages';
+  Future<Map<String, dynamic>> getContactMessages({
+    bool unreadOnly = false,
+  }) async {
+    final path = unreadOnly
+        ? '/contact-messages?unread=1'
+        : '/contact-messages';
     final response = await _client.get(path);
     final dynamic decoded = _client.decodeJson(response);
     if (decoded is Map<String, dynamic>) {

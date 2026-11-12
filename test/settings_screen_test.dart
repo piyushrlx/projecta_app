@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projecta_app/core/theme.dart';
 import 'package:projecta_app/models/user_model.dart';
 import 'package:projecta_app/screens/settings/settings_screen.dart';
@@ -36,8 +37,15 @@ class FakeSettingsService extends DashboardService {
   }
 
   @override
-  Future<void> saveSettings(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> saveSettings(
+    Map<String, dynamic> data, {
+    List<int>? logoBytes,
+    String? logoFileName,
+    String? logoPath,
+    bool removeLogo = false,
+  }) async {
     didSave = true;
+    return {'message': 'Settings saved successfully.'};
   }
 
   @override
@@ -73,6 +81,9 @@ void main() {
   }
 
   group('Phase 3: SettingsScreen Widget & Interaction Tests', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
     testWidgets('Renders settings tabs and general configuration', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       addTearDown(tester.view.resetPhysicalSize);
@@ -86,6 +97,9 @@ void main() {
       expect(find.text('Rules & permissions'), findsOneWidget);
       expect(find.text('Company & Display'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Rank First Technologies'), findsOneWidget);
+      expect(find.text('Company logo'), findsOneWidget);
+      expect(find.text('Choose File'), findsOneWidget);
+      expect(find.textContaining('Replaces the Projeqta logo'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Asia/Kolkata'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'INR'), findsOneWidget);
     });

@@ -4,6 +4,7 @@ import 'dart:io' show Platform, SocketException;
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'company_settings.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -24,7 +25,7 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.3';
+  static const String defaultLanIp = '192.168.1.2';
   static const String _defaultAdbTunnelUrl =
       'http://localhost:8080/projecta/api/v1';
   static const String _defaultAndroidUrl =
@@ -84,6 +85,7 @@ class ApiClient {
     _baseUrl = cleanUrl;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlPrefKey, _baseUrl);
+    unawaited(CompanySettings.instance.fetchFromApi());
   }
 
   /// Resolves relative or localhost media/avatar URLs to point to the active host and port

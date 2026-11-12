@@ -99,7 +99,7 @@ projecta_app/
 ### Backend API Base URL
 | Environment | Default URL |
 |-------------|-------------|
-| Android (LAN) | `http://192.168.1.3/projecta/api/v1` |
+| Android (LAN) | `http://192.168.1.2/projecta/api/v1` |
 | Desktop/Web | `http://localhost/projecta/api/v1` |
 
 > The user can override the base URL from within the app settings. It is persisted via `SharedPreferences`.

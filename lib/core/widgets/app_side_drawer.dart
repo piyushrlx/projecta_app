@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../api_client.dart';
+import '../company_settings.dart';
 import '../theme.dart';
 import '../../models/user_model.dart';
 import '../../screens/analytics/analytics_hub_screen.dart';
@@ -7,6 +9,7 @@ import '../../screens/audit/audit_log_screen.dart';
 import '../../screens/calendar/calendar_screen.dart';
 import '../../screens/contact/contact_messages_screen.dart';
 import '../../screens/profile/profile_screen.dart';
+import '../../screens/reports/report_submission_screen.dart';
 import '../../screens/settings/settings_screen.dart';
 import '../../screens/team/departments_screen.dart';
 import 'projeqta_logo.dart';
@@ -25,6 +28,7 @@ class AppSideDrawer extends StatelessWidget {
   final VoidCallback onApprovalsTap;
   final VoidCallback? onDepartmentsTap;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onSubmitReportTap;
   final int unreadNotifications;
 
   const AppSideDrawer({
@@ -42,6 +46,7 @@ class AppSideDrawer extends StatelessWidget {
     required this.onApprovalsTap,
     this.onDepartmentsTap,
     this.onProfileTap,
+    this.onSubmitReportTap,
     this.unreadNotifications = 0,
   });
 
@@ -52,9 +57,7 @@ class AppSideDrawer extends StatelessWidget {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => ProfileScreen(user: user),
-        ),
+        MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
       );
     }
   }
@@ -73,78 +76,7 @@ class AppSideDrawer extends StatelessWidget {
     Navigator.pop(context);
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => CalendarScreen(currentUser: user),
-      ),
-    );
-  }
-
-  void _showInfoDialog(BuildContext context, String title, String message) {
-    Navigator.pop(context);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.pureWhite,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppTheme.borderSubtle, width: 1.0),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.info_outline, color: AppTheme.royalBlue, size: 22),
-            const SizedBox(width: 8),
-            Text(title, style: AppTheme.heading(fontSize: 16)),
-          ],
-        ),
-        content: Text(
-          message,
-          style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.royalBlue,
-            ),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String featureName) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.pureWhite,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppTheme.borderSubtle, width: 1.0),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.info_outline, color: AppTheme.royalBlue, size: 22),
-            const SizedBox(width: 8),
-            Text('Coming Soon', style: AppTheme.heading(fontSize: 16)),
-          ],
-        ),
-        content: Text(
-          '$featureName will be available in the next release.',
-          style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.royalBlue,
-            ),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      MaterialPageRoute(builder: (_) => CalendarScreen(currentUser: user)),
     );
   }
 
@@ -157,50 +89,154 @@ class AppSideDrawer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Drawer Header: Projeqta Logo & Admin Executive Branding (Matching Reference Step 3 & 4)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
-              child: Row(
-                children: [
-                  const ProjeqtaIcon(size: 38, borderRadius: 10),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.isAdmin ? 'Admin Executive' : 'Staff Executive',
-                          style: AppTheme.heading(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.deepSlate,
+            // Drawer Header: Full Company Logo Banner with Company Name Below (Matching Website Sidebar)
+            AnimatedBuilder(
+              animation: CompanySettings.instance,
+              builder: (context, _) {
+                final companySettings = CompanySettings.instance;
+                final companyName = companySettings.companyName;
+                final logoUrl = companySettings.logoUrl;
+                final resolvedLogoUrl = ApiClient().resolveMediaUrl(logoUrl);
+
+                if (resolvedLogoUrl != null &&
+                    resolvedLogoUrl.isNotEmpty &&
+                    companySettings.logoBytes == null) {
+                  unawaited(companySettings.ensureLogoCached(resolvedLogoUrl));
+                }
+
+                return Container(
+                  color: const Color(0xFF0F172A),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 8, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Row: Prominent full company logo + Close button [X]
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: companySettings.decodedLogo != null
+                                ? Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: RawImage(
+                                      image: companySettings.decodedLogo,
+                                      height: 32,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : companySettings.logoBytes != null
+                                    ? Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Image.memory(
+                                          companySettings.logoBytes!,
+                                          height: 32,
+                                          fit: BoxFit.contain,
+                                          gaplessPlayback: true,
+                                          cacheHeight: (36 *
+                                                  MediaQuery.of(context)
+                                                      .devicePixelRatio)
+                                              .round()
+                                              .clamp(72, 216),
+                                        ),
+                                      )
+                                    : (resolvedLogoUrl != null &&
+                                            resolvedLogoUrl.isNotEmpty)
+                                        ? Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Image.network(
+                                              resolvedLogoUrl,
+                                              height: 32,
+                                              fit: BoxFit.contain,
+                                              gaplessPlayback: true,
+                                              cacheHeight: (36 *
+                                                      MediaQuery.of(context)
+                                                          .devicePixelRatio)
+                                                  .round()
+                                                  .clamp(72, 216),
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  const ProjeqtaLogo(
+                                                iconSize: 26,
+                                                isDark: true,
+                                              ),
+                                            ),
+                                          )
+                                        : const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ProjeqtaIcon(size: 28, borderRadius: 7),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'projeqta',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          'Management Portal',
-                          style: AppTheme.body(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.mutedSlate,
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                            tooltip: 'Close Menu',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => Navigator.pop(context),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Crisp dividing line separating logo from company details
+                      Container(
+                        height: 1,
+                        color: const Color(0xFF1E293B),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Company Name below the line
+                      Text(
+                        companyName.isNotEmpty
+                            ? companyName
+                            : (user.isAdmin
+                                  ? 'Admin Executive'
+                                  : 'Staff Executive'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF94A3B8),
+                          letterSpacing: 0.3,
                         ),
-                      ],
-                    ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+
+                      // User role / Portal subtitle
+                      Text(
+                        user.isAdmin ? 'Admin Executive' : 'Staff Executive',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF64748B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: AppTheme.deepSlate,
-                      size: 20,
-                    ),
-                    tooltip: 'Close Menu',
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
 
             const Divider(
@@ -316,11 +352,30 @@ class AppSideDrawer extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  // 2. OPERATIONS SECTION
-                  _buildSectionLabel('OPERATIONS'),
+                  // 2. OPERATIONS SECTION (REPORTING FOR STAFF)
+                  _buildSectionLabel(user.isAdmin ? 'OPERATIONS' : 'REPORTING'),
+                  if (!user.isAdmin)
+                    _buildMenuItem(
+                      icon: Icons.add_comment_outlined,
+                      label: 'Submit Daily Report',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        if (onSubmitReportTap != null) {
+                          onSubmitReportTap!();
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ReportSubmissionScreen(),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   _buildMenuItem(
                     icon: Icons.assignment_outlined,
-                    label: 'Reports',
+                    label: user.isAdmin ? 'Reports' : 'Daily Reports',
                     isActive: currentTabIndex == 3,
                     onTap: () {
                       Navigator.pop(context);
@@ -341,26 +396,28 @@ class AppSideDrawer extends StatelessWidget {
                       );
                     },
                   ),
-                  _buildMenuItem(
-                    icon: Icons.fact_check_outlined,
-                    label: 'Approvals',
-                    isActive: false,
-                    badgeText: '7',
-                    badgeColor: const Color(0xFFF59E0B),
-                    onTap: () {
-                      Navigator.pop(context);
-                      onApprovalsTap();
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.event_note_outlined,
-                    label: 'Attendance & Activities',
-                    isActive: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onTabSelected(3);
-                    },
-                  ),
+                  if (user.isAdmin)
+                    _buildMenuItem(
+                      icon: Icons.fact_check_outlined,
+                      label: 'Approvals',
+                      isActive: false,
+                      badgeText: '7',
+                      badgeColor: const Color(0xFFF59E0B),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onApprovalsTap();
+                      },
+                    ),
+                  if (user.isAdmin)
+                    _buildMenuItem(
+                      icon: Icons.event_note_outlined,
+                      label: 'Attendance & Activities',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onTabSelected(3);
+                      },
+                    ),
                   _buildMenuItem(
                     icon: Icons.calendar_today_outlined,
                     label: 'Calendar',
@@ -372,15 +429,16 @@ class AppSideDrawer extends StatelessWidget {
 
                   // 3. MONITORING SECTION
                   _buildSectionLabel('MONITORING'),
-                  _buildMenuItem(
-                    icon: Icons.warning_amber_outlined,
-                    label: 'Risks & Alerts',
-                    isActive: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onTabSelected(0);
-                    },
-                  ),
+                  if (user.isAdmin)
+                    _buildMenuItem(
+                      icon: Icons.warning_amber_outlined,
+                      label: 'Risks & Alerts',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onTabSelected(0);
+                      },
+                    ),
                   _buildMenuItem(
                     icon: Icons.history_toggle_off_outlined,
                     label: 'Overdue Backlog',
@@ -396,8 +454,8 @@ class AppSideDrawer extends StatelessWidget {
                     isActive: false,
                     badgeText: unreadNotifications > 0
                         ? (unreadNotifications > 99
-                            ? '99+'
-                            : unreadNotifications.toString())
+                              ? '99+'
+                              : unreadNotifications.toString())
                         : null,
                     badgeColor: AppTheme.dangerText,
                     onTap: () {
@@ -405,63 +463,67 @@ class AppSideDrawer extends StatelessWidget {
                       onNotificationsTap();
                     },
                   ),
-                  _buildMenuItem(
-                    icon: Icons.verified_outlined,
-                    label: 'Reporting Compliance',
-                    isActive: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onComplianceTap();
-                    },
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // 4. SYSTEM SECTION
-                  _buildSectionLabel('SYSTEM'),
-                  _buildMenuItem(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    isActive: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SettingsScreen(currentUser: user),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.history_edu_outlined,
-                    label: 'Audit Log',
-                    isActive: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AuditLogScreen(currentUser: user),
-                        ),
-                      );
-                    },
-                  ),
-                  if (user.isSuperAdmin)
+                  if (user.isAdmin)
                     _buildMenuItem(
-                      icon: Icons.mark_email_unread_outlined,
-                      label: 'Contact Messages',
+                      icon: Icons.verified_outlined,
+                      label: 'Reporting Compliance',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onComplianceTap();
+                      },
+                    ),
+
+                  if (user.isAdmin || user.isSuperAdmin) ...[
+                    const SizedBox(height: 14),
+
+                    // 4. SYSTEM SECTION
+                    _buildSectionLabel('SYSTEM'),
+                    _buildMenuItem(
+                      icon: Icons.settings_outlined,
+                      label: 'Settings',
                       isActive: false,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ContactMessagesScreen(currentUser: user),
+                            builder: (_) => SettingsScreen(currentUser: user),
                           ),
                         );
                       },
                     ),
+                    _buildMenuItem(
+                      icon: Icons.history_edu_outlined,
+                      label: 'Audit Log',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AuditLogScreen(currentUser: user),
+                          ),
+                        );
+                      },
+                    ),
+                    if (user.isSuperAdmin)
+                      _buildMenuItem(
+                        icon: Icons.mark_email_unread_outlined,
+                        label: 'Contact Messages',
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ContactMessagesScreen(currentUser: user),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
                 ],
               ),
             ),
@@ -497,7 +559,9 @@ class AppSideDrawer extends StatelessWidget {
                                 Text(
                                   user.fullName.isNotEmpty
                                       ? user.fullName
-                                      : (user.isAdmin ? 'Administrator' : 'Staff'),
+                                      : (user.isAdmin
+                                            ? 'Administrator'
+                                            : 'Staff'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTheme.heading(
@@ -605,6 +669,9 @@ class AppSideDrawer extends StatelessWidget {
           width: 38,
           height: 38,
           fit: BoxFit.cover,
+          gaplessPlayback: true,
+          cacheWidth: 120,
+          cacheHeight: 120,
           errorBuilder: (context, error, stackTrace) =>
               _buildInitialsFallback(),
         ),

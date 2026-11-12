@@ -269,13 +269,17 @@ void main() {
     });
 
     testWidgets('AppSideDrawer displays dynamic unread notification badge', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(
         buildTestableWidget(
           Scaffold(
             drawer: AppSideDrawer(
               user: testUser,
               currentTabIndex: 0,
-              unreadNotifications: 7,
+              unreadNotifications: 5,
               onTabSelected: (_) {},
               onLogout: () {},
               onComplianceTap: () {},
@@ -295,8 +299,8 @@ void main() {
       scaffoldState.openDrawer();
       await tester.pumpAndSettle();
 
-      // Verify exact dynamic badge '7' is displayed
-      expect(find.text('7'), findsOneWidget);
+      // Verify exact dynamic badge '5' is displayed
+      expect(find.text('5'), findsOneWidget);
       // Verify hardcoded '9+' is not present
       expect(find.text('9+'), findsNothing);
     });
