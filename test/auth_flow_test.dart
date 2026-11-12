@@ -85,6 +85,7 @@ void main() {
       );
 
       expect(find.text('projeqta'), findsOneWidget);
+      expect(find.text('WORKFORCE SYNC 2.4'), findsOneWidget);
       expect(find.text('Know what your team did today.'), findsOneWidget);
       expect(
         find.text('Projects, tasks and daily reports — reviewed in one place.'),
@@ -93,6 +94,7 @@ void main() {
       expect(find.text('Username or Email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Sign In'), findsOneWidget);
+      expect(find.text('Create a free admin account'), findsOneWidget);
       expect(find.byType(TextFormField), findsNWidgets(2));
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     });

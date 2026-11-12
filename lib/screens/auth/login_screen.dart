@@ -246,65 +246,134 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 32.0,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Official projeqta brand header
-                      const Center(
-                        child: ProjeqtaLogo(
-                          iconSize: 42,
-                          fontSize: 28,
-                          spacing: 10,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Know what your team did today.',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.heading(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Projects, tasks and daily reports — reviewed in one place.',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.body(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          color: AppTheme.mutedSlate,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Refined White Card (16px rounded corners, 1px #E2E8F0 border, soft shadow)
-                      Container(
-                        padding: const EdgeInsets.all(24.0),
-                        decoration: BoxDecoration(
-                          color: AppTheme.pureWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppTheme.borderSubtle,
-                            width: 1.0,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFEEF2FF), // Soft indigo/blue top tint
+              AppTheme.scaffoldBg,
+              AppTheme.scaffoldBg,
+            ],
+            stops: [0.0, 0.38, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 28.0,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Official projeqta brand header
+                        const Center(
+                          child: ProjeqtaLogo(
+                            iconSize: 44,
+                            fontSize: 28,
+                            spacing: 10,
                           ),
-                          boxShadow: const [AppTheme.softShadow],
                         ),
+                        const SizedBox(height: 16),
+
+                        // Status Pill: WORKFORCE SYNC 2.4
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.pureWhite,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppTheme.borderSubtle,
+                                width: 1.0,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x080F172A),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF59E0B),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'WORKFORCE SYNC 2.4',
+                                  style: AppTheme.mono(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.mutedSlate,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text(
+                          'Know what your team did today.',
+                          textAlign: TextAlign.center,
+                          style: AppTheme.heading(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.deepSlate,
+                            letterSpacing: -0.6,
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Projects, tasks and daily reports — reviewed in one place.',
+                          textAlign: TextAlign.center,
+                          style: AppTheme.body(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.mutedSlate,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Refined White Card (20px rounded corners, 1px #E2E8F0 border, soft diffused shadow)
+                        Container(
+                          padding: const EdgeInsets.all(24.0),
+                          decoration: BoxDecoration(
+                            color: AppTheme.pureWhite,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.borderSubtle,
+                              width: 1.0,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0D0F172A),
+                                blurRadius: 24,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
+                          ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -492,16 +561,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 28),
 
-                            // Full-width 52px-tall Executive Navy Blue button
-                            SizedBox(
+                            // Full-width 52px-tall Crisp Royal Blue button with soft blue glow
+                            Container(
                               height: 52,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x332563EB),
+                                    blurRadius: 16,
+                                    offset: Offset(0, 6),
+                                  ),
+                                ],
+                              ),
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.navyBlue,
+                                  backgroundColor: AppTheme.royalBlue,
                                   foregroundColor: AppTheme.pureWhite,
+                                  elevation: 0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 child: _isLoading
@@ -513,61 +593,76 @@ class _LoginScreenState extends State<LoginScreen> {
                                           color: AppTheme.pureWhite,
                                         ),
                                       )
-                                    : Text(
-                                        'Sign In',
-                                        style: AppTheme.heading(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.pureWhite,
-                                        ),
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Sign In',
+                                            style: AppTheme.heading(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.pureWhite,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 18,
+                                            color: AppTheme.pureWhite,
+                                          ),
+                                        ],
                                       ),
                               ),
                             ),
+                            const SizedBox(height: 20),
+
+                            // User-requested placement: right below Sign In button with balanced spacing
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'New here? ',
+                                  style: AppTheme.body(
+                                    fontSize: 13.5,
+                                    color: AppTheme.mutedSlate,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () async {
+                                    final registeredEmail =
+                                        await Navigator.push<String>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const RegisterScreen(),
+                                          ),
+                                        );
+                                    if (registeredEmail != null &&
+                                        registeredEmail.isNotEmpty &&
+                                        mounted) {
+                                      setState(() {
+                                        _usernameController.text =
+                                            registeredEmail;
+                                        _passwordController.clear();
+                                      });
+                                    }
+                                  },
+                                  child: Text(
+                                    'Create a free admin account',
+                                    style: AppTheme.heading(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.royalBlue,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Footer: New here? Create a free admin account
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            'New here? ',
-                            style: AppTheme.body(
-                              fontSize: 14,
-                              color: AppTheme.mutedSlate,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () async {
-                              final registeredEmail =
-                                  await Navigator.push<String>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const RegisterScreen(),
-                                    ),
-                                  );
-                              if (registeredEmail != null &&
-                                  registeredEmail.isNotEmpty &&
-                                  mounted) {
-                                setState(() {
-                                  _usernameController.text = registeredEmail;
-                                  _passwordController.clear();
-                                });
-                              }
-                            },
-                            child: Text(
-                              'Create a free admin account',
-                              style: AppTheme.heading(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.royalBlue,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -596,6 +691,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
