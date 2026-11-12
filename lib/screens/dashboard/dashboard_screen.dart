@@ -21,6 +21,7 @@ import 'admin_dashboard_view.dart';
 import 'staff_dashboard_view.dart';
 import '../../core/widgets/app_side_drawer.dart';
 import '../../core/widgets/offline_cache_banner.dart';
+import '../../core/widgets/projeqta_logo.dart';
 import '../../core/widgets/server_config_dialog.dart';
 import 'widgets/compliance_card.dart';
 import 'widgets/dashboard_filter_sheet.dart';
@@ -312,35 +313,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
                   const SizedBox(width: 6),
-                  // Brand Title: Projeqta + AppTheme.royalBlue status dot
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Projeqta',
-                            style: AppTheme.heading(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.navyBlue,
-                              letterSpacing: -0.4,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppTheme.royalBlue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Brand Logo: ProjeqtaIcon badge (prevents text truncation on compact screens)
+                  const ProjeqtaIcon(size: 32, borderRadius: 9),
+                  const Spacer(),
                   // Refresh Action (Compact to prevent header overflow)
                   IconButton(
                     padding: EdgeInsets.zero,

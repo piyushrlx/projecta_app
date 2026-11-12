@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projecta_app/core/theme.dart';
+import 'package:projecta_app/core/widgets/projeqta_logo.dart';
 import 'package:projecta_app/models/user_model.dart';
 import 'package:projecta_app/screens/dashboard/admin_dashboard_view.dart';
 import 'package:projecta_app/screens/dashboard/dashboard_screen.dart';
@@ -279,8 +280,8 @@ void main() {
         ),
       );
 
-      // Verify app bar displays brand title and profile dropdown with down arrow
-      expect(find.text('Projeqta'), findsOneWidget);
+      // Verify app bar displays brand logo and profile dropdown with down arrow
+      expect(find.byType(ProjeqtaIcon), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
       expect(find.byIcon(Icons.refresh), findsOneWidget);
 
