@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/user_model.dart';
 import '../../services/dashboard_service.dart';
 
@@ -64,45 +65,16 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(
-              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
-            ),
+      appBar: ModuleAppBar(
+        title: 'Audit Log Viewer',
+        subtitle: '${_logs.length} event${_logs.length == 1 ? '' : 's'}',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.royalBlue),
+            tooltip: 'Refresh',
+            onPressed: _fetchAuditLogs,
           ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Audit Log Viewer',
-                      style: AppTheme.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: AppTheme.royalBlue),
-                    onPressed: _fetchAuditLogs,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        ],
       ),
       body: Column(
         children: [

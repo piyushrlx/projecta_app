@@ -116,12 +116,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Server Configuration',
-              style: AppTheme.heading(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.deepSlate,
+            Expanded(
+              child: Text(
+                'Server Configuration',
+                style: AppTheme.heading(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepSlate,
+                ),
               ),
             ),
           ],
@@ -498,35 +500,46 @@ class _LoginScreenState extends State<LoginScreen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'Password',
-                                    style: AppTheme.heading(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.deepSlate,
+                                  Flexible(
+                                    child: Text(
+                                      'Password',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTheme.heading(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.deepSlate,
+                                      ),
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => ForgotPasswordScreen(
-                                            initialEmail:
-                                                _usernameController.text
-                                                    .contains('@')
-                                                ? _usernameController.text
-                                                      .trim()
-                                                : null,
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                ForgotPasswordScreen(
+                                                  initialEmail:
+                                                      _usernameController.text
+                                                          .contains('@')
+                                                      ? _usernameController.text
+                                                            .trim()
+                                                      : null,
+                                                ),
                                           ),
+                                        );
+                                      },
+                                      child: Text(
+                                        'Forgot password?',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.right,
+                                        style: AppTheme.body(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.royalBlue,
                                         ),
-                                      );
-                                    },
-                                    child: Text(
-                                      'Forgot password?',
-                                      style: AppTheme.body(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppTheme.royalBlue,
                                       ),
                                     ),
                                   ),

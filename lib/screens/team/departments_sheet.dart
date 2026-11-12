@@ -8,7 +8,10 @@ class DepartmentsSheet extends StatefulWidget {
 
   const DepartmentsSheet({super.key, this.directoryService});
 
-  static Future<void> show(BuildContext context, {DirectoryService? directoryService}) {
+  static Future<void> show(
+    BuildContext context, {
+    DirectoryService? directoryService,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -67,8 +70,12 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
 
   Future<void> _openDepartmentDialog({Map<String, dynamic>? dept}) async {
     final isEdit = dept != null;
-    final nameController = TextEditingController(text: dept?['name']?.toString() ?? '');
-    final descController = TextEditingController(text: dept?['description']?.toString() ?? '');
+    final nameController = TextEditingController(
+      text: dept?['name']?.toString() ?? '',
+    );
+    final descController = TextEditingController(
+      text: dept?['description']?.toString() ?? '',
+    );
     int? selectedManagerId = dept?['manager_id'] as int?;
     String status = (dept?['status'] ?? 'active').toString();
 
@@ -77,7 +84,9 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppTheme.pureWhite,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             isEdit ? 'Edit Department' : 'Add Department',
             style: AppTheme.heading(fontSize: 16, color: AppTheme.deepSlate),
@@ -87,19 +96,36 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Name *', style: AppTheme.body(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Name *',
+                  style: AppTheme.body(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: nameController,
                   style: AppTheme.body(fontSize: 13),
                   decoration: InputDecoration(
                     hintText: 'e.g. Engineering',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Description', style: AppTheme.body(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Description',
+                  style: AppTheme.body(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: descController,
@@ -107,22 +133,41 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                   style: AppTheme.body(fontSize: 13),
                   decoration: InputDecoration(
                     hintText: 'Brief description...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Department Head', style: AppTheme.body(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Department Head',
+                  style: AppTheme.body(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<int?>(
                   initialValue: selectedManagerId,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                   items: [
-                    const DropdownMenuItem<int?>(value: null, child: Text('No Head Assigned')),
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('No Head Assigned'),
+                    ),
                     ..._managers.map(
                       (m) => DropdownMenuItem<int?>(
                         value: m['id'] as int,
@@ -133,7 +178,8 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                       ),
                     ),
                   ],
-                  onChanged: (val) => setDialogState(() => selectedManagerId = val),
+                  onChanged: (val) =>
+                      setDialogState(() => selectedManagerId = val),
                 ),
               ],
             ),
@@ -141,14 +187,19 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancel', style: AppTheme.body(color: AppTheme.mutedSlate)),
+              child: Text(
+                'Cancel',
+                style: AppTheme.body(color: AppTheme.mutedSlate),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) return;
                 Navigator.pop(ctx, true);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.navyBlue),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.navyBlue,
+              ),
               child: const Text('Save'),
             ),
           ],
@@ -188,8 +239,11 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
   Future<void> _deleteDepartment(Map<String, dynamic> dept) async {
     final id = dept['id'] as int;
     final name = dept['name']?.toString() ?? '';
-    final empCount = (dept['total_employee_count'] ?? dept['employee_count'] ?? 0) as int;
-    final projCount = (dept['total_projects_count'] ?? dept['active_projects_count'] ?? 0) as int;
+    final empCount =
+        (dept['total_employee_count'] ?? dept['employee_count'] ?? 0) as int;
+    final projCount =
+        (dept['total_projects_count'] ?? dept['active_projects_count'] ?? 0)
+            as int;
     final inUse = empCount > 0 || projCount > 0;
 
     final confirmed = await showDialog<bool>(
@@ -210,12 +264,17 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: AppTheme.body(color: AppTheme.mutedSlate)),
+            child: Text(
+              'Cancel',
+              style: AppTheme.body(color: AppTheme.mutedSlate),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: inUse ? AppTheme.warningText : AppTheme.dangerText,
+              backgroundColor: inUse
+                  ? AppTheme.warningText
+                  : AppTheme.dangerText,
             ),
             child: Text(inUse ? 'Deactivate' : 'Delete'),
           ),
@@ -285,21 +344,29 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                       const SizedBox(height: 2),
                       Text(
                         '${_departments.length} registered department(s)',
-                        style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+                        style: AppTheme.body(
+                          fontSize: 12,
+                          color: AppTheme.mutedSlate,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.open_in_new, size: 18, color: AppTheme.royalBlue),
+                  icon: const Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: AppTheme.royalBlue,
+                  ),
                   tooltip: 'Open Full Page',
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            DepartmentsScreen(directoryService: _directoryService),
+                        builder: (_) => DepartmentsScreen(
+                          directoryService: _directoryService,
+                        ),
                       ),
                     );
                   },
@@ -310,8 +377,13 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                   label: const Text('Add'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.navyBlue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
               ],
@@ -321,21 +393,32 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
           // List
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.navyBlue))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppTheme.navyBlue),
+                  )
                 : _errorMessage != null
                 ? Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_errorMessage!, style: AppTheme.body(color: AppTheme.mutedSlate)),
+                        Text(
+                          _errorMessage!,
+                          style: AppTheme.body(color: AppTheme.mutedSlate),
+                        ),
                         const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _loadDepartments, child: const Text('Retry')),
+                        ElevatedButton(
+                          onPressed: _loadDepartments,
+                          child: const Text('Retry'),
+                        ),
                       ],
                     ),
                   )
                 : _departments.isEmpty
                 ? Center(
-                    child: Text('No departments found.', style: AppTheme.body(color: AppTheme.mutedSlate)),
+                    child: Text(
+                      'No departments found.',
+                      style: AppTheme.body(color: AppTheme.mutedSlate),
+                    ),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
@@ -347,7 +430,8 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                       final desc = d['description']?.toString() ?? '';
                       final mgr = d['manager_name']?.toString();
                       final empCount = (d['employee_count'] ?? 0) as int;
-                      final projCount = (d['active_projects_count'] ?? 0) as int;
+                      final projCount =
+                          (d['active_projects_count'] ?? 0) as int;
                       final isActive = (d['status'] ?? 'active') == 'active';
 
                       return Container(
@@ -368,7 +452,11 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Center(
-                                child: Icon(Icons.domain_outlined, size: 20, color: AppTheme.royalBlue),
+                                child: Icon(
+                                  Icons.domain_outlined,
+                                  size: 20,
+                                  color: AppTheme.royalBlue,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -378,25 +466,38 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                                 children: [
                                   Row(
                                     children: [
-                                      Text(
-                                        name,
-                                        style: AppTheme.heading(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.deepSlate,
+                                      Flexible(
+                                        child: Text(
+                                          name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.heading(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.deepSlate,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       if (!isActive)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 1,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: AppTheme.dangerBg,
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           child: Text(
                                             'INACTIVE',
-                                            style: AppTheme.mono(fontSize: 8, fontWeight: FontWeight.w700, color: AppTheme.dangerText),
+                                            style: AppTheme.mono(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.dangerText,
+                                            ),
                                           ),
                                         ),
                                     ],
@@ -405,7 +506,10 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                                     const SizedBox(height: 2),
                                     Text(
                                       desc,
-                                      style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                                      style: AppTheme.body(
+                                        fontSize: 11,
+                                        color: AppTheme.mutedSlate,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -413,20 +517,29 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Head: ${mgr ?? 'Unassigned'}  •  $empCount staff  •  $projCount projects',
-                                    style: AppTheme.body(fontSize: 10, color: AppTheme.lightSlate),
+                                    style: AppTheme.body(
+                                      fontSize: 10,
+                                      color: AppTheme.lightSlate,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 18, color: AppTheme.royalBlue),
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 18,
+                                color: AppTheme.royalBlue,
+                              ),
                               onPressed: () => _openDepartmentDialog(dept: d),
                             ),
                             IconButton(
                               icon: Icon(
                                 isActive ? Icons.delete_outline : Icons.block,
                                 size: 18,
-                                color: isActive ? AppTheme.dangerText : AppTheme.mutedSlate,
+                                color: isActive
+                                    ? AppTheme.dangerText
+                                    : AppTheme.mutedSlate,
                               ),
                               onPressed: () => _deleteDepartment(d),
                             ),
@@ -441,4 +554,3 @@ class _DepartmentsSheetState extends State<DepartmentsSheet> {
     );
   }
 }
-

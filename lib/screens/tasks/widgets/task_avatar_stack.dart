@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../../../models/task_model.dart';
 
 class TaskAvatarStack extends StatelessWidget {
@@ -51,30 +52,19 @@ class TaskAvatarStack extends StatelessWidget {
           child: Stack(
             children: List.generate(displayed.length, (i) {
               final a = displayed[i];
-              final initials = getInitials(a.fullName);
 
               return Positioned(
                 left: i * 14.0,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: avatarColor(a.fullName),
-                    border: Border.all(
-                      color: AppTheme.pureWhite,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                child: UserAvatar(
+                  name: a.fullName,
+                  photoUrl: a.profilePhotoUrl,
+                  size: 22,
+                  backgroundColor: avatarColor(a.fullName),
+                  textColor: Colors.white,
+                  fontSize: 9,
+                  border: Border.all(
+                    color: AppTheme.pureWhite,
+                    width: 1.5,
                   ),
                 ),
               );

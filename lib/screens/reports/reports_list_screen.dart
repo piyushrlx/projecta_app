@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
+import '../analytics/analytics_hub_screen.dart';
 import 'compliance_matrix_view.dart';
 import 'report_submission_screen.dart';
 
@@ -32,6 +34,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   late String _selectedFilter;
   int _selectedTabIndex =
       0; // 0 = Submissions Queue (Inbox), 1 = Compliance Matrix
+  int _complianceRefreshSeed = 0;
 
   @override
   void initState() {
@@ -127,156 +130,160 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
           top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Review Daily Report',
-                  style: AppTheme.heading(
-                    fontSize: 17,
-                    color: AppTheme.deepSlate,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: Text(
-                    report.hoursFormatted,
-                    style: AppTheme.mono(
-                      fontSize: 11,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Review Daily Report',
+                    style: AppTheme.heading(
+                      fontSize: 17,
                       color: AppTheme.deepSlate,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${report.employeeName ?? 'Worker'} Â· ${report.reportDate}',
-              style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${report.projectName ?? 'Project'} ${report.taskTitle != null ? 'Â· ${report.taskTitle}' : ''}',
-              style: AppTheme.heading(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.deepSlate,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.scaffoldBg,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.borderSubtle),
-              ),
-              child: Text(
-                report.workSummary,
-                style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Reviewer Feedback (required for Reject / Clarify)',
-              style: AppTheme.heading(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.deepSlate,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: commentController,
-              maxLines: 2,
-              style: AppTheme.body(color: AppTheme.deepSlate),
-              decoration: const InputDecoration(
-                hintText: 'Enter feedback for employee...',
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx, 'approve'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.successText,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.scaffoldBg,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                    ),
+                    child: Text(
+                      report.hoursFormatted,
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        color: AppTheme.deepSlate,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: const Text('Approve'),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${report.employeeName ?? 'Worker'} Â· ${report.reportDate}',
+                style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${report.projectName ?? 'Project'} ${report.taskTitle != null ? 'Â· ${report.taskTitle}' : ''}',
+                style: AppTheme.heading(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (commentController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Comment required to request clarification.',
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.borderSubtle),
+                ),
+                child: Text(
+                  report.workSummary,
+                  style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Reviewer Feedback (required for Reject / Clarify)',
+                style: AppTheme.heading(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: commentController,
+                maxLines: 2,
+                style: AppTheme.body(color: AppTheme.deepSlate),
+                decoration: const InputDecoration(
+                  hintText: 'Enter feedback for employee...',
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, 'approve'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.successText,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Approve'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (commentController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Comment required to request clarification.',
+                              ),
                             ),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pop(ctx, 'clarify');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.warningText,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                          );
+                          return;
+                        }
+                        Navigator.pop(ctx, 'clarify');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.warningText,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: const Text('Clarify'),
                     ),
-                    child: const Text('Clarify'),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      if (commentController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Comment required to reject report.'),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pop(ctx, 'reject');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.dangerText,
-                      side: const BorderSide(color: AppTheme.dangerText),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        if (commentController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Comment required to reject report.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.pop(ctx, 'reject');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.dangerText,
+                        side: const BorderSide(color: AppTheme.dangerText),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: const Text('Reject'),
                     ),
-                    child: const Text('Reject'),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -331,25 +338,67 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
         : (_selectedTabIndex == 1
               ? 'Reporting Compliance'
               : 'Daily Reports Inbox');
+    final subtitle = (isAdmin && _selectedTabIndex == 1)
+        ? 'Team compliance overview'
+        : '${_reports.length} report${_reports.length == 1 ? '' : 's'} · $_selectedFilter';
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Text(title, style: AppTheme.heading(fontSize: 18)),
+      appBar: ModuleAppBar(
+        title: title,
+        subtitle: subtitle,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(
+              Icons.analytics_outlined,
+              color: AppTheme.deepSlate,
+            ),
+            tooltip: 'Analytics Hub',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AnalyticsHubScreen(currentUser: widget.user),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
             tooltip: 'Refresh',
             onPressed: () {
               if (_selectedTabIndex == 0 || !isAdmin) {
                 _loadReports();
               } else {
-                setState(() {});
+                setState(() => _complianceRefreshSeed++);
               }
             },
           ),
         ],
       ),
+      floatingActionButton: !isAdmin
+          ? FloatingActionButton(
+              heroTag: 'reports_list_fab',
+              onPressed: () async {
+                final submitted = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ReportSubmissionScreen(),
+                  ),
+                );
+                if (submitted == true && mounted) {
+                  _loadReports();
+                }
+              },
+              backgroundColor: AppTheme.royalBlue,
+              shape: const CircleBorder(),
+              tooltip: 'Submit Daily Report',
+              child: const Icon(
+                Icons.add_comment_outlined,
+                color: AppTheme.pureWhite,
+              ),
+            )
+          : null,
       body: Column(
         children: [
           // Segmented Switch for Admin users
@@ -357,7 +406,12 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
 
           // If Compliance Matrix selected
           if (isAdmin && _selectedTabIndex == 1)
-            Expanded(child: ComplianceMatrixView(user: widget.user))
+            Expanded(
+              child: ComplianceMatrixView(
+                key: ValueKey('compliance_$_complianceRefreshSeed'),
+                user: widget.user,
+              ),
+            )
           else ...[
             // Filter Chips Bar
             _buildFilterChips(),

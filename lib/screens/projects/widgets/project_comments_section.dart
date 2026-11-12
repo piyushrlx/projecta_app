@@ -158,14 +158,18 @@ class _ProjectCommentsSectionState extends State<ProjectCommentsSection> {
                   color: AppTheme.navyBlue,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Discussion & Comments',
-                  style: AppTheme.heading(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    'Discussion & Comments',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.heading(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,

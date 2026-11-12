@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/task_model.dart';
 import '../../services/task_service.dart';
 import 'task_form_screen.dart';
@@ -439,19 +440,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       onPopInvokedWithResult: (didPop, _) {},
       child: Scaffold(
         backgroundColor: AppTheme.scaffoldBg,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-            onPressed: () => Navigator.pop(context, _hasChanges),
+        appBar: ModuleAppBar(
+          onBack: () => Navigator.pop(context, _hasChanges),
+          title: _detail != null ? _detail!.task.taskCode : 'Task Details',
+          titleStyle: AppTheme.mono(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.deepSlate,
           ),
-          title: Text(
-            _detail != null ? _detail!.task.taskCode : 'Task Details',
-            style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
+          subtitle: _detail?.task.title,
           actions: [
             if (_detail != null && _detail!.canManage)
               IconButton(
-                icon: const Icon(Icons.edit_outlined, color: AppTheme.royalBlue),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: AppTheme.royalBlue,
+                ),
                 tooltip: 'Edit Task',
                 onPressed: () async {
                   final updated = await Navigator.push<bool>(
@@ -775,20 +779,30 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Update Status',
-                style: AppTheme.heading(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.deepSlate,
+              Flexible(
+                child: Text(
+                  'Update Status',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.heading(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
+                  ),
                 ),
               ),
-              Text(
-                'Current: ${detail.task.status.replaceAll('_', ' ')}',
-                style: AppTheme.body(
-                  fontSize: 11,
-                  color: AppTheme.mutedSlate,
-                  fontWeight: FontWeight.w500,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Current: ${detail.task.status.replaceAll('_', ' ')}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -945,15 +959,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Deadline Extension',
-                style: AppTheme.heading(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.deepSlate,
+              Expanded(
+                child: Text(
+                  'Deadline Extension',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.heading(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
+                  ),
                 ),
               ),
-              if (detail.canWork && !detail.task.isCompleted)
+              if (detail.canWork && !detail.task.isCompleted) ...[
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: _showExtensionDialog,
                   borderRadius: BorderRadius.circular(6),
@@ -976,6 +995,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   ),
                 ),
+              ],
             ],
           ),
           if (pendingRequests.isNotEmpty) ...[
@@ -1090,12 +1110,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    a.fullName,
-                    style: AppTheme.heading(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.deepSlate,
+                  Flexible(
+                    child: Text(
+                      a.fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.deepSlate,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -1165,14 +1189,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         : AppTheme.dangerText,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    '${d.taskCode}: ${d.title}',
-                    style: AppTheme.body(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: d.isFinished
-                          ? AppTheme.successText
-                          : AppTheme.dangerText,
+                  Expanded(
+                    child: Text(
+                      '${d.taskCode}: ${d.title}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.body(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: d.isFinished
+                            ? AppTheme.successText
+                            : AppTheme.dangerText,
+                      ),
                     ),
                   ),
                 ],
@@ -1194,9 +1222,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Subtasks (${subtasks.length})',
-              style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700),
+            Expanded(
+              child: Text(
+                'Subtasks (${subtasks.length})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.heading(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             if (detail.canManage)
               TextButton.icon(
@@ -1215,7 +1250,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     _loadTaskDetail();
                   }
                 },
-                icon: const Icon(Icons.add, size: 16, color: AppTheme.royalBlue),
+                icon: const Icon(
+                  Icons.add,
+                  size: 16,
+                  color: AppTheme.royalBlue,
+                ),
                 label: const Text(
                   'Add Subtask',
                   style: TextStyle(
@@ -1225,7 +1264,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),

@@ -117,9 +117,13 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
       }).toList();
 
       // If editing and detail was not passed directly, load details to pre-populate members
-      if (widget.detail == null && widget.project != null && widget.project!.id > 0) {
+      if (widget.detail == null &&
+          widget.project != null &&
+          widget.project!.id > 0) {
         try {
-          final detail = await _projectService.getProjectDetails(widget.project!.id);
+          final detail = await _projectService.getProjectDetails(
+            widget.project!.id,
+          );
           for (final m in detail.members) {
             if (m.memberRole == 'viewer') {
               _selectedViewerIds.add(m.userId);
@@ -694,6 +698,7 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
         const SizedBox(height: 4),
         DropdownButtonFormField<T>(
           initialValue: value,
+          isExpanded: true,
           items: items,
           onChanged: onChanged,
           style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
@@ -748,15 +753,22 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  date != null ? AppDateUtils.fmtDate(_formatDate(date)) : 'Select date',
-                  style: AppTheme.mono(
-                    fontSize: 12,
-                    color: date != null
-                        ? AppTheme.deepSlate
-                        : AppTheme.lightSlate,
+                Expanded(
+                  child: Text(
+                    date != null
+                        ? AppDateUtils.fmtDate(_formatDate(date))
+                        : 'Select date',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.mono(
+                      fontSize: 12,
+                      color: date != null
+                          ? AppTheme.deepSlate
+                          : AppTheme.lightSlate,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 4),
                 const Icon(
                   Icons.calendar_today,
                   size: 16,
@@ -804,11 +816,12 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            Text(
-              subtitle,
-              style: AppTheme.body(
-                fontSize: 11,
-                color: AppTheme.mutedSlate,
+            Flexible(
+              child: Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
               ),
             ),
           ],
@@ -824,8 +837,10 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
             children: [
               // Search input matching "Type to filter..."
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 child: TextField(
                   onChanged: onFilterChanged,
                   style: AppTheme.body(fontSize: 12, color: AppTheme.deepSlate),
@@ -833,11 +848,18 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
                     isDense: true,
                     hintText: 'Type to filter...',
                     hintStyle: AppTheme.body(
-                        fontSize: 12, color: AppTheme.lightSlate),
-                    prefixIcon: const Icon(Icons.search,
-                        size: 16, color: AppTheme.mutedSlate),
-                    prefixIconConstraints:
-                        const BoxConstraints(minWidth: 26, minHeight: 26),
+                      fontSize: 12,
+                      color: AppTheme.lightSlate,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      size: 16,
+                      color: AppTheme.mutedSlate,
+                    ),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 26,
+                      minHeight: 26,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   ),
@@ -853,7 +875,9 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
                           child: Text(
                             'No users found',
                             style: AppTheme.body(
-                                fontSize: 12, color: AppTheme.mutedSlate),
+                              fontSize: 12,
+                              color: AppTheme.mutedSlate,
+                            ),
                           ),
                         ),
                       )
@@ -894,8 +918,7 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
                                       value: isChecked,
                                       onChanged: isLocked
                                           ? null
-                                          : (val) =>
-                                              onToggle(id, val ?? false),
+                                          : (val) => onToggle(id, val ?? false),
                                       activeColor: AppTheme.navyBlue,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
@@ -1009,13 +1032,18 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      name,
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            isLocked ? AppTheme.deepSlate : AppTheme.navyBlue,
+                    Flexible(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isLocked
+                              ? AppTheme.deepSlate
+                              : AppTheme.navyBlue,
+                        ),
                       ),
                     ),
                     if (!isLocked) ...[

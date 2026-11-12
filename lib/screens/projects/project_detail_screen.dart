@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/offline_cache_banner.dart';
 import '../../models/project_model.dart';
 import '../../services/directory_service.dart';
@@ -415,6 +416,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Container(
@@ -422,104 +424,127 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             color: AppTheme.pureWhite,
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Add Team Member',
-                    style: AppTheme.heading(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Add Team Member',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.heading(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (candidates.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    'All available active employees are already in this project team.',
-                  ),
-                )
-              else ...[
-                DropdownButtonFormField<int>(
-                  initialValue: selectedUserId,
-                  items: candidates.map((c) {
-                    return DropdownMenuItem<int>(
-                      value: c['id'] as int?,
-                      child: Text(c['full_name']?.toString() ?? ''),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setModalState(() => selectedUserId = val),
-                  decoration: const InputDecoration(
-                    labelText: 'Select Employee',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedRole,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'member',
-                      child: Text('Member (Can be assigned tasks)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'viewer',
-                      child: Text('Viewer (Read-only observation)'),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
-                  onChanged: (val) =>
-                      setModalState(() => selectedRole = val ?? 'member'),
-                  decoration: const InputDecoration(
-                    labelText: 'Project Role',
-                    border: OutlineInputBorder(),
-                  ),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (selectedUserId == null) return;
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.pop(ctx);
-                      try {
-                        await _projectService.addProjectMember(
-                          widget.projectId,
-                          selectedUserId!,
-                          selectedRole,
-                        );
-                        _loadProjectDetail();
-                      } catch (e) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to add member: $e'),
-                            backgroundColor: AppTheme.dangerText,
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.navyBlue,
-                      foregroundColor: AppTheme.pureWhite,
+                const SizedBox(height: 12),
+                if (candidates.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'All available active employees are already in this project team.',
                     ),
-                    child: const Text('Add Member'),
+                  )
+                else ...[
+                  DropdownButtonFormField<int>(
+                    initialValue: selectedUserId,
+                    isExpanded: true,
+                    items: candidates.map((c) {
+                      return DropdownMenuItem<int>(
+                        value: c['id'] as int?,
+                        child: Text(
+                          c['full_name']?.toString() ?? '',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) =>
+                        setModalState(() => selectedUserId = val),
+                    decoration: const InputDecoration(
+                      labelText: 'Select Employee',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedRole,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'member',
+                        child: Text(
+                          'Member (Can be assigned tasks)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'viewer',
+                        child: Text(
+                          'Viewer (Read-only observation)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) =>
+                        setModalState(() => selectedRole = val ?? 'member'),
+                    decoration: const InputDecoration(
+                      labelText: 'Project Role',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (selectedUserId == null) return;
+                        final messenger = ScaffoldMessenger.of(context);
+                        Navigator.pop(ctx);
+                        try {
+                          await _projectService.addProjectMember(
+                            widget.projectId,
+                            selectedUserId!,
+                            selectedRole,
+                          );
+                          _loadProjectDetail();
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to add member: $e'),
+                              backgroundColor: AppTheme.dangerText,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.navyBlue,
+                        foregroundColor: AppTheme.pureWhite,
+                      ),
+                      child: const Text('Add Member'),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -623,6 +648,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
@@ -630,64 +656,70 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Change Project Status',
-                  style: AppTheme.heading(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Change Project Status',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...statuses.map((st) {
-              final isCurrent = st == currentStatus;
-              return ListTile(
-                title: Text(
-                  st[0].toUpperCase() + st.substring(1).replaceAll('_', ' '),
-                  style: AppTheme.body(
-                    fontSize: 14,
-                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                    color: isCurrent ? AppTheme.navyBlue : AppTheme.deepSlate,
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
                   ),
-                ),
-                trailing: isCurrent
-                    ? const Icon(Icons.check, color: AppTheme.navyBlue)
-                    : null,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  if (st == currentStatus) return;
-                  try {
-                    await _projectService.changeProjectStatus(
-                      widget.projectId,
-                      st,
-                    );
-                    _loadProjectDetail();
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Status update failed: $e'),
-                          backgroundColor: AppTheme.dangerText,
-                        ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...statuses.map((st) {
+                final isCurrent = st == currentStatus;
+                return ListTile(
+                  title: Text(
+                    st[0].toUpperCase() + st.substring(1).replaceAll('_', ' '),
+                    style: AppTheme.body(
+                      fontSize: 14,
+                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                      color: isCurrent ? AppTheme.navyBlue : AppTheme.deepSlate,
+                    ),
+                  ),
+                  trailing: isCurrent
+                      ? const Icon(Icons.check, color: AppTheme.navyBlue)
+                      : null,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (st == currentStatus) return;
+                    try {
+                      await _projectService.changeProjectStatus(
+                        widget.projectId,
+                        st,
                       );
+                      _loadProjectDetail();
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Status update failed: $e'),
+                            backgroundColor: AppTheme.dangerText,
+                          ),
+                        );
+                      }
                     }
-                  }
-                },
-              );
-            }),
-          ],
+                  },
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -761,8 +793,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isArchived ? AppTheme.royalBlue : AppTheme.dangerText,
+              backgroundColor: isArchived
+                  ? AppTheme.royalBlue
+                  : AppTheme.dangerText,
             ),
             child: Text(isArchived ? 'Unarchive' : 'Archive'),
           ),
@@ -778,11 +811,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Text(
-          p != null ? p.projectCode : 'Project Details',
-          style: AppTheme.mono(fontSize: 16, fontWeight: FontWeight.w700),
+      appBar: ModuleAppBar(
+        title: p != null ? p.projectCode : 'Project Details',
+        titleStyle: AppTheme.mono(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: AppTheme.deepSlate,
         ),
+        subtitle: p?.name,
         actions: [
           if (canManage)
             PopupMenuButton<String>(
@@ -1039,22 +1075,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           const SizedBox(height: 24),
 
           // 9. Discussion & Comments Section
-          ProjectCommentsSection(
-            projectId: p.id,
-          ),
+          ProjectCommentsSection(projectId: p.id),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
-
-
-
-
-
-
-
-
 
   Widget _buildErrorView() {
     return Center(

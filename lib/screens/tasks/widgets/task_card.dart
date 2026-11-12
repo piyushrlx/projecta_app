@@ -153,40 +153,54 @@ class TaskCard extends StatelessWidget {
           ],
 
           // Bottom Meta Row: Status tag, Avatar Stack, Deadline
-          Row(
-            children: [
-              TaskStatusPill(
-                key: ValueKey('task_status_pill_${task.id}'),
-                status: task.status,
-                isInteractive: isKanban,
-                onTap: onStatusPillTap,
-              ),
-              const SizedBox(width: 8),
-              TaskAvatarStack(assignees: task.assignees),
-              const Spacer(),
-              Icon(
-                Icons.calendar_today_outlined,
-                size: 12,
-                color: task.isOverdue
-                    ? AppTheme.dangerText
-                    : AppTheme.lightSlate,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                task.isOverdue && task.overdueDays > 0
-                    ? '${task.formattedDeadline} (${task.overdueDays}d overdue)'
-                    : task.isOverdue
-                        ? '${task.formattedDeadline} (overdue)'
-                        : task.formattedDeadline,
-                style: AppTheme.mono(
-                  fontSize: 10,
-                  color: task.isOverdue
-                      ? AppTheme.dangerText
-                      : AppTheme.mutedSlate,
-                  fontWeight: FontWeight.w600,
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                TaskStatusPill(
+                  key: ValueKey('task_status_pill_${task.id}'),
+                  status: task.status,
+                  isInteractive: isKanban,
+                  onTap: onStatusPillTap,
                 ),
-              ),
-            ],
+                TaskAvatarStack(assignees: task.assignees),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 12,
+                      color: task.isOverdue
+                          ? AppTheme.dangerText
+                          : AppTheme.lightSlate,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        task.isOverdue && task.overdueDays > 0
+                            ? '${task.formattedDeadline} (${task.overdueDays}d overdue)'
+                            : task.isOverdue
+                            ? '${task.formattedDeadline} (overdue)'
+                            : task.formattedDeadline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.mono(
+                          fontSize: 10,
+                          color: task.isOverdue
+                              ? AppTheme.dangerText
+                              : AppTheme.mutedSlate,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -212,18 +226,11 @@ class TaskCard extends StatelessWidget {
         shadowColor: Colors.black26,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320),
-          child: Opacity(
-            opacity: 0.95,
-            child: content,
-          ),
+          child: Opacity(opacity: 0.95, child: content),
         ),
       ),
-      childWhenDragging: Opacity(
-        opacity: 0.35,
-        child: content,
-      ),
+      childWhenDragging: Opacity(opacity: 0.35, child: content),
       child: content,
     );
   }
 }
-

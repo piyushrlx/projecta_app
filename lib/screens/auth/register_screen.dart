@@ -97,12 +97,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Account Created',
-                  style: AppTheme.heading(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
+                Expanded(
+                  child: Text(
+                    'Account Created',
+                    style: AppTheme.heading(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                 ),
               ],

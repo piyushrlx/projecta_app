@@ -29,36 +29,42 @@ class ProjectMilestonesSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Text(
-                  'Milestones',
-                  style: AppTheme.heading(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: Text(
-                    '${milestones.length}',
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.deepSlate,
+            Flexible(
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Milestones',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.scaffoldBg,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                    ),
+                    child: Text(
+                      '${milestones.length}',
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (canManage)
               TextButton.icon(
@@ -290,7 +296,10 @@ class ProjectMilestonesSection extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Row(
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   if (m.dueDate != null) ...[
                                     Text(
@@ -305,8 +314,7 @@ class ProjectMilestonesSection extends StatelessWidget {
                                             : FontWeight.w500,
                                       ),
                                     ),
-                                    if (m.isOverdue) ...[
-                                      const SizedBox(width: 6),
+                                    if (m.isOverdue)
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 5,
@@ -327,17 +335,14 @@ class ProjectMilestonesSection extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                    ],
                                   ],
                                   if (m.taskCount > 0) ...[
-                                    const SizedBox(width: 8),
                                     Text(
                                       '·',
                                       style: TextStyle(
                                         color: AppTheme.mutedSlate,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
                                     Text(
                                       '${m.taskCount} task${m.taskCount == 1 ? '' : 's'}',
                                       style: AppTheme.body(
@@ -386,4 +391,3 @@ class ProjectMilestonesSection extends StatelessWidget {
     );
   }
 }
-

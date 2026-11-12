@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/user_model.dart';
 import '../../services/report_service.dart';
 
@@ -7,11 +8,7 @@ class AnalyticsHubScreen extends StatefulWidget {
   final UserModel? currentUser;
   final ReportService? reportService;
 
-  const AnalyticsHubScreen({
-    super.key,
-    this.currentUser,
-    this.reportService,
-  });
+  const AnalyticsHubScreen({super.key, this.currentUser, this.reportService});
 
   @override
   State<AnalyticsHubScreen> createState() => _AnalyticsHubScreenState();
@@ -105,50 +102,37 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
     );
   }
 
+  String get _activeTypeLabel {
+    for (final item in _allReportTypes) {
+      if (item['type'] == _activeType) {
+        return item['label'] ?? 'Analytics';
+      }
+    }
+    return 'Analytics';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(
-              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+      appBar: ModuleAppBar(
+        title: 'Reports & Analytics Hub',
+        subtitle: '$_activeTypeLabel · Last $_rangeDays days',
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.file_download_outlined,
+              color: AppTheme.royalBlue,
             ),
+            tooltip: 'Export CSV',
+            onPressed: _handleExportCsv,
           ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Reports & Analytics Hub',
-                      style: AppTheme.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.file_download_outlined, color: AppTheme.royalBlue),
-                    tooltip: 'Export CSV',
-                    onPressed: _handleExportCsv,
-                  ),
-                ],
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
+            tooltip: 'Refresh',
+            onPressed: _fetchReportData,
           ),
-        ),
+        ],
       ),
       body: Column(
         children: [
@@ -165,43 +149,50 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                     child: CircularProgressIndicator(color: AppTheme.royalBlue),
                   )
                 : _errorMessage != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.error_outline, size: 48, color: AppTheme.dangerText),
-                              const SizedBox(height: 12),
-                              Text(
-                                _errorMessage!,
-                                textAlign: TextAlign.center,
-                                style: AppTheme.body(fontSize: 14, color: AppTheme.deepSlate),
-                              ),
-                              const SizedBox(height: 16),
-                              OutlinedButton(
-                                onPressed: _fetchReportData,
-                                child: const Text('Try Again'),
-                              ),
-                            ],
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: AppTheme.dangerText,
                           ),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: AppTheme.royalBlue,
-                        onRefresh: _fetchReportData,
-                        child: ListView(
-                          padding: const EdgeInsets.all(16.0),
-                          children: [
-                            // Summary Metrics
-                            _buildSummaryCard(),
-                            const SizedBox(height: 16),
-
-                            // Data Table / Cards
-                            _buildRowsSection(),
-                          ],
-                        ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: AppTheme.body(
+                              fontSize: 14,
+                              color: AppTheme.deepSlate,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: _fetchReportData,
+                            child: const Text('Try Again'),
+                          ),
+                        ],
                       ),
+                    ),
+                  )
+                : RefreshIndicator(
+                    color: AppTheme.royalBlue,
+                    onRefresh: _fetchReportData,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16.0),
+                      children: [
+                        // Summary Metrics
+                        _buildSummaryCard(),
+                        const SizedBox(height: 16),
+
+                        // Data Table / Cards
+                        _buildRowsSection(),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -233,7 +224,9 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
-                    color: isSelected ? AppTheme.royalBlue : AppTheme.borderSubtle,
+                    color: isSelected
+                        ? AppTheme.royalBlue
+                        : AppTheme.borderSubtle,
                   ),
                 ),
                 onSelected: (val) {
@@ -265,7 +258,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
           children: [
             Text(
               'Period:',
-              style: AppTheme.body(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.mutedSlate),
+              style: AppTheme.body(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.mutedSlate,
+              ),
             ),
             const SizedBox(width: 8),
             _buildRangeChip(7, 'Last 7 Days'),
@@ -313,7 +310,9 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
   Widget _buildSummaryCard() {
     if (_summary.isEmpty) return const SizedBox.shrink();
 
-    final entries = _summary.entries.where((e) => e.key != 'from' && e.key != 'to').toList();
+    final entries = _summary.entries
+        .where((e) => e.key != 'from' && e.key != 'to')
+        .toList();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -328,41 +327,69 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
         children: [
           Text(
             'Summary Overview',
-            style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+            style: AppTheme.heading(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: entries.map((entry) {
-              final label = entry.key.replaceAll('_', ' ').toUpperCase();
-              final val = entry.value.toString();
-              return Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderSubtle),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        val,
-                        style: AppTheme.heading(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.royalBlue),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 8.0;
+              final cols = constraints.maxWidth < 400
+                  ? (entries.length < 2 ? entries.length : 2)
+                  : entries.length.clamp(1, 4);
+              final itemWidth =
+                  (constraints.maxWidth - spacing * (cols - 1)) / cols;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: entries.map((entry) {
+                  final label = entry.key.replaceAll('_', ' ').toUpperCase();
+                  final val = entry.value.toString();
+                  return SizedBox(
+                    width: itemWidth,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.borderSubtle),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.mutedSlate),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              val,
+                              maxLines: 1,
+                              style: AppTheme.heading(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.royalBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: AppTheme.mono(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.mutedSlate,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                }).toList(),
               );
-            }).toList(),
+            },
           ),
         ],
       ),
@@ -381,7 +408,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
         child: Center(
           child: Column(
             children: [
-              const Icon(Icons.inbox_outlined, size: 40, color: AppTheme.mutedSlate),
+              const Icon(
+                Icons.inbox_outlined,
+                size: 40,
+                color: AppTheme.mutedSlate,
+              ),
               const SizedBox(height: 8),
               Text(
                 'No records found for this period.',
@@ -400,7 +431,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
           child: Text(
             'Records (${_rows.length})',
-            style: AppTheme.heading(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+            style: AppTheme.heading(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -430,7 +465,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 (row['full_name']?.toString().isNotEmpty ?? false)
                     ? row['full_name'].toString()[0].toUpperCase()
                     : 'U',
-                style: const TextStyle(color: AppTheme.pureWhite, fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  color: AppTheme.pureWhite,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -440,11 +479,18 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 children: [
                   Text(
                     row['full_name']?.toString() ?? '',
-                    style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                   Text(
                     '${row['employee_code'] ?? '—'} · ${row['designation'] ?? '—'}',
-                    style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                    style: AppTheme.body(
+                      fontSize: 11,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ],
               ),
@@ -454,11 +500,18 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
               children: [
                 Text(
                   '${row['completed_tasks'] ?? 0} Done',
-                  style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.successText),
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.successText,
+                  ),
                 ),
                 Text(
                   '${row['open_tasks'] ?? 0} Open',
-                  style: AppTheme.mono(fontSize: 10, color: AppTheme.mutedSlate),
+                  style: AppTheme.mono(
+                    fontSize: 10,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
               ],
             ),
@@ -484,18 +537,29 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 Expanded(
                   child: Text(
                     row['name']?.toString() ?? '',
-                    style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     row['code']?.toString() ?? '',
-                    style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.royalBlue),
+                    style: AppTheme.mono(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.royalBlue,
+                    ),
                   ),
                 ),
               ],
@@ -506,11 +570,18 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
               children: [
                 Text(
                   '${row['completed_tasks']} / ${row['total_tasks']} tasks',
-                  style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
                 Text(
                   '$pct%',
-                  style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                  style: AppTheme.mono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepSlate,
+                  ),
                 ),
               ],
             ),
@@ -541,7 +612,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: AppTheme.dangerText, size: 20),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: AppTheme.dangerText,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -549,11 +624,18 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 children: [
                   Text(
                     row['title']?.toString() ?? '',
-                    style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                   Text(
                     '${row['code']} · ${row['project_name']}',
-                    style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                    style: AppTheme.body(
+                      fontSize: 11,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ],
               ),
@@ -566,7 +648,11 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
               ),
               child: Text(
                 '$days d late',
-                style: AppTheme.mono(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.dangerText),
+                style: AppTheme.mono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.dangerText,
+                ),
               ),
             ),
           ],
@@ -574,8 +660,10 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
       );
     } else {
       // General fall-through for daily, pending, compliance
-      final title = row['title'] ?? row['full_name'] ?? row['employee_name'] ?? 'Record';
-      final subtitle = row['project_name'] ?? row['summary'] ?? row['department'] ?? '';
+      final title =
+          row['title'] ?? row['full_name'] ?? row['employee_name'] ?? 'Record';
+      final subtitle =
+          row['project_name'] ?? row['summary'] ?? row['department'] ?? '';
       return Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
@@ -592,14 +680,21 @@ class _AnalyticsHubScreenState extends State<AnalyticsHubScreen> {
                 children: [
                   Text(
                     title.toString(),
-                    style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (subtitle.toString().isNotEmpty)
                     Text(
                       subtitle.toString(),
-                      style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

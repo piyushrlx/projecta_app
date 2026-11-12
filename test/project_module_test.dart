@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projecta_app/core/app_date_utils.dart';
+import 'package:projecta_app/core/widgets/module_app_bar.dart';
 import 'package:projecta_app/models/project_model.dart';
 import 'package:projecta_app/screens/projects/project_form_screen.dart';
 import 'package:projecta_app/screens/projects/projects_list_screen.dart';
@@ -534,6 +535,54 @@ void main() {
       // Zero exceptions / zero render overflows
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'ModuleAppBar renders clean actions without add_circle_outline and search icon focuses search bar',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(const MaterialApp(home: ProjectsListScreen()));
+        await tester.pumpAndSettle();
+
+        final headerFinder = find.byType(ModuleAppBar);
+        expect(headerFinder, findsOneWidget);
+        expect(find.text('Projects'), findsOneWidget);
+        expect(find.text('1 project'), findsOneWidget);
+        expect(find.byIcon(Icons.add_circle_outline), findsNothing);
+
+        final headerSearchIcon = find.descendant(
+          of: headerFinder,
+          matching: find.byIcon(Icons.search),
+        );
+        expect(headerSearchIcon, findsOneWidget);
+        expect(
+          find.descendant(
+            of: headerFinder,
+            matching: find.byIcon(Icons.filter_list_rounded),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: headerFinder,
+            matching: find.byIcon(Icons.refresh),
+          ),
+          findsOneWidget,
+        );
+
+        final textFieldBefore = tester.widget<TextField>(find.byType(TextField));
+        expect(textFieldBefore.focusNode, isNotNull);
+        expect(textFieldBefore.focusNode!.hasFocus, isFalse);
+
+        await tester.tap(headerSearchIcon);
+        await tester.pump();
+
+        expect(textFieldBefore.focusNode!.hasFocus, isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   group('Module 3: ProjectFormScreen Widget Tests', () {

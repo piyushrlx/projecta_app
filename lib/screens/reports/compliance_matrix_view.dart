@@ -242,292 +242,302 @@ class _ComplianceMatrixViewState extends State<ComplianceMatrixView> {
                 top: 20,
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Record Leave / Exemption',
-                        style: AppTheme.heading(
-                          fontSize: 16,
-                          color: AppTheme.deepSlate,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Employee: ${emp.fullName} (${emp.departmentName ?? 'Staff'})',
-                    style: AppTheme.body(
-                      fontSize: 13,
-                      color: AppTheme.mutedSlate,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Exemption Type Chips
-                  Text(
-                    'Type',
-                    style: AppTheme.heading(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Leave'),
-                        selected: type == 'leave',
-                        onSelected: (val) {
-                          if (val) setModalState(() => type = 'leave');
-                        },
-                        selectedColor: AppTheme.navyBlue,
-                        labelStyle: TextStyle(
-                          color: type == 'leave'
-                              ? AppTheme.pureWhite
-                              : AppTheme.deepSlate,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('Reporting Exemption'),
-                        selected: type == 'exemption',
-                        onSelected: (val) {
-                          if (val) setModalState(() => type = 'exemption');
-                        },
-                        selectedColor: AppTheme.navyBlue,
-                        labelStyle: TextStyle(
-                          color: type == 'exemption'
-                              ? AppTheme.pureWhite
-                              : AppTheme.deepSlate,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Dates
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Start Date',
-                              style: AppTheme.heading(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Record Leave / Exemption',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.heading(
+                              fontSize: 16,
+                              color: AppTheme.deepSlate,
                             ),
-                            const SizedBox(height: 6),
-                            InkWell(
-                              onTap: () async {
-                                final cur = _parseDate(startDate);
-                                final picked = await showDatePicker(
-                                  context: ctx,
-                                  initialDate: cur,
-                                  firstDate: DateTime(2024, 1, 1),
-                                  lastDate: DateTime(2028, 12, 31),
-                                );
-                                if (picked != null) {
-                                  setModalState(() {
-                                    startDate = _formatDate(picked);
-                                    if (_parseDate(endDate).isBefore(picked)) {
-                                      endDate = startDate;
-                                    }
-                                  });
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.scaffoldBg,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.borderSubtle,
-                                  ),
-                                ),
-                                child: Text(
-                                  startDate,
-                                  style: AppTheme.mono(
-                                    fontSize: 12,
-                                    color: AppTheme.deepSlate,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'End Date',
-                              style: AppTheme.heading(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            InkWell(
-                              onTap: () async {
-                                final cur = _parseDate(endDate);
-                                final startDt = _parseDate(startDate);
-                                final picked = await showDatePicker(
-                                  context: ctx,
-                                  initialDate: cur.isBefore(startDt)
-                                      ? startDt
-                                      : cur,
-                                  firstDate: startDt,
-                                  lastDate: DateTime(2028, 12, 31),
-                                );
-                                if (picked != null) {
-                                  setModalState(() {
-                                    endDate = _formatDate(picked);
-                                  });
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.scaffoldBg,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppTheme.borderSubtle,
-                                  ),
-                                ),
-                                child: Text(
-                                  endDate,
-                                  style: AppTheme.mono(
-                                    fontSize: 12,
-                                    color: AppTheme.deepSlate,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Reason
-                  Text(
-                    'Reason (Optional)',
-                    style: AppTheme.heading(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: reasonController,
-                    maxLines: 2,
-                    style: AppTheme.body(
-                      fontSize: 13,
-                      color: AppTheme.deepSlate,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Sick leave, Conference, Client visit...',
-                      hintStyle: AppTheme.body(
+                    const SizedBox(height: 4),
+                    Text(
+                      'Employee: ${emp.fullName} (${emp.departmentName ?? 'Staff'})',
+                      style: AppTheme.body(
                         fontSize: 13,
-                        color: AppTheme.lightSlate,
+                        color: AppTheme.mutedSlate,
                       ),
-                      contentPadding: const EdgeInsets.all(12),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                  // Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting
-                          ? null
-                          : () async {
-                              setModalState(() => isSubmitting = true);
-                              final messenger = ScaffoldMessenger.of(context);
-                              try {
-                                await _reportService.createExemption(
-                                  userId: emp.id,
-                                  startDate: startDate,
-                                  endDate: endDate,
-                                  type: type,
-                                  reason: reasonController.text.trim(),
-                                );
-                                if (!ctx.mounted) return;
-                                Navigator.pop(ctx);
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Exemption saved for ${emp.fullName}.',
-                                    ),
-                                    backgroundColor: AppTheme.successText,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                if (mounted) {
-                                  _loadComplianceData();
-                                }
-                              } catch (e) {
-                                setModalState(() => isSubmitting = false);
-                                ScaffoldMessenger.of(ctx).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      e
-                                          .toString()
-                                          .replaceAll('ApiException', '')
-                                          .trim(),
-                                    ),
-                                    backgroundColor: AppTheme.dangerText,
-                                  ),
-                                );
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.navyBlue,
-                        foregroundColor: AppTheme.pureWhite,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    // Exemption Type Chips
+                    Text(
+                      'Type',
+                      style: AppTheme.heading(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                      child: isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.pureWhite,
-                              ),
-                            )
-                          : const Text('Record Exemption'),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Leave'),
+                          selected: type == 'leave',
+                          onSelected: (val) {
+                            if (val) setModalState(() => type = 'leave');
+                          },
+                          selectedColor: AppTheme.navyBlue,
+                          labelStyle: TextStyle(
+                            color: type == 'leave'
+                                ? AppTheme.pureWhite
+                                : AppTheme.deepSlate,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Reporting Exemption'),
+                          selected: type == 'exemption',
+                          onSelected: (val) {
+                            if (val) setModalState(() => type = 'exemption');
+                          },
+                          selectedColor: AppTheme.navyBlue,
+                          labelStyle: TextStyle(
+                            color: type == 'exemption'
+                                ? AppTheme.pureWhite
+                                : AppTheme.deepSlate,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Dates
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start Date',
+                                style: AppTheme.heading(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              InkWell(
+                                onTap: () async {
+                                  final cur = _parseDate(startDate);
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: cur,
+                                    firstDate: DateTime(2024, 1, 1),
+                                    lastDate: DateTime(2028, 12, 31),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() {
+                                      startDate = _formatDate(picked);
+                                      if (_parseDate(
+                                        endDate,
+                                      ).isBefore(picked)) {
+                                        endDate = startDate;
+                                      }
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.scaffoldBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    startDate,
+                                    style: AppTheme.mono(
+                                      fontSize: 12,
+                                      color: AppTheme.deepSlate,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'End Date',
+                                style: AppTheme.heading(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              InkWell(
+                                onTap: () async {
+                                  final cur = _parseDate(endDate);
+                                  final startDt = _parseDate(startDate);
+                                  final picked = await showDatePicker(
+                                    context: ctx,
+                                    initialDate: cur.isBefore(startDt)
+                                        ? startDt
+                                        : cur,
+                                    firstDate: startDt,
+                                    lastDate: DateTime(2028, 12, 31),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() {
+                                      endDate = _formatDate(picked);
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.scaffoldBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    endDate,
+                                    style: AppTheme.mono(
+                                      fontSize: 12,
+                                      color: AppTheme.deepSlate,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Reason
+                    Text(
+                      'Reason (Optional)',
+                      style: AppTheme.heading(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 2,
+                      style: AppTheme.body(
+                        fontSize: 13,
+                        color: AppTheme.deepSlate,
+                      ),
+                      decoration: InputDecoration(
+                        hintText:
+                            'e.g., Sick leave, Conference, Client visit...',
+                        hintStyle: AppTheme.body(
+                          fontSize: 13,
+                          color: AppTheme.lightSlate,
+                        ),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                setModalState(() => isSubmitting = true);
+                                final messenger = ScaffoldMessenger.of(context);
+                                try {
+                                  await _reportService.createExemption(
+                                    userId: emp.id,
+                                    startDate: startDate,
+                                    endDate: endDate,
+                                    type: type,
+                                    reason: reasonController.text.trim(),
+                                  );
+                                  if (!ctx.mounted) return;
+                                  Navigator.pop(ctx);
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Exemption saved for ${emp.fullName}.',
+                                      ),
+                                      backgroundColor: AppTheme.successText,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  if (mounted) {
+                                    _loadComplianceData();
+                                  }
+                                } catch (e) {
+                                  setModalState(() => isSubmitting = false);
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        e
+                                            .toString()
+                                            .replaceAll('ApiException', '')
+                                            .trim(),
+                                      ),
+                                      backgroundColor: AppTheme.dangerText,
+                                    ),
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.navyBlue,
+                          foregroundColor: AppTheme.pureWhite,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.pureWhite,
+                                ),
+                              )
+                            : const Text('Record Exemption'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },

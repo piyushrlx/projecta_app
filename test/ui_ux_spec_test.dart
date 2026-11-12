@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:projecta_app/core/theme.dart';
 import 'package:projecta_app/core/widgets/brutalist_pressable.dart';
+import 'package:projecta_app/core/widgets/module_app_bar.dart';
 import 'package:projecta_app/models/task_model.dart';
 import 'package:projecta_app/models/user_model.dart';
 import 'package:projecta_app/screens/dashboard/admin_dashboard_view.dart';
@@ -34,11 +35,11 @@ class FakeTaskService extends TaskService {
     return {
       'is_cached': false,
       'columns': {
-      'not_started': [],
-      'in_progress': [],
-      'blocked': [],
-      'pending_review': [],
-      'completed': [],
+        'not_started': [],
+        'in_progress': [],
+        'blocked': [],
+        'pending_review': [],
+        'completed': [],
       },
     };
   }
@@ -238,10 +239,7 @@ void main() {
 
         // Verify Action Strip at top
         expect(find.text('Admin Executive Control'), findsOneWidget);
-        expect(
-          find.text('OVERDUE'),
-          findsOneWidget,
-        ); // Top strip & KPI card
+        expect(find.text('OVERDUE'), findsOneWidget); // Top strip & KPI card
         expect(find.text('PENDING'), findsOneWidget);
         expect(find.textContaining('Reports Awaiting Review'), findsOneWidget);
       },
@@ -280,5 +278,126 @@ void main() {
         expect(pageController.viewportFraction, 0.88);
       },
     );
+
+    testWidgets(
+      'TasksScreen header search icon filters List View via API and Kanban View client-side',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final searchService = _SearchableFakeTaskService();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.themeData,
+            home: TasksScreen(taskService: searchService),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Alpha Migration'), findsOneWidget);
+        expect(find.text('Beta Audit'), findsOneWidget);
+
+        // Open inline search bar from ModuleAppBar
+        final headerSearchIcon = find.descendant(
+          of: find.byType(ModuleAppBar),
+          matching: find.byIcon(Icons.search),
+        );
+        expect(headerSearchIcon, findsOneWidget);
+        await tester.tap(headerSearchIcon);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(TextField), findsOneWidget);
+        await tester.enterText(find.byType(TextField), 'Alpha');
+        await tester.pump(const Duration(milliseconds: 450));
+        await tester.pumpAndSettle();
+
+        expect(searchService.lastListSearch, 'Alpha');
+        expect(find.text('Alpha Migration'), findsOneWidget);
+        expect(find.text('Beta Audit'), findsNothing);
+
+        // Switch to Kanban view -> client-side search filter should keep Alpha only
+        await tester.tap(find.text('Kanban Board'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Alpha Migration'), findsOneWidget);
+        expect(find.text('Beta Audit'), findsNothing);
+
+        // Closing search bar clears filter and restores Beta Audit in Kanban
+        await tester.tap(find.byIcon(Icons.search_off));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Alpha Migration'), findsOneWidget);
+        expect(find.text('Beta Audit'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
+}
+
+class _SearchableFakeTaskService extends TaskService {
+  String? lastListSearch;
+
+  final List<TaskModel> _allTasks = const [
+    TaskModel(
+      id: 1,
+      taskCode: 'T-0001',
+      projectId: 10,
+      projectName: 'Core ERP',
+      title: 'Alpha Migration',
+      priority: 'high',
+      status: 'in_progress',
+      progress: 40,
+    ),
+    TaskModel(
+      id: 2,
+      taskCode: 'T-0002',
+      projectId: 11,
+      projectName: 'Security Ops',
+      title: 'Beta Audit',
+      priority: 'medium',
+      status: 'not_started',
+      progress: 0,
+    ),
+  ];
+
+  @override
+  Future<Map<String, dynamic>> getTasks({
+    int? projectId,
+    String? status,
+    String? priority,
+    bool? overdue,
+    bool? assignedToMe,
+    String? search,
+    int page = 1,
+    int limit = 30,
+  }) async {
+    lastListSearch = search;
+    final query = search?.trim().toLowerCase() ?? '';
+    final filtered = query.isEmpty
+        ? _allTasks
+        : _allTasks
+              .where((t) => t.title.toLowerCase().contains(query))
+              .toList();
+    return {'tasks': filtered, 'total': filtered.length};
+  }
+
+  @override
+  Future<Map<String, dynamic>> getKanban({
+    int? projectId,
+    String? priority,
+    int? userId,
+  }) async {
+    return {
+      'is_cached': false,
+      'columns': {
+        'not_started': [_allTasks[1]],
+        'in_progress': [_allTasks[0]],
+        'blocked': <TaskModel>[],
+        'pending_review': <TaskModel>[],
+        'completed': <TaskModel>[],
+      },
+    };
+  }
 }

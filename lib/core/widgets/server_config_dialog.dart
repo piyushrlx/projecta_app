@@ -35,12 +35,14 @@ Future<void> showServerConfigDialog({
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            'Server Configuration',
-            style: AppTheme.heading(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.deepSlate,
+          Expanded(
+            child: Text(
+              'Server Configuration',
+              style: AppTheme.heading(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.deepSlate,
+              ),
             ),
           ),
         ],

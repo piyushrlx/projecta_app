@@ -74,21 +74,25 @@ class ComplianceCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: badgeBg,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            isSubmitted ? 'Submitted — On Time' : label,
-                            style: AppTheme.heading(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: badgeText,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: badgeBg,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isSubmitted ? 'Submitted — On Time' : label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.heading(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: badgeText,
+                              ),
                             ),
                           ),
                         ),
@@ -97,19 +101,28 @@ class ComplianceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.scaffoldBg,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Text(
-                  'Due $deadline',
-                  style: AppTheme.mono(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.mutedSlate,
+              const SizedBox(width: 8),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.scaffoldBg,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                  ),
+                  child: Text(
+                    'Due $deadline',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ),
               ),

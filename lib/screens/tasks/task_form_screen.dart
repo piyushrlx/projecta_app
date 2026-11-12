@@ -134,10 +134,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           _projects = projects;
           if (_selectedProjectId == null && _projects.isNotEmpty) {
             final p0 = _projects.first['id'];
-            _selectedProjectId =
-                p0 is num
-                    ? p0.toInt()
-                    : (p0 is String ? int.tryParse(p0) : null);
+            _selectedProjectId = p0 is num
+                ? p0.toInt()
+                : (p0 is String ? int.tryParse(p0) : null);
           }
           _isLoadingLookups = false;
         });
@@ -196,10 +195,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           _projectMembers = assignable;
           if (_selectedOwnerId == null ||
               !assignable.any((a) => a['id'] == _selectedOwnerId)) {
-            _selectedOwnerId =
-                assignable.isNotEmpty
-                    ? assignable.first['id'] as int?
-                    : null;
+            _selectedOwnerId = assignable.isNotEmpty
+                ? assignable.first['id'] as int?
+                : null;
           }
           _selectedContributorIds.removeWhere(
             (id) => !assignable.any((a) => a['id'] == id),
@@ -220,7 +218,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     final now = DateTime.now();
     final initial = isStartDate
         ? (_startDate ?? now)
-        : (_selectedDeadline ?? (_startDate ?? now).add(const Duration(days: 7)));
+        : (_selectedDeadline ??
+              (_startDate ?? now).add(const Duration(days: 7)));
 
     final picked = await showDatePicker(
       context: context,
@@ -245,7 +244,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       setState(() {
         if (isStartDate) {
           _startDate = picked;
-          if (_selectedDeadline != null && _selectedDeadline!.isBefore(_startDate!)) {
+          if (_selectedDeadline != null &&
+              _selectedDeadline!.isBefore(_startDate!)) {
             _selectedDeadline = _startDate;
           }
         } else {
@@ -259,9 +259,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     final pid = effectiveProjectId ?? _selectedProjectId;
     if (pid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a project.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a project.')));
       return;
     }
 
@@ -283,8 +283,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     try {
       final startStr = _startDate != null ? _fmtDateIso(_startDate!) : null;
-      final deadlineStr =
-          _selectedDeadline != null ? _fmtDateIso(_selectedDeadline!) : null;
+      final deadlineStr = _selectedDeadline != null
+          ? _fmtDateIso(_selectedDeadline!)
+          : null;
 
       final assignees = <int>[];
       final resp = <String, String>{};
@@ -333,8 +334,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             isEdit
                 ? 'Task updated successfully.'
                 : (isSubtask
-                    ? 'Subtask created successfully.'
-                    : 'Task assigned successfully.'),
+                      ? 'Subtask created successfully.'
+                      : 'Task assigned successfully.'),
           ),
           backgroundColor: AppTheme.successText,
         ),
@@ -730,7 +731,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           color: AppTheme.deepSlate,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Specific technical steps, checklist or notes...',
+                          hintText:
+                              'Specific technical steps, checklist or notes...',
                           hintStyle: AppTheme.body(
                             fontSize: 14,
                             color: AppTheme.mutedSlate,
@@ -789,8 +791,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                                     isEdit
                                         ? 'Save Changes'
                                         : (isSubtask
-                                            ? 'Create Subtask'
-                                            : 'Assign Task'),
+                                              ? 'Create Subtask'
+                                              : 'Assign Task'),
                                     style: AppTheme.heading(
                                       fontSize: 15,
                                       color: AppTheme.pureWhite,
@@ -832,7 +834,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.folder_outlined, color: AppTheme.royalBlue, size: 20),
+          const Icon(
+            Icons.folder_outlined,
+            color: AppTheme.royalBlue,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -853,6 +859,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   Widget _buildProjectDropdown() {
     return DropdownButtonFormField<int>(
       initialValue: _selectedProjectId,
+      isExpanded: true,
       decoration: InputDecoration(
         filled: true,
         fillColor: AppTheme.scaffoldBg,
@@ -930,11 +937,20 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  p.toUpperCase(),
-                  style: AppTheme.heading(
-                    fontSize: 11,
-                    color: isSelected ? AppTheme.pureWhite : AppTheme.deepSlate,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      p.toUpperCase(),
+                      maxLines: 1,
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        color: isSelected
+                            ? AppTheme.pureWhite
+                            : AppTheme.deepSlate,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -950,7 +966,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
-    final display = date != null ? AppDateUtils.fmtDate(_fmtDateIso(date)) : label;
+    final display = date != null
+        ? AppDateUtils.fmtDate(_fmtDateIso(date))
+        : label;
     return BrutalistPressable(
       onTap: onTap,
       child: Container(
@@ -973,7 +991,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 display,
                 style: AppTheme.body(
                   fontSize: 13,
-                  color: date != null ? AppTheme.deepSlate : AppTheme.mutedSlate,
+                  color: date != null
+                      ? AppTheme.deepSlate
+                      : AppTheme.mutedSlate,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1002,6 +1022,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     return DropdownButtonFormField<int>(
       initialValue: _selectedOwnerId,
+      isExpanded: true,
       decoration: InputDecoration(
         filled: true,
         fillColor: AppTheme.scaffoldBg,
@@ -1104,15 +1125,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               color: AppTheme.dangerText,
             ),
             const SizedBox(height: 16),
-            Text('Failed to Load Lookups', style: AppTheme.heading(fontSize: 16)),
+            Text(
+              'Failed to Load Lookups',
+              style: AppTheme.heading(fontSize: 16),
+            ),
             const SizedBox(height: 8),
             Text(
               _lookupError ?? 'An unexpected error occurred.',
               textAlign: TextAlign.center,
-              style: AppTheme.body(
-                fontSize: 13,
-                color: AppTheme.deepSlate,
-              ),
+              style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

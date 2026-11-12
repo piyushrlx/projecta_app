@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:projecta_app/core/api_client.dart';
 import 'package:projecta_app/core/theme.dart';
+import 'package:projecta_app/core/widgets/module_app_bar.dart';
 import 'package:projecta_app/core/widgets/projeqta_logo.dart';
+import 'package:projecta_app/core/widgets/user_avatar.dart';
 import 'package:projecta_app/models/user_model.dart';
 import 'package:projecta_app/screens/dashboard/admin_dashboard_view.dart';
 import 'package:projecta_app/screens/dashboard/dashboard_screen.dart';
@@ -280,16 +285,28 @@ void main() {
         ),
       );
 
-      // Verify app bar displays brand logo and profile dropdown with down arrow
+      // Verify app bar displays brand logo (menu trigger), title/subtitle, actions, and circular profile avatar
+      expect(find.byIcon(Icons.menu_rounded), findsNothing);
       expect(find.byType(ProjeqtaIcon), findsOneWidget);
-      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
-      expect(find.byIcon(Icons.refresh), findsOneWidget);
+      expect(find.text('Admin Executive Control'), findsWidgets);
+      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.keyboard_arrow_down), findsNothing);
+      expect(find.byType(UserAvatar), findsOneWidget);
 
-      // Verify tapping profile dropdown displays options (My profile, Notifications, Log out)
-      await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+      // Verify tapping profile avatar displays options (My profile, Notifications, Log out)
+      await tester.tap(find.byType(UserAvatar));
       await tester.pumpAndSettle();
       expect(find.text('My profile'), findsOneWidget);
       expect(find.byIcon(Icons.logout), findsOneWidget);
+
+      // Close popup menu and verify tapping brand logo opens the side drawer
+      await tester.tapAt(const Offset(200, 300));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ProjeqtaIcon));
+      await tester.pumpAndSettle();
+      expect(find.byType(Drawer), findsOneWidget);
     });
   });
 
@@ -482,4 +499,149 @@ void main() {
       },
     );
   });
+
+  group('DashboardScreen Navigation & Module Header Separation', () {
+    testWidgets(
+      'Bottom nav opens Tasks, Projects, and Reports full-screen without Dashboard bars and pops back cleanly',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        SharedPreferences.setMockInitialValues({
+          'auth_token': 'test-token',
+          'user_data': jsonEncode({
+            'id': adminUser.id,
+            'full_name': adminUser.name,
+            'email': adminUser.email,
+            'role': adminUser.role,
+            'admin_scope': adminUser.adminScope,
+            'must_change_password': false,
+            'department_name': adminUser.departmentName,
+          }),
+        });
+
+        final fakeHttpClient = _FakeDashboardHttpClient();
+        ApiClient().customHttpClient = fakeHttpClient;
+        addTearDown(() => ApiClient().resetHttpClient());
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.themeData,
+            home: const DashboardScreen(user: adminUser),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Dashboard shows its own header + bottom nav
+        expect(find.text('Dashboard'), findsOneWidget);
+        expect(find.text('PULSE'), findsOneWidget);
+        expect(find.text('TASKS'), findsOneWidget);
+        expect(find.text('PROJECTS'), findsOneWidget);
+        expect(find.text('REPORTS'), findsOneWidget);
+        expect(find.byType(ModuleAppBar), findsNothing);
+
+        // 1. Open Tasks full-screen
+        await tester.tap(find.text('TASKS'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ModuleAppBar), findsOneWidget);
+        expect(find.text('Tasks & Kanban'), findsOneWidget);
+        expect(find.text('PULSE'), findsNothing);
+        expect(find.text('Dashboard'), findsNothing);
+
+        // Pop back to Dashboard
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+        expect(find.text('PULSE'), findsOneWidget);
+        expect(find.text('Dashboard'), findsOneWidget);
+
+        // 2. Open Projects full-screen
+        await tester.tap(find.text('PROJECTS'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ModuleAppBar), findsOneWidget);
+        expect(find.text('Projects'), findsOneWidget);
+        expect(find.text('PULSE'), findsNothing);
+
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+        expect(find.text('PULSE'), findsOneWidget);
+
+        // 3. Open Reports full-screen
+        await tester.tap(find.text('REPORTS'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ModuleAppBar), findsOneWidget);
+        expect(find.text('Daily Reports Inbox'), findsOneWidget);
+        expect(find.text('PULSE'), findsNothing);
+
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+        expect(find.text('PULSE'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+}
+
+class _FakeDashboardHttpClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final path = request.url.path;
+    Map<String, dynamic> payload;
+
+    if (path.contains('dashboard.php')) {
+      payload = {
+        'ok': true,
+        'role': 'admin',
+        'kpis': {
+          'total_projects': 1,
+          'active_projects': 1,
+          'at_risk_projects': 0,
+          'total_tasks': 2,
+          'completed_tasks': 1,
+          'pending_tasks': 1,
+          'overdue_tasks': 0,
+          'active_employees': 2,
+          'reports_submitted_today': 1,
+          'reports_pending_today': 1,
+          'compliance_percent': 50,
+        },
+        'alerts': {
+          'reports_awaiting_review': 0,
+          'overdue_tasks': <dynamic>[],
+          'blocked_tasks': <dynamic>[],
+        },
+        'active_projects': <dynamic>[],
+        'compliance': <String, dynamic>{
+          'submitted_today': false,
+          'is_exempt': false,
+          'expected': true,
+        },
+        'recent_activity': <dynamic>[],
+      };
+    } else if (path.contains('/projects')) {
+      payload = {'ok': true, 'projects': <dynamic>[], 'total': 0};
+    } else if (path.contains('/tasks')) {
+      payload = {'ok': true, 'tasks': <dynamic>[], 'total': 0};
+    } else if (path.contains('/reports')) {
+      payload = {'ok': true, 'reports': <dynamic>[], 'total': 0};
+    } else if (path.contains('/notifications')) {
+      payload = {'ok': true, 'unread_count': 0, 'notifications': <dynamic>[]};
+    } else if (path.contains('/departments')) {
+      payload = {'ok': true, 'departments': <dynamic>[]};
+    } else if (path.contains('/employees')) {
+      payload = {'ok': true, 'employees': <dynamic>[]};
+    } else {
+      payload = {'ok': true, 'settings': <String, dynamic>{}};
+    }
+
+    final bytes = utf8.encode(jsonEncode(payload));
+    return http.StreamedResponse(
+      Stream<List<int>>.fromIterable([bytes]),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  }
 }

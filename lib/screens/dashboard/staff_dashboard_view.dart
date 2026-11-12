@@ -665,27 +665,33 @@ class StaffDashboardView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (task['reason'] != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isOverdue ? AppTheme.dangerBg : AppTheme.scaffoldBg,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    task['reason'].toString(),
-                    style: AppTheme.heading(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: isOverdue
-                          ? AppTheme.dangerText
-                          : AppTheme.mutedSlate,
+              if (task['reason'] != null) ...[
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isOverdue ? AppTheme.dangerBg : AppTheme.scaffoldBg,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      task['reason'].toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isOverdue
+                            ? AppTheme.dangerText
+                            : AppTheme.mutedSlate,
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+              ],
               Text(
                 '$progress% completed',
                 style: AppTheme.mono(
@@ -785,10 +791,15 @@ class StaffDashboardView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                task['project_name']?.toString() ?? '',
-                style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+              Expanded(
+                child: Text(
+                  task['project_name']?.toString() ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '$progress%',
                 style: AppTheme.mono(
@@ -952,13 +963,18 @@ class StaffDashboardView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        task['project_name']?.toString() ?? '',
-                        style: AppTheme.body(
-                          fontSize: 11,
-                          color: AppTheme.mutedSlate,
+                      Expanded(
+                        child: Text(
+                          task['project_name']?.toString() ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.body(
+                            fontSize: 11,
+                            color: AppTheme.mutedSlate,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

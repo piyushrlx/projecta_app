@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../models/user_model.dart';
 import '../projects/project_detail_screen.dart';
 import '../projects/project_form_screen.dart';
@@ -1769,11 +1769,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Text(
-                        staff['department_name']?.toString() ?? '',
-                        style: AppTheme.body(
-                          fontSize: 11,
-                          color: AppTheme.mutedSlate,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          staff['department_name']?.toString() ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: AppTheme.body(
+                            fontSize: 11,
+                            color: AppTheme.mutedSlate,
+                          ),
                         ),
                       ),
                     ],
@@ -1973,10 +1979,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            task['project_name']?.toString() ?? '',
-            style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
-            overflow: TextOverflow.ellipsis,
+          Flexible(
+            child: Text(
+              task['project_name']?.toString() ?? '',
+              maxLines: 1,
+              style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -2103,7 +2112,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Start ${proj['start_date'] ?? '—'}',
@@ -2112,7 +2124,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       color: AppTheme.mutedSlate,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
                     '·',
                     style: const TextStyle(
@@ -2120,7 +2131,6 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                       fontSize: 10,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
                     'Due ${proj['deadline'] ?? '—'}',
                     style: AppTheme.mono(
@@ -2215,28 +2225,17 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         ...display.map((m) {
           final member = m as Map<String, dynamic>;
           final name = member['full_name']?.toString() ?? '';
-          final rawPhoto = member['profile_photo']?.toString();
-          final photo = ApiClient().resolveMediaUrl(rawPhoto);
+          final rawPhoto = (member['profile_photo_url'] ?? member['profile_photo'])
+              ?.toString();
           return Container(
             margin: const EdgeInsets.only(right: 3),
-            child: photo != null && photo.isNotEmpty && photo.startsWith('http')
-                ? CircleAvatar(
-                    radius: 10,
-                    backgroundImage: NetworkImage(photo),
-                    onBackgroundImageError: (_, _) {},
-                  )
-                : CircleAvatar(
-                    radius: 10,
-                    backgroundColor: const Color(0xFFE2E8F0),
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                  ),
+            child: UserAvatar(
+              name: name,
+              photoUrl: rawPhoto,
+              size: 20,
+              fontSize: 8,
+              singleInitial: true,
+            ),
           );
         }),
         if (memberCount > 4)

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/module_app_bar.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../services/directory_service.dart';
 import 'departments_screen.dart';
 import 'employee_detail_screen.dart';
@@ -111,7 +113,8 @@ class _TeamListScreenState extends State<TeamListScreen>
             _statusFilter == 'ALL' ||
             (_statusFilter == 'ACTIVE' && status == 'active') ||
             (_statusFilter == 'ON LEAVE' && status == 'on_leave') ||
-            (_statusFilter == 'RESIGNED' && (status == 'resigned' || status == 'inactive'));
+            (_statusFilter == 'RESIGNED' &&
+                (status == 'resigned' || status == 'inactive'));
 
         return matchesSearch && matchesStatus;
       }).toList();
@@ -173,110 +176,32 @@ class _TeamListScreenState extends State<TeamListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(
-              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+      appBar: ModuleAppBar(
+        title: 'Team Management',
+        subtitle:
+            '${_filtered.length} of ${_employees.length} member${_employees.length == 1 ? '' : 's'}',
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.domain_outlined,
+              color: AppTheme.deepSlate,
+              size: 22,
             ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: AppTheme.deepSlate,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Team Management',
-                      style: AppTheme.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.domain_outlined, color: AppTheme.deepSlate, size: 22),
-                    tooltip: 'Departments',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            DepartmentsScreen(directoryService: _directoryService),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  // Notification Bell with Badge
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(
-                          Icons.notifications_outlined,
-                          color: AppTheme.deepSlate,
-                          size: 24,
-                        ),
-                        onPressed: () {},
-                      ),
-                      Positioned(
-                        top: -2,
-                        right: -4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.dangerText,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text(
-                            '9+',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: AppTheme.pureWhite,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  // User Avatar Circle
-                  const CircleAvatar(
-                    radius: 17,
-                    backgroundColor: Color(0xFF64748B),
-                    child: Text(
-                      'AD',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.pureWhite,
-                      ),
-                    ),
-                  ),
-                ],
+            tooltip: 'Departments',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    DepartmentsScreen(directoryService: _directoryService),
               ),
             ),
           ),
-        ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
+            tooltip: 'Refresh',
+            onPressed: _loadEmployees,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -330,12 +255,14 @@ class _TeamListScreenState extends State<TeamListScreen>
       ),
       // Circular Royal Blue FAB (Opens Add Employee)
       floatingActionButton: FloatingActionButton(
+        heroTag: 'team_list_fab',
         onPressed: () async {
           HapticFeedback.lightImpact();
           final created = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => EmployeeFormScreen(directoryService: _directoryService),
+              builder: (_) =>
+                  EmployeeFormScreen(directoryService: _directoryService),
             ),
           );
           if (created == true) {
@@ -529,27 +456,18 @@ class _TeamListScreenState extends State<TeamListScreen>
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          // Avatar initials circle
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppTheme.navyBlue,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppTheme.royalBlue.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                _getInitials(name),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.pureWhite,
-                ),
-              ),
+          // Avatar with initials fallback
+          UserAvatar(
+            name: name,
+            photoUrl: (emp['profile_photo_url'] ?? emp['profile_photo'])
+                ?.toString(),
+            size: 44,
+            backgroundColor: AppTheme.navyBlue,
+            textColor: AppTheme.pureWhite,
+            fontSize: 15,
+            border: Border.all(
+              color: AppTheme.royalBlue.withValues(alpha: 0.3),
+              width: 1.5,
             ),
           ),
           const SizedBox(width: 12),
@@ -618,7 +536,11 @@ class _TeamListScreenState extends State<TeamListScreen>
               ),
               const SizedBox(height: 4),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20, color: AppTheme.mutedSlate),
+                icon: const Icon(
+                  Icons.more_vert,
+                  size: 20,
+                  color: AppTheme.mutedSlate,
+                ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 onSelected: (val) {
@@ -627,8 +549,14 @@ class _TeamListScreenState extends State<TeamListScreen>
                   if (val == 'toggle') _toggleEmployeeStatus(emp);
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'view', child: Text('View Profile')),
-                  const PopupMenuItem(value: 'edit', child: Text('Edit Employee')),
+                  const PopupMenuItem(
+                    value: 'view',
+                    child: Text('View Profile'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit Employee'),
+                  ),
                   PopupMenuItem(
                     value: 'toggle',
                     child: Text(status == 'active' ? 'Deactivate' : 'Activate'),
@@ -706,12 +634,17 @@ class _TeamListScreenState extends State<TeamListScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate)),
+            child: Text(
+              'Cancel',
+              style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActivating ? AppTheme.royalBlue : AppTheme.dangerText,
+              backgroundColor: isActivating
+                  ? AppTheme.royalBlue
+                  : AppTheme.dangerText,
             ),
             child: Text(
               isActivating ? 'Activate' : 'Deactivate',
@@ -728,7 +661,9 @@ class _TeamListScreenState extends State<TeamListScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(res['message']?.toString() ?? 'Status updated successfully.'),
+              content: Text(
+                res['message']?.toString() ?? 'Status updated successfully.',
+              ),
               backgroundColor: AppTheme.successText,
             ),
           );
@@ -738,7 +673,9 @@ class _TeamListScreenState extends State<TeamListScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.toString().replaceAll('ApiException:', '').trim()),
+              content: Text(
+                e.toString().replaceAll('ApiException:', '').trim(),
+              ),
               backgroundColor: AppTheme.dangerText,
             ),
           );

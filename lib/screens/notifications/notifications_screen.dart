@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/notification_router.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -11,11 +12,7 @@ class NotificationsScreen extends StatefulWidget {
   final UserModel? user;
   final NotificationService? notificationService;
 
-  const NotificationsScreen({
-    super.key,
-    this.user,
-    this.notificationService,
-  });
+  const NotificationsScreen({super.key, this.user, this.notificationService});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -30,7 +27,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   String? _errorMessage;
   List<NotificationModel> _notifications = [];
   int _unreadCount = 0;
-  String _selectedFilter = 'ALL'; // 'ALL', 'UNREAD', 'TASKS', 'PROJECTS', 'REPORTS'
+  String _selectedFilter =
+      'ALL'; // 'ALL', 'UNREAD', 'TASKS', 'PROJECTS', 'REPORTS'
 
   static const List<String> _filters = [
     'ALL',
@@ -51,7 +49,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadCurrentUser() async {
-    final user = AuthService().currentUser ?? await AuthService().getCurrentUser();
+    final user =
+        AuthService().currentUser ?? await AuthService().getCurrentUser();
     if (mounted) {
       setState(() {
         _currentUser = user;
@@ -205,22 +204,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Text('Notifications', style: AppTheme.heading(fontSize: 18)),
+      appBar: ModuleAppBar(
+        title: 'Notifications',
+        subtitle: _unreadCount > 0
+            ? '$_unreadCount unread · ${_notifications.length} total'
+            : '${_notifications.length} notification${_notifications.length == 1 ? '' : 's'}',
         actions: [
           if (_unreadCount > 0)
             TextButton(
               onPressed: _handleMarkAllRead,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               child: Text(
                 'Mark all read',
                 style: AppTheme.heading(
-                  fontSize: 13,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.royalBlue,
                 ),
               ),
             ),
           IconButton(
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
             tooltip: 'Refresh',
             onPressed: _loadNotifications,
@@ -322,11 +335,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? (filter == 'UNREAD' && count > 0
-                                  ? AppTheme.dangerText
-                                  : AppTheme.pureWhite.withValues(alpha: 0.25))
+                                    ? AppTheme.dangerText
+                                    : AppTheme.pureWhite.withValues(
+                                        alpha: 0.25,
+                                      ))
                               : (filter == 'UNREAD' && count > 0
-                                  ? AppTheme.dangerText
-                                  : const Color(0xFFF1F5F9)),
+                                    ? AppTheme.dangerText
+                                    : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -337,8 +352,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             color: isSelected
                                 ? AppTheme.pureWhite
                                 : (filter == 'UNREAD' && count > 0
-                                    ? AppTheme.pureWhite
-                                    : AppTheme.deepSlate),
+                                      ? AppTheme.pureWhite
+                                      : AppTheme.deepSlate),
                           ),
                         ),
                       ),
@@ -462,11 +477,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      n.createdAt,
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.lightSlate,
+                    Expanded(
+                      child: Text(
+                        n.createdAt,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: AppTheme.lightSlate,
+                        ),
                       ),
                     ),
                     if (!n.isRead)
@@ -576,10 +595,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const SizedBox(height: 12),
           Text(title, style: AppTheme.heading(fontSize: 16)),
           const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: AppTheme.body(color: AppTheme.mutedSlate),
-          ),
+          Text(subtitle, style: AppTheme.body(color: AppTheme.mutedSlate)),
         ],
       ),
     );

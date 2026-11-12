@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/department_model.dart';
 import '../../services/directory_service.dart';
 import '../projects/projects_list_screen.dart';
@@ -47,7 +48,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
 
     try {
       final depts = await _directoryService.getDepartmentModels(status: 'all');
-      final employees = await _directoryService.getEmployees(status: 'all', limit: 100);
+      final employees = await _directoryService.getEmployees(
+        status: 'all',
+        limit: 100,
+      );
 
       if (mounted) {
         setState(() {
@@ -55,7 +59,8 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
           _managers = employees.where((e) {
             final role = (e['role'] ?? '').toString().toLowerCase();
             final status = (e['status'] ?? 'active').toString().toLowerCase();
-            return (role == 'admin' || role == 'super_admin') && status == 'active';
+            return (role == 'admin' || role == 'super_admin') &&
+                status == 'active';
           }).toList();
           _isLoading = false;
         });
@@ -84,7 +89,8 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
         final name = dept.name.toLowerCase();
         final desc = (dept.description ?? '').toLowerCase();
         final mgr = (dept.managerName ?? '').toLowerCase();
-        final matchesQuery = query.isEmpty ||
+        final matchesQuery =
+            query.isEmpty ||
             name.contains(query) ||
             desc.contains(query) ||
             mgr.contains(query);
@@ -104,10 +110,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
 
   Future<void> _openDepartmentDialog({DepartmentModel? department}) async {
     final isEdit = department != null;
-    final nameController =
-        TextEditingController(text: department?.name ?? '');
-    final descController =
-        TextEditingController(text: department?.description ?? '');
+    final nameController = TextEditingController(text: department?.name ?? '');
+    final descController = TextEditingController(
+      text: department?.description ?? '',
+    );
     int? selectedManagerId = department?.managerId;
     String status = department?.status ?? 'active';
     String? formError;
@@ -131,7 +137,7 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                   color: Color(0x33000000),
                   blurRadius: 20,
                   offset: Offset(0, -4),
-                )
+                ),
               ],
             ),
             child: SingleChildScrollView(
@@ -177,7 +183,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppTheme.mutedSlate),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppTheme.mutedSlate,
+                        ),
                         onPressed: () => Navigator.pop(sheetContext),
                       ),
                     ],
@@ -191,18 +200,24 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                         color: AppTheme.dangerBg,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                            color: AppTheme.dangerText.withValues(alpha: 0.3)),
+                          color: AppTheme.dangerText.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline,
-                              color: AppTheme.dangerText, size: 18),
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppTheme.dangerText,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               formError!,
                               style: AppTheme.body(
-                                  fontSize: 12, color: AppTheme.dangerText),
+                                fontSize: 12,
+                                color: AppTheme.dangerText,
+                              ),
                             ),
                           ),
                         ],
@@ -212,76 +227,109 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                   ],
 
                   // Department Name
-                  Text('Department Name *',
-                      style: AppTheme.body(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate)),
+                  Text(
+                    'Department Name *',
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: nameController,
-                    style: AppTheme.body(fontSize: 14, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 14,
+                      color: AppTheme.deepSlate,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'e.g. Mobile Engineering, QA & Testing',
                       hintStyle: AppTheme.body(color: AppTheme.lightSlate),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: AppTheme.borderSubtle,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.royalBlue, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppTheme.royalBlue,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Description
-                  Text('Description',
-                      style: AppTheme.body(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate)),
+                  Text(
+                    'Description',
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: descController,
                     maxLines: 3,
-                    style: AppTheme.body(fontSize: 14, color: AppTheme.deepSlate),
+                    style: AppTheme.body(
+                      fontSize: 14,
+                      color: AppTheme.deepSlate,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Scope, key functions, and responsibilities...',
                       hintStyle: AppTheme.body(color: AppTheme.lightSlate),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: AppTheme.borderSubtle,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.royalBlue, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppTheme.royalBlue,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Department Head
-                  Text('Department Head / Manager',
-                      style: AppTheme.body(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate)),
+                  Text(
+                    'Department Head / Manager',
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int?>(
                     initialValue: selectedManagerId,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppTheme.borderSubtle),
+                        borderSide: const BorderSide(
+                          color: AppTheme.borderSubtle,
+                        ),
                       ),
                     ),
                     items: [
@@ -305,11 +353,14 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                   const SizedBox(height: 16),
 
                   // Status Toggle
-                  Text('Operational Status',
-                      style: AppTheme.body(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.deepSlate)),
+                  Text(
+                    'Operational Status',
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -333,11 +384,13 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.check_circle,
-                                    size: 16,
-                                    color: status == 'active'
-                                        ? AppTheme.successText
-                                        : AppTheme.mutedSlate),
+                                Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: status == 'active'
+                                      ? AppTheme.successText
+                                      : AppTheme.mutedSlate,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'ACTIVE',
@@ -375,11 +428,13 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.cancel,
-                                    size: 16,
-                                    color: status == 'inactive'
-                                        ? AppTheme.dangerText
-                                        : AppTheme.mutedSlate),
+                                Icon(
+                                  Icons.cancel,
+                                  size: 16,
+                                  color: status == 'inactive'
+                                      ? AppTheme.dangerText
+                                      : AppTheme.mutedSlate,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'INACTIVE',
@@ -405,17 +460,25 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: isSaving ? null : () => Navigator.pop(sheetContext),
+                          onPressed: isSaving
+                              ? null
+                              : () => Navigator.pop(sheetContext),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: AppTheme.borderSubtle),
+                            side: const BorderSide(
+                              color: AppTheme.borderSubtle,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: Text('Cancel',
-                              style: AppTheme.heading(
-                                  fontSize: 14, color: AppTheme.mutedSlate)),
+                          child: Text(
+                            'Cancel',
+                            style: AppTheme.heading(
+                              fontSize: 14,
+                              color: AppTheme.mutedSlate,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -427,13 +490,17 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                               : () async {
                                   final name = nameController.text.trim();
                                   if (name.isEmpty) {
-                                    setSheetState(() =>
-                                        formError = 'Department name is required.');
+                                    setSheetState(
+                                      () => formError =
+                                          'Department name is required.',
+                                    );
                                     return;
                                   }
                                   if (name.length > 120) {
-                                    setSheetState(() => formError =
-                                        'Department name must be under 120 characters.');
+                                    setSheetState(
+                                      () => formError =
+                                          'Department name must be under 120 characters.',
+                                    );
                                     return;
                                   }
 
@@ -442,7 +509,9 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                                     formError = null;
                                   });
 
-                                  final messenger = ScaffoldMessenger.of(context);
+                                  final messenger = ScaffoldMessenger.of(
+                                    context,
+                                  );
                                   final navigator = Navigator.of(sheetContext);
 
                                   try {
@@ -460,8 +529,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                                     navigator.pop(true);
                                     messenger.showSnackBar(
                                       SnackBar(
-                                        content: Text(res['message']?.toString() ??
-                                            'Department saved successfully.'),
+                                        content: Text(
+                                          res['message']?.toString() ??
+                                              'Department saved successfully.',
+                                        ),
                                         backgroundColor: AppTheme.successText,
                                       ),
                                     );
@@ -488,15 +559,18 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppTheme.pureWhite),
+                                    strokeWidth: 2,
+                                    color: AppTheme.pureWhite,
+                                  ),
                                 )
                               : Text(
                                   isEdit
                                       ? 'Update Department'
                                       : 'Create Department',
                                   style: AppTheme.heading(
-                                      fontSize: 14, color: AppTheme.pureWhite),
+                                    fontSize: 14,
+                                    color: AppTheme.pureWhite,
+                                  ),
                                 ),
                         ),
                       ),
@@ -533,7 +607,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
             Expanded(
               child: Text(
                 inUse ? 'Deactivate Department' : 'Delete Department',
-                style: AppTheme.heading(fontSize: 17, color: AppTheme.deepSlate),
+                style: AppTheme.heading(
+                  fontSize: 17,
+                  color: AppTheme.deepSlate,
+                ),
               ),
             ),
           ],
@@ -547,14 +624,17 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel',
-                style: AppTheme.body(fontSize: 14, color: AppTheme.mutedSlate)),
+            child: Text(
+              'Cancel',
+              style: AppTheme.body(fontSize: 14, color: AppTheme.mutedSlate),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  inUse ? const Color(0xFFF59E0B) : AppTheme.dangerText,
+              backgroundColor: inUse
+                  ? const Color(0xFFF59E0B)
+                  : AppTheme.dangerText,
             ),
             child: Text(
               inUse ? 'Deactivate' : 'Delete Permanently',
@@ -572,10 +652,13 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
       final res = await _directoryService.deleteDepartment(dept.id);
       messenger.showSnackBar(
         SnackBar(
-          content: Text(res['message']?.toString() ??
-              (inUse ? 'Department deactivated.' : 'Department deleted.')),
-          backgroundColor:
-              inUse ? const Color(0xFFF59E0B) : AppTheme.successText,
+          content: Text(
+            res['message']?.toString() ??
+                (inUse ? 'Department deactivated.' : 'Department deleted.'),
+          ),
+          backgroundColor: inUse
+              ? const Color(0xFFF59E0B)
+              : AppTheme.successText,
         ),
       );
       _loadData();
@@ -611,48 +694,40 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: AppTheme.pureWhite,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Department Management',
-              style: AppTheme.heading(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.deepSlate,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              '${_departments.length} registered department(s)',
-              style: AppTheme.body(
-                fontSize: 11,
-                color: AppTheme.mutedSlate,
-              ),
-            ),
-          ],
-        ),
+      appBar: ModuleAppBar(
+        title: 'Department Management',
+        subtitle: '${_departments.length} registered department(s)',
         actions: [
+          IconButton(
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
+            tooltip: 'Refresh',
+            onPressed: _loadData,
+          ),
+          const SizedBox(width: 2),
           Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 6.0),
             child: ElevatedButton.icon(
               onPressed: () => _openDepartmentDialog(),
-              icon: const Icon(Icons.add, size: 16),
+              icon: const Icon(Icons.add, size: 15),
               label: const Text('Add Dept'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.royalBlue,
                 foregroundColor: AppTheme.pureWhite,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                textStyle: AppTheme.heading(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -660,205 +735,225 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
             ),
           ),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1.0),
-          child: Divider(color: AppTheme.borderSubtle, height: 1.0),
-        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
         color: AppTheme.royalBlue,
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: AppTheme.royalBlue))
+                child: CircularProgressIndicator(color: AppTheme.royalBlue),
+              )
             : _errorMessage != null
-                ? Center(
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.cloud_off_outlined,
+                        size: 48,
+                        color: AppTheme.mutedSlate,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: AppTheme.body(color: AppTheme.mutedSlate),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: _loadData,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.royalBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : CustomScrollView(
+                slivers: [
+                  // 1. KPI Summary Matrix Cards
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: LayoutBuilder(
+                        builder: (ctx, constraints) {
+                          final itemWidth = (constraints.maxWidth - 12) / 2;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              _buildKpiCard(
+                                width: itemWidth,
+                                label: 'Total Departments',
+                                value: '$_totalDepartments',
+                                icon: Icons.domain_outlined,
+                                accentColor: AppTheme.royalBlue,
+                              ),
+                              _buildKpiCard(
+                                width: itemWidth,
+                                label: 'Active Departments',
+                                value: '$_activeDepartments',
+                                icon: Icons.check_circle_outline,
+                                accentColor: AppTheme.successText,
+                              ),
+                              _buildKpiCard(
+                                width: itemWidth,
+                                label: 'Staff Assigned',
+                                value: '$_totalAssignedEmployees',
+                                icon: Icons.people_outline,
+                                accentColor: const Color(0xFF8B5CF6),
+                              ),
+                              _buildKpiCard(
+                                width: itemWidth,
+                                label: 'Active Projects',
+                                value: '$_totalActiveProjects',
+                                icon: Icons.assignment_outlined,
+                                accentColor: const Color(0xFFF59E0B),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // 2. Search & Filter Bar
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Icon(Icons.cloud_off_outlined,
-                              size: 48, color: AppTheme.mutedSlate),
-                          const SizedBox(height: 12),
-                          Text(_errorMessage!,
-                              textAlign: TextAlign.center,
-                              style: AppTheme.body(color: AppTheme.mutedSlate)),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _loadData,
-                            icon: const Icon(Icons.refresh, size: 16),
-                            label: const Text('Retry'),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.royalBlue),
+                          // Search Input
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppTheme.pureWhite,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppTheme.borderSubtle),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (_) => _applyFilters(),
+                              style: AppTheme.body(
+                                fontSize: 13,
+                                color: AppTheme.deepSlate,
+                              ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Search by name, description, or head...',
+                                hintStyle: AppTheme.body(
+                                  fontSize: 13,
+                                  color: AppTheme.lightSlate,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.search,
+                                  size: 18,
+                                  color: AppTheme.mutedSlate,
+                                ),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(
+                                          Icons.clear,
+                                          size: 16,
+                                          color: AppTheme.mutedSlate,
+                                        ),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _applyFilters();
+                                        },
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Status Filter Chips
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildFilterChip('ALL', _departments.length),
+                                const SizedBox(width: 8),
+                                _buildFilterChip(
+                                  'ACTIVE',
+                                  _departments.where((d) => d.isActive).length,
+                                ),
+                                const SizedBox(width: 8),
+                                _buildFilterChip(
+                                  'INACTIVE',
+                                  _departments.where((d) => !d.isActive).length,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  )
-                : CustomScrollView(
-                    slivers: [
-                      // 1. KPI Summary Matrix Cards
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: LayoutBuilder(
-                            builder: (ctx, constraints) {
-                              final itemWidth = (constraints.maxWidth - 12) / 2;
-                              return Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: [
-                                  _buildKpiCard(
-                                    width: itemWidth,
-                                    label: 'Total Departments',
-                                    value: '$_totalDepartments',
-                                    icon: Icons.domain_outlined,
-                                    accentColor: AppTheme.royalBlue,
-                                  ),
-                                  _buildKpiCard(
-                                    width: itemWidth,
-                                    label: 'Active Departments',
-                                    value: '$_activeDepartments',
-                                    icon: Icons.check_circle_outline,
-                                    accentColor: AppTheme.successText,
-                                  ),
-                                  _buildKpiCard(
-                                    width: itemWidth,
-                                    label: 'Staff Assigned',
-                                    value: '$_totalAssignedEmployees',
-                                    icon: Icons.people_outline,
-                                    accentColor: const Color(0xFF8B5CF6),
-                                  ),
-                                  _buildKpiCard(
-                                    width: itemWidth,
-                                    label: 'Active Projects',
-                                    value: '$_totalActiveProjects',
-                                    icon: Icons.assignment_outlined,
-                                    accentColor: const Color(0xFFF59E0B),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                  ),
 
-                      // 2. Search & Filter Bar
-                      SliverToBoxAdapter(
+                  // 3. Department Cards List
+                  if (_filteredDepartments.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
+                          padding: const EdgeInsets.all(32.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Search Input
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppTheme.pureWhite,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppTheme.borderSubtle),
-                                ),
-                                child: TextField(
-                                  controller: _searchController,
-                                  onChanged: (_) => _applyFilters(),
-                                  style: AppTheme.body(
-                                      fontSize: 13, color: AppTheme.deepSlate),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'Search by name, description, or head...',
-                                    hintStyle: AppTheme.body(
-                                        fontSize: 13, color: AppTheme.lightSlate),
-                                    prefixIcon: const Icon(Icons.search,
-                                        size: 18, color: AppTheme.mutedSlate),
-                                    suffixIcon: _searchController.text.isNotEmpty
-                                        ? IconButton(
-                                            icon: const Icon(Icons.clear,
-                                                size: 16,
-                                                color: AppTheme.mutedSlate),
-                                            onPressed: () {
-                                              _searchController.clear();
-                                              _applyFilters();
-                                            },
-                                          )
-                                        : null,
-                                    border: InputBorder.none,
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(vertical: 12),
-                                  ),
+                              const Icon(
+                                Icons.folder_off_outlined,
+                                size: 48,
+                                color: AppTheme.lightSlate,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No departments match your filters.',
+                                style: AppTheme.body(
+                                  color: AppTheme.mutedSlate,
+                                  fontSize: 14,
                                 ),
                               ),
-                              const SizedBox(height: 10),
-
-                              // Status Filter Chips
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    _buildFilterChip('ALL', _departments.length),
-                                    const SizedBox(width: 8),
-                                    _buildFilterChip(
-                                        'ACTIVE',
-                                        _departments
-                                            .where((d) => d.isActive)
-                                            .length),
-                                    const SizedBox(width: 8),
-                                    _buildFilterChip(
-                                        'INACTIVE',
-                                        _departments
-                                            .where((d) => !d.isActive)
-                                            .length),
-                                  ],
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => _openDepartmentDialog(),
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('Add Department'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.royalBlue,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-
-                      // 3. Department Cards List
-                      if (_filteredDepartments.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.folder_off_outlined,
-                                      size: 48, color: AppTheme.lightSlate),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No departments match your filters.',
-                                    style: AppTheme.body(
-                                        color: AppTheme.mutedSlate, fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _openDepartmentDialog(),
-                                    icon: const Icon(Icons.add, size: 16),
-                                    label: const Text('Add Department'),
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.royalBlue),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (ctx, i) => _buildDepartmentCard(_filteredDepartments[i]),
-                              childCount: _filteredDepartments.length,
-                            ),
-                          ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (ctx, i) =>
+                              _buildDepartmentCard(_filteredDepartments[i]),
+                          childCount: _filteredDepartments.length,
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                ],
+              ),
       ),
     );
   }
@@ -1029,7 +1124,9 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: dept.isActive
                                 ? AppTheme.successBg
@@ -1055,7 +1152,9 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                       Text(
                         dept.description!,
                         style: AppTheme.body(
-                            fontSize: 12, color: AppTheme.mutedSlate),
+                          fontSize: 12,
+                          color: AppTheme.mutedSlate,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1083,7 +1182,8 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                   backgroundColor: AppTheme.royalBlue.withValues(alpha: 0.2),
                   child: Text(
                     dept.hasManager
-                        ? (dept.managerName?.substring(0, 1).toUpperCase() ?? 'M')
+                        ? (dept.managerName?.substring(0, 1).toUpperCase() ??
+                              'M')
                         : '—',
                     style: AppTheme.mono(
                       fontSize: 10,
@@ -1128,8 +1228,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                 child: BrutalistPressable(
                   onTap: () => _navigateToStaff(dept),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.pureWhite,
                       borderRadius: BorderRadius.circular(8),
@@ -1138,8 +1240,11 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.people_outline,
-                            size: 14, color: AppTheme.royalBlue),
+                        const Icon(
+                          Icons.people_outline,
+                          size: 14,
+                          color: AppTheme.royalBlue,
+                        ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -1153,8 +1258,11 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(Icons.chevron_right,
-                            size: 14, color: AppTheme.lightSlate),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: AppTheme.lightSlate,
+                        ),
                       ],
                     ),
                   ),
@@ -1167,8 +1275,10 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                 child: BrutalistPressable(
                   onTap: () => _navigateToProjects(dept),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.pureWhite,
                       borderRadius: BorderRadius.circular(8),
@@ -1177,8 +1287,11 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.folder_outlined,
-                            size: 14, color: Color(0xFFF59E0B)),
+                        const Icon(
+                          Icons.folder_outlined,
+                          size: 14,
+                          color: Color(0xFFF59E0B),
+                        ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -1192,8 +1305,11 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(Icons.chevron_right,
-                            size: 14, color: AppTheme.lightSlate),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: AppTheme.lightSlate,
+                        ),
                       ],
                     ),
                   ),
@@ -1204,8 +1320,11 @@ class _DepartmentsScreenState extends State<DepartmentsScreen> {
 
               // Edit Action
               IconButton(
-                icon: const Icon(Icons.edit_outlined,
-                    size: 18, color: AppTheme.royalBlue),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: AppTheme.royalBlue,
+                ),
                 tooltip: 'Edit Department',
                 constraints: const BoxConstraints(),
                 padding: const EdgeInsets.all(6),

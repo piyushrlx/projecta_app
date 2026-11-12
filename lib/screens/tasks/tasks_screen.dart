@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/offline_cache_banner.dart';
 import '../../models/task_model.dart';
+import '../../services/auth_service.dart';
 import '../../services/task_service.dart';
+import 'create_task_screen.dart';
 import 'task_detail_screen.dart';
 import 'widgets/kanban_board_view.dart';
 import 'widgets/kanban_status_move_sheet.dart';
@@ -37,12 +41,25 @@ class _TasksScreenState extends State<TasksScreen> {
   bool _isKanbanView = false;
   bool _isOfflineCached = false;
 
+  // Search State
+  bool _showSearchBar = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounce;
+
   // List View State
   List<TaskModel> _tasks = [];
   late String _selectedFilter = widget.initialFilter ?? 'All';
 
   // Kanban View State
   String _selectedKanbanPriority = 'All';
+  Map<String, List<TaskModel>> _rawKanbanColumns = {
+    'not_started': [],
+    'in_progress': [],
+    'blocked': [],
+    'pending_review': [],
+    'completed': [],
+  };
   Map<String, List<TaskModel>> _kanbanColumns = {
     'not_started': [],
     'in_progress': [],
@@ -50,6 +67,9 @@ class _TasksScreenState extends State<TasksScreen> {
     'pending_review': [],
     'completed': [],
   };
+
+  int get _totalKanbanTasks =>
+      _kanbanColumns.values.fold(0, (sum, list) => sum + list.length);
 
   late final PageController _kanbanPageController;
   int _activeKanbanPage = 0;
@@ -63,8 +83,67 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _kanbanPageController.dispose();
     super.dispose();
+  }
+
+  Map<String, List<TaskModel>> _filterKanbanByQuery(
+    Map<String, List<TaskModel>> source,
+    String query,
+  ) {
+    final clean = query.trim().toLowerCase();
+    final filtered = <String, List<TaskModel>>{};
+    source.forEach((col, items) {
+      if (clean.isEmpty) {
+        filtered[col] = List<TaskModel>.from(items);
+      } else {
+        filtered[col] = items.where((t) {
+          return t.title.toLowerCase().contains(clean) ||
+              t.taskCode.toLowerCase().contains(clean) ||
+              (t.projectName?.toLowerCase().contains(clean) ?? false);
+        }).toList();
+      }
+    });
+    return filtered;
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {});
+    if (_isKanbanView) {
+      setState(() {
+        _kanbanColumns = _filterKanbanByQuery(_rawKanbanColumns, query);
+      });
+      return;
+    }
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      _loadData();
+    });
+  }
+
+  void _toggleSearchBar() {
+    if (_showSearchBar) {
+      final hadText = _searchController.text.trim().isNotEmpty;
+      _searchDebounce?.cancel();
+      _searchController.clear();
+      setState(() {
+        _showSearchBar = false;
+        if (_isKanbanView && hadText) {
+          _kanbanColumns = _filterKanbanByQuery(_rawKanbanColumns, '');
+        }
+      });
+      if (!_isKanbanView && hadText) {
+        _loadData();
+      }
+    } else {
+      setState(() => _showSearchBar = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -99,7 +178,11 @@ class _TasksScreenState extends State<TasksScreen> {
             });
           }
           setState(() {
-            _kanbanColumns = parsedCols;
+            _rawKanbanColumns = parsedCols;
+            _kanbanColumns = _filterKanbanByQuery(
+              parsedCols,
+              _searchController.text,
+            );
             _isOfflineCached = res['is_cached'] == true;
             _isLoading = false;
           });
@@ -116,11 +199,13 @@ class _TasksScreenState extends State<TasksScreen> {
         if (upper == 'PENDING REVIEW') status = 'pending_review';
         if (upper == 'MY PRIORITY') priority = 'high';
 
+        final searchQuery = _searchController.text.trim();
         final res = await _taskService.getTasks(
           projectId: widget.projectId,
           status: status,
           overdue: overdue,
           priority: priority,
+          search: searchQuery.isNotEmpty ? searchQuery : null,
           limit: 100,
         );
 
@@ -240,7 +325,13 @@ class _TasksScreenState extends State<TasksScreen> {
     HapticFeedback.mediumImpact();
 
     final previousColumns = <String, List<TaskModel>>{};
-    _kanbanColumns.forEach((k, v) => previousColumns[k] = List<TaskModel>.from(v));
+    _kanbanColumns.forEach(
+      (k, v) => previousColumns[k] = List<TaskModel>.from(v),
+    );
+    final previousRawColumns = <String, List<TaskModel>>{};
+    _rawKanbanColumns.forEach(
+      (k, v) => previousRawColumns[k] = List<TaskModel>.from(v),
+    );
 
     final fromStatus = task.status;
     final updatedTask = task.copyWith(
@@ -252,6 +343,8 @@ class _TasksScreenState extends State<TasksScreen> {
     setState(() {
       _kanbanColumns[fromStatus]?.removeWhere((t) => t.id == task.id);
       _kanbanColumns[targetStatus]?.insert(0, updatedTask);
+      _rawKanbanColumns[fromStatus]?.removeWhere((t) => t.id == task.id);
+      _rawKanbanColumns[targetStatus]?.insert(0, updatedTask);
     });
 
     try {
@@ -274,6 +367,7 @@ class _TasksScreenState extends State<TasksScreen> {
       if (mounted) {
         setState(() {
           _kanbanColumns = previousColumns;
+          _rawKanbanColumns = previousRawColumns;
         });
 
         if (e is ApiException &&
@@ -448,32 +542,63 @@ class _TasksScreenState extends State<TasksScreen> {
     final title = widget.projectName != null
         ? '${widget.projectName} Tasks'
         : 'Tasks & Kanban';
+    final subtitle = _isKanbanView
+        ? '$_totalKanbanTasks task${_totalKanbanTasks == 1 ? '' : 's'} · Kanban'
+        : '${_tasks.length} task${_tasks.length == 1 ? '' : 's'} · $_selectedFilter';
+    final isAdmin = AuthService().currentUser?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTheme.heading(fontSize: 18),
-        ),
+      appBar: ModuleAppBar(
+        title: title,
+        subtitle: subtitle,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              _showSearchBar ? Icons.search_off : Icons.search,
+              color: AppTheme.deepSlate,
+            ),
+            tooltip: _showSearchBar ? 'Close Search' : 'Search Tasks',
+            onPressed: _toggleSearchBar,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
             tooltip: 'Refresh',
             onPressed: _loadData,
           ),
         ],
       ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              heroTag: 'tasks_screen_fab',
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        CreateTaskScreen(initialProjectId: widget.projectId),
+                  ),
+                );
+                if (created == true && mounted) {
+                  _loadData();
+                }
+              },
+              backgroundColor: AppTheme.royalBlue,
+              shape: const CircleBorder(),
+              tooltip: 'New Task',
+              child: const Icon(Icons.add, color: AppTheme.pureWhite),
+            )
+          : null,
       body: Column(
         children: [
           // Top Segmented Switcher
           _buildViewToggle(),
 
+          // Optional Inline Search Bar
+          if (_showSearchBar) _buildSearchBar(),
+
           // Ambient Offline Banner
-          if (_isOfflineCached)
-            OfflineCacheBanner(onRetry: _loadData),
+          if (_isOfflineCached) OfflineCacheBanner(onRetry: _loadData),
 
           // Filter bar depends on view mode
           if (!_isKanbanView)
@@ -497,28 +622,81 @@ class _TasksScreenState extends State<TasksScreen> {
                     ),
                   )
                 : _errorMessage != null
-                    ? _buildErrorView()
-                    : _isKanbanView
-                        ? KanbanBoardView(
-                            kanbanColumns: _kanbanColumns,
-                            pageController: _kanbanPageController,
-                            activePage: _activeKanbanPage,
-                            onPageChanged: (idx) {
-                              setState(() => _activeKanbanPage = idx);
-                            },
-                            onTaskTap: _navigateToDetail,
-                            onStatusPillTap: _showStatusMoveSheet,
-                            onTaskMove: _handleTaskMove,
-                            onRefresh: _loadData,
-                          )
-                        : TaskListView(
-                            tasks: _tasks,
-                            selectedFilter: _selectedFilter,
-                            onRefresh: _loadData,
-                            onTaskTap: _navigateToDetail,
-                          ),
+                ? _buildErrorView()
+                : _isKanbanView
+                ? KanbanBoardView(
+                    kanbanColumns: _kanbanColumns,
+                    pageController: _kanbanPageController,
+                    activePage: _activeKanbanPage,
+                    onPageChanged: (idx) {
+                      setState(() => _activeKanbanPage = idx);
+                    },
+                    onTaskTap: _navigateToDetail,
+                    onStatusPillTap: _showStatusMoveSheet,
+                    onTaskMove: _handleTaskMove,
+                    onRefresh: _loadData,
+                  )
+                : TaskListView(
+                    tasks: _tasks,
+                    selectedFilter: _selectedFilter,
+                    onRefresh: _loadData,
+                    onTaskTap: _navigateToDetail,
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      color: AppTheme.pureWhite,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        onChanged: _onSearchChanged,
+        style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+        decoration: InputDecoration(
+          hintText: 'Search by task title, code, or project...',
+          hintStyle: AppTheme.body(fontSize: 13, color: AppTheme.lightSlate),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 20,
+            color: AppTheme.mutedSlate,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.clear,
+                    size: 18,
+                    color: AppTheme.mutedSlate,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _onSearchChanged('');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: const Color(0xFFF8FAFC),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 10,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderSubtle),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderSubtle),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.navyBlue, width: 1.5),
+          ),
+        ),
       ),
     );
   }
@@ -561,7 +739,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
-                            )
+                            ),
                           ]
                         : null,
                   ),
@@ -576,16 +754,20 @@ class _TasksScreenState extends State<TasksScreen> {
                             : AppTheme.mutedSlate,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        'List View',
-                        style: AppTheme.heading(
-                          fontSize: 13,
-                          fontWeight: !_isKanbanView
-                              ? FontWeight.w700
-                              : FontWeight.w600,
-                          color: !_isKanbanView
-                              ? AppTheme.navyBlue
-                              : AppTheme.mutedSlate,
+                      Flexible(
+                        child: Text(
+                          'List View',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.heading(
+                            fontSize: 13,
+                            fontWeight: !_isKanbanView
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: !_isKanbanView
+                                ? AppTheme.navyBlue
+                                : AppTheme.mutedSlate,
+                          ),
                         ),
                       ),
                     ],
@@ -615,7 +797,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
-                            )
+                            ),
                           ]
                         : null,
                   ),
@@ -630,16 +812,20 @@ class _TasksScreenState extends State<TasksScreen> {
                             : AppTheme.mutedSlate,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        'Kanban Board',
-                        style: AppTheme.heading(
-                          fontSize: 13,
-                          fontWeight: _isKanbanView
-                              ? FontWeight.w700
-                              : FontWeight.w600,
-                          color: _isKanbanView
-                              ? AppTheme.navyBlue
-                              : AppTheme.mutedSlate,
+                      Flexible(
+                        child: Text(
+                          'Kanban Board',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.heading(
+                            fontSize: 13,
+                            fontWeight: _isKanbanView
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: _isKanbanView
+                                ? AppTheme.navyBlue
+                                : AppTheme.mutedSlate,
+                          ),
                         ),
                       ),
                     ],

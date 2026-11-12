@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/offline_cache_banner.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../models/project_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/directory_service.dart';
@@ -31,6 +33,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       widget.projectService ?? ProjectService();
   final DirectoryService _directoryService = DirectoryService();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounceTimer;
 
   bool _isLoading = true;
@@ -68,6 +71,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -190,152 +194,190 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Filter Projects',
-                      style: AppTheme.heading(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Department Dropdown
-                DropdownButtonFormField<int?>(
-                  initialValue: tempDept,
-                  decoration: const InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('All Departments'),
-                    ),
-                    ..._departments.map(
-                      (d) => DropdownMenuItem<int?>(
-                        value: d['id'] as int?,
-                        child: Text(d['name']?.toString() ?? ''),
-                      ),
-                    ),
-                  ],
-                  onChanged: (val) => setSheetState(() => tempDept = val),
-                ),
-                const SizedBox(height: 12),
-
-                // Manager Dropdown
-                DropdownButtonFormField<int?>(
-                  initialValue: tempMgr,
-                  decoration: const InputDecoration(
-                    labelText: 'Project Manager',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('All Managers'),
-                    ),
-                    ..._managers.map(
-                      (m) => DropdownMenuItem<int?>(
-                        value: m['id'] as int?,
-                        child: Text(m['full_name']?.toString() ?? ''),
-                      ),
-                    ),
-                  ],
-                  onChanged: (val) => setSheetState(() => tempMgr = val),
-                ),
-                const SizedBox(height: 12),
-
-                // Priority Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: tempPri,
-                  decoration: const InputDecoration(
-                    labelText: 'Priority',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'all',
-                      child: Text('All Priorities'),
-                    ),
-                    DropdownMenuItem(value: 'low', child: Text('Low')),
-                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(
-                      value: 'critical',
-                      child: Text('Critical'),
-                    ),
-                  ],
-                  onChanged: (val) =>
-                      setSheetState(() => tempPri = val ?? 'all'),
-                ),
-                const SizedBox(height: 12),
-
-                // Overdue Only Switch
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    'Overdue projects only',
-                    style: AppTheme.body(fontSize: 14),
-                  ),
-                  value: tempOverdue,
-                  activeThumbColor: AppTheme.navyBlue,
-                  onChanged: (val) => setSheetState(() => tempOverdue = val),
-                ),
-                const SizedBox(height: 16),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _resetAllFilters();
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: AppTheme.borderSubtle),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filter Projects',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.heading(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        child: const Text('Reset All'),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Department Dropdown
+                  DropdownButtonFormField<int?>(
+                    initialValue: tempDept,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Department',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          setState(() {
-                            _selectedDepartmentId = tempDept;
-                            _selectedManagerId = tempMgr;
-                            _selectedPriority = tempPri;
-                            _overdueOnly = tempOverdue;
-                          });
-                          _loadProjects();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.navyBlue,
-                          foregroundColor: AppTheme.pureWhite,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text(
+                          'All Departments',
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: const Text('Apply Filters'),
                       ),
+                      ..._departments.map(
+                        (d) => DropdownMenuItem<int?>(
+                          value: d['id'] as int?,
+                          child: Text(
+                            d['name']?.toString() ?? '',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) => setSheetState(() => tempDept = val),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Manager Dropdown
+                  DropdownButtonFormField<int?>(
+                    initialValue: tempMgr,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Project Manager',
+                      border: OutlineInputBorder(),
                     ),
-                  ],
-                ),
-              ],
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text(
+                          'All Managers',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      ..._managers.map(
+                        (m) => DropdownMenuItem<int?>(
+                          value: m['id'] as int?,
+                          child: Text(
+                            m['full_name']?.toString() ?? '',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) => setSheetState(() => tempMgr = val),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Priority Dropdown
+                  DropdownButtonFormField<String>(
+                    initialValue: tempPri,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Priority',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'all',
+                        child: Text(
+                          'All Priorities',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'low',
+                        child: Text('Low', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'medium',
+                        child: Text('Medium', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'high',
+                        child: Text('High', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'critical',
+                        child: Text(
+                          'Critical',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) =>
+                        setSheetState(() => tempPri = val ?? 'all'),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Overdue Only Switch
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'Overdue projects only',
+                      style: AppTheme.body(fontSize: 14),
+                    ),
+                    value: tempOverdue,
+                    activeThumbColor: AppTheme.navyBlue,
+                    onChanged: (val) => setSheetState(() => tempOverdue = val),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _resetAllFilters();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(
+                              color: AppTheme.borderSubtle,
+                            ),
+                          ),
+                          child: const Text('Reset All'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            setState(() {
+                              _selectedDepartmentId = tempDept;
+                              _selectedManagerId = tempMgr;
+                              _selectedPriority = tempPri;
+                              _overdueOnly = tempOverdue;
+                            });
+                            _loadProjects();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.navyBlue,
+                            foregroundColor: AppTheme.pureWhite,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Apply Filters'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -348,7 +390,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot create projects while viewing offline cached data.'),
+          content: Text(
+            'Cannot create projects while viewing offline cached data.',
+          ),
           backgroundColor: Color(0xFFB45309),
           behavior: SnackBarBehavior.floating,
         ),
@@ -369,7 +413,9 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Cannot edit projects while viewing offline cached data.'),
+          content: Text(
+            'Cannot edit projects while viewing offline cached data.',
+          ),
           backgroundColor: Color(0xFFB45309),
           behavior: SnackBarBehavior.floating,
         ),
@@ -391,24 +437,25 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Projects', style: AppTheme.heading(fontSize: 18)),
-            Text(
-              '$_totalProjects project${_totalProjects == 1 ? '' : 's'}${_overdueOnly ? ' · overdue only' : ''}',
-              style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
-            ),
-          ],
-        ),
+      appBar: ModuleAppBar(
+        title: 'Projects',
+        subtitle:
+            '$_totalProjects project${_totalProjects == 1 ? '' : 's'}${_overdueOnly ? ' · overdue only' : ''}',
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: AppTheme.deepSlate),
+            tooltip: 'Search Projects',
+            onPressed: () => _searchFocusNode.requestFocus(),
+          ),
           // Filter Funnel with Active Indicator Dot
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.filter_list_rounded),
+                icon: const Icon(
+                  Icons.filter_list_rounded,
+                  color: AppTheme.deepSlate,
+                ),
                 tooltip: 'Advanced Filters',
                 onPressed: _openAdvancedFilterSheet,
               ),
@@ -427,17 +474,8 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                 ),
             ],
           ),
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(
-                Icons.add_circle_outline,
-                color: AppTheme.royalBlue,
-              ),
-              tooltip: 'New Project',
-              onPressed: _navigateToCreateProject,
-            ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
             tooltip: 'Refresh',
             onPressed: _loadProjects,
           ),
@@ -445,8 +483,10 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       ),
       floatingActionButton: isAdmin
           ? FloatingActionButton(
+              heroTag: 'projects_list_fab',
               onPressed: _navigateToCreateProject,
-              backgroundColor: AppTheme.navyBlue,
+              backgroundColor: AppTheme.royalBlue,
+              shape: const CircleBorder(),
               tooltip: 'New Project',
               child: const Icon(Icons.add, color: AppTheme.pureWhite),
             )
@@ -502,6 +542,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       child: TextField(
         controller: _searchController,
+        focusNode: _searchFocusNode,
         onChanged: _onSearchChanged,
         style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
         decoration: InputDecoration(
@@ -839,14 +880,19 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Progress (${project.isWeighted ? 'weighted' : 'average'})',
-                style: AppTheme.heading(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.mutedSlate,
+              Flexible(
+                child: Text(
+                  'Progress (${project.isWeighted ? 'weighted' : 'average'})',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.heading(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${project.completionPercent.toStringAsFixed(0)}%',
                 style: AppTheme.mono(
@@ -934,30 +980,18 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           for (int i = 0; i < displayList.length; i++)
             Positioned(
               left: i * overlap,
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.pureWhite, width: 2),
-                  color: const Color(0xFFCBD5E1),
-                ),
-                child: Center(
-                  child: Text(
-                    displayList[i]['full_name'] != null &&
-                            displayList[i]['full_name'].toString().isNotEmpty
-                        ? displayList[i]['full_name']
-                              .toString()
-                              .substring(0, 1)
-                              .toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                ),
+              child: UserAvatar(
+                name: displayList[i]['full_name']?.toString() ?? '',
+                photoUrl:
+                    (displayList[i]['profile_photo_url'] ??
+                            displayList[i]['profile_photo'])
+                        ?.toString(),
+                size: size,
+                backgroundColor: const Color(0xFFCBD5E1),
+                textColor: const Color(0xFF1E293B),
+                fontSize: 10,
+                singleInitial: true,
+                border: Border.all(color: AppTheme.pureWhite, width: 2),
               ),
             ),
           if (remaining > 0)

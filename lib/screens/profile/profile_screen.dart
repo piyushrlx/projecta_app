@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -204,44 +205,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(
-              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: AppTheme.deepSlate,
-                    ),
-                    onPressed: () => Navigator.pop(context, _currentUser),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'My Profile',
-                      style: AppTheme.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      appBar: ModuleAppBar(
+        title: 'My Profile',
+        subtitle: _currentUser.designation?.trim().isNotEmpty == true
+            ? _currentUser.designation!
+            : 'Account & security',
+        onBack: () => Navigator.pop(context, _currentUser),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -422,9 +391,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => EmployeeDetailScreen(
-                        employeeId: _currentUser.id,
-                      ),
+                      builder: (_) =>
+                          EmployeeDetailScreen(employeeId: _currentUser.id),
                     ),
                   );
                 },
@@ -685,22 +653,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _removePhoto = !_removePhoto;
-                        if (_removePhoto) {
-                          _selectedPhotoName = null;
-                          _selectedPhotoPath = null;
-                          _selectedPhotoBytes = null;
-                        }
-                      });
-                    },
-                    child: Text(
-                      'Remove current photo',
-                      style: AppTheme.body(
-                        fontSize: 12,
-                        color: AppTheme.deepSlate,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _removePhoto = !_removePhoto;
+                          if (_removePhoto) {
+                            _selectedPhotoName = null;
+                            _selectedPhotoPath = null;
+                            _selectedPhotoBytes = null;
+                          }
+                        });
+                      },
+                      child: Text(
+                        'Remove current photo',
+                        style: AppTheme.body(
+                          fontSize: 12,
+                          color: AppTheme.deepSlate,
+                        ),
                       ),
                     ),
                   ),

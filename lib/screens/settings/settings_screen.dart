@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/company_settings.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
 import '../../models/user_model.dart';
 import '../../services/dashboard_service.dart';
 
@@ -11,20 +12,18 @@ class SettingsScreen extends StatefulWidget {
   final UserModel? currentUser;
   final DashboardService? dashboardService;
 
-  const SettingsScreen({
-    super.key,
-    this.currentUser,
-    this.dashboardService,
-  });
+  const SettingsScreen({super.key, this.currentUser, this.dashboardService});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late final DashboardService _service = widget.dashboardService ?? DashboardService();
+  late final DashboardService _service =
+      widget.dashboardService ?? DashboardService();
 
-  int _selectedTab = 0; // 0: General, 1: Working time, 2: Rules & permissions, 3: Holidays
+  int _selectedTab =
+      0; // 0: General, 1: Working time, 2: Rules & permissions, 3: Holidays
   bool _isLoading = true;
   bool _isSaving = false;
   String? _errorMessage;
@@ -85,13 +84,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _holidays = h;
 
-          _companyNameController.text = (s['company_name'] ?? 'Rank First Technologies').toString();
-          _timezoneController.text = (s['timezone'] ?? 'Asia/Kolkata').toString();
+          _companyNameController.text =
+              (s['company_name'] ?? 'Rank First Technologies').toString();
+          _timezoneController.text = (s['timezone'] ?? 'Asia/Kolkata')
+              .toString();
           _currencyController.text = (s['currency'] ?? 'INR').toString();
           _startController.text = (s['work_start_time'] ?? '09:30').toString();
           _endController.text = (s['work_end_time'] ?? '18:30').toString();
-          _deadlineController.text = (s['report_deadline_time'] ?? '19:00').toString();
-          _graceController.text = (s['report_grace_minutes'] ?? '60').toString();
+          _deadlineController.text = (s['report_deadline_time'] ?? '19:00')
+              .toString();
+          _graceController.text = (s['report_grace_minutes'] ?? '60')
+              .toString();
 
           _currentLogoUrl = s['logo_url']?.toString();
           if (_currentLogoUrl != null && _currentLogoUrl!.isNotEmpty) {
@@ -101,9 +104,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }
 
-          _staffCanSetProgress = s['staff_can_set_progress'] == '1' || s['staff_can_set_progress'] == true;
-          _staffCanUpload = s['staff_can_upload'] == '1' || s['staff_can_upload'] == true;
-          _requireCompletionNotes = s['require_completion_notes'] == '1' || s['require_completion_notes'] == true;
+          _staffCanSetProgress =
+              s['staff_can_set_progress'] == '1' ||
+              s['staff_can_set_progress'] == true;
+          _staffCanUpload =
+              s['staff_can_upload'] == '1' || s['staff_can_upload'] == true;
+          _requireCompletionNotes =
+              s['require_completion_notes'] == '1' ||
+              s['require_completion_notes'] == true;
 
           _isLoading = false;
         });
@@ -203,8 +211,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         logoBytes: _removeLogo
             ? null
             : (_selectedLogoBytes != null
-                ? Uint8List.fromList(_selectedLogoBytes!)
-                : null),
+                  ? Uint8List.fromList(_selectedLogoBytes!)
+                  : null),
       );
 
       if (mounted) {
@@ -247,7 +255,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Delete Holiday'),
         content: Text('Are you sure you want to delete "$name"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppTheme.dangerText),
             onPressed: () => Navigator.pop(ctx, true),
@@ -265,13 +276,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _holidays.removeWhere((h) => h['id'] == id);
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Holiday deleted.'), backgroundColor: AppTheme.successText),
+            const SnackBar(
+              content: Text('Holiday deleted.'),
+              backgroundColor: AppTheme.successText,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete holiday: $e'), backgroundColor: AppTheme.dangerText),
+            SnackBar(
+              content: Text('Failed to delete holiday: $e'),
+              backgroundColor: AppTheme.dangerText,
+            ),
           );
         }
       }
@@ -307,7 +324,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () async {
               final d = dateCtrl.text.trim();
@@ -318,16 +338,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final newId = await _service.addHoliday(d, n);
                 if (mounted) {
                   setState(() {
-                    _holidays.insert(0, {'id': newId, 'holiday_date': d, 'name': n});
+                    _holidays.insert(0, {
+                      'id': newId,
+                      'holiday_date': d,
+                      'name': n,
+                    });
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Holiday added successfully.'), backgroundColor: AppTheme.successText),
+                    const SnackBar(
+                      content: Text('Holiday added successfully.'),
+                      backgroundColor: AppTheme.successText,
+                    ),
                   );
                 }
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error adding holiday: $e'), backgroundColor: AppTheme.dangerText),
+                    SnackBar(
+                      content: Text('Error adding holiday: $e'),
+                      backgroundColor: AppTheme.dangerText,
+                    ),
                   );
                 }
               }
@@ -341,109 +371,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = ['General', 'Working time', 'Rules & permissions', 'Holidays (${_holidays.length})'];
+    final tabs = [
+      'General',
+      'Working time',
+      'Rules & permissions',
+      'Holidays (${_holidays.length})',
+    ];
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(
-              bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Settings',
-                      style: AppTheme.heading(
-                        fontSize: 18,
+      appBar: ModuleAppBar(
+        title: 'Settings',
+        subtitle: 'Workspace & company preferences',
+        actions: [
+          if (_selectedTab != 3)
+            TextButton(
+              onPressed: _isSaving ? null : _handleSave,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      'Save',
+                      style: AppTheme.body(
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
+                        color: AppTheme.royalBlue,
                       ),
                     ),
-                  ),
-                  if (_selectedTab != 3)
-                    TextButton(
-                      onPressed: _isSaving ? null : _handleSave,
-                      child: _isSaving
-                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(
-                              'Save',
-                              style: AppTheme.body(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.royalBlue),
-                            ),
-                    ),
-                ],
-              ),
             ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.deepSlate),
+            tooltip: 'Refresh',
+            onPressed: _fetchSettings,
           ),
-        ),
+        ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.royalBlue))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.royalBlue),
+            )
           : _errorMessage != null
-              ? Center(child: Text(_errorMessage!, style: AppTheme.body(fontSize: 14, color: AppTheme.dangerText)))
-              : Column(
-                  children: [
-                    // Sub Tabs
-                    Container(
-                      color: AppTheme.pureWhite,
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: List.generate(tabs.length, (idx) {
-                            final isSelected = _selectedTab == idx;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ChoiceChip(
-                                label: Text(tabs[idx]),
-                                selected: isSelected,
-                                selectedColor: AppTheme.royalBlue,
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                labelStyle: AppTheme.body(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                                  color: isSelected ? AppTheme.pureWhite : AppTheme.deepSlate,
-                                ),
-                                onSelected: (val) {
-                                  if (val) setState(() => _selectedTab = idx);
-                                },
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
+          ? Center(
+              child: Text(
+                _errorMessage!,
+                style: AppTheme.body(fontSize: 14, color: AppTheme.dangerText),
+              ),
+            )
+          : Column(
+              children: [
+                // Sub Tabs
+                Container(
+                  color: AppTheme.pureWhite,
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: List.generate(tabs.length, (idx) {
+                        final isSelected = _selectedTab == idx;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(tabs[idx]),
+                            selected: isSelected,
+                            selectedColor: AppTheme.royalBlue,
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            labelStyle: AppTheme.body(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? AppTheme.pureWhite
+                                  : AppTheme.deepSlate,
+                            ),
+                            onSelected: (val) {
+                              if (val) setState(() => _selectedTab = idx);
+                            },
+                          ),
+                        );
+                      }),
                     ),
-                    const Divider(height: 1, color: AppTheme.borderSubtle),
-
-                    // Active Tab Content
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(16.0),
-                        children: [
-                          if (_selectedTab == 0) _buildGeneralTab(),
-                          if (_selectedTab == 1) _buildWorkingTab(),
-                          if (_selectedTab == 2) _buildRulesTab(),
-                          if (_selectedTab == 3) _buildHolidaysTab(),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+                const Divider(height: 1, color: AppTheme.borderSubtle),
+
+                // Active Tab Content
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      if (_selectedTab == 0) _buildGeneralTab(),
+                      if (_selectedTab == 1) _buildWorkingTab(),
+                      if (_selectedTab == 2) _buildRulesTab(),
+                      if (_selectedTab == 3) _buildHolidaysTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -481,8 +510,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildCompanyLogoSection() {
     final hasExistingLogo =
-        _currentLogoUrl != null && _currentLogoUrl!.trim().isNotEmpty && !_removeLogo;
-    final hasNewLogo = _selectedLogoBytes != null && _selectedLogoBytes!.isNotEmpty;
+        _currentLogoUrl != null &&
+        _currentLogoUrl!.trim().isNotEmpty &&
+        !_removeLogo;
+    final hasNewLogo =
+        _selectedLogoBytes != null && _selectedLogoBytes!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -496,7 +528,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.business_outlined, size: 18, color: AppTheme.royalBlue),
+              const Icon(
+                Icons.business_outlined,
+                size: 18,
+                color: AppTheme.royalBlue,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Company logo',
@@ -527,13 +563,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fit: BoxFit.contain,
                     )
                   : hasExistingLogo
-                      ? Image.network(
-                          ApiClient().resolveMediaUrl(_currentLogoUrl!) ?? _currentLogoUrl!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildLogoPlaceholder(),
-                        )
-                      : _buildLogoPlaceholder(),
+                  ? Image.network(
+                      ApiClient().resolveMediaUrl(_currentLogoUrl!) ??
+                          _currentLogoUrl!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildLogoPlaceholder(),
+                    )
+                  : _buildLogoPlaceholder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -576,12 +613,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'Remove company logo',
-                      style: AppTheme.body(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: _removeLogo ? AppTheme.dangerText : AppTheme.deepSlate,
+                    Expanded(
+                      child: Text(
+                        'Remove company logo',
+                        style: AppTheme.body(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _removeLogo
+                              ? AppTheme.dangerText
+                              : AppTheme.deepSlate,
+                        ),
                       ),
                     ),
                   ],
@@ -604,18 +645,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   _selectedLogoName ??
-                      (hasExistingLogo ? 'Current logo active' : 'No file chosen'),
+                      (hasExistingLogo
+                          ? 'Current logo active'
+                          : 'No file chosen'),
                   style: AppTheme.body(
                     fontSize: 12,
-                    color: _selectedLogoName != null ? AppTheme.royalBlue : AppTheme.mutedSlate,
-                    fontWeight: _selectedLogoName != null ? FontWeight.w600 : FontWeight.w400,
+                    color: _selectedLogoName != null
+                        ? AppTheme.royalBlue
+                        : AppTheme.mutedSlate,
+                    fontWeight: _selectedLogoName != null
+                        ? FontWeight.w600
+                        : FontWeight.w400,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -666,7 +716,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Working Time & Reports', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+          Text(
+            'Working Time & Reports',
+            style: AppTheme.heading(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
+          ),
           const SizedBox(height: 16),
           _buildField('Work start time (HH:MM)', _startController),
           const SizedBox(height: 12),
@@ -691,27 +748,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Rules & Permissions', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+          Text(
+            'Rules & Permissions',
+            style: AppTheme.heading(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.deepSlate,
+            ),
+          ),
           const SizedBox(height: 16),
           SwitchListTile(
-            title: Text('Staff can set progress', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
-            subtitle: Text('Allow staff members to update task completion percentages.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
+            title: Text(
+              'Staff can set progress',
+              style: AppTheme.body(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
+              ),
+            ),
+            subtitle: Text(
+              'Allow staff members to update task completion percentages.',
+              style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+            ),
             value: _staffCanSetProgress,
             activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _staffCanSetProgress = val),
           ),
           const Divider(height: 1),
           SwitchListTile(
-            title: Text('Staff can upload attachments', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
-            subtitle: Text('Allow team members to upload project and task files.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
+            title: Text(
+              'Staff can upload attachments',
+              style: AppTheme.body(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
+              ),
+            ),
+            subtitle: Text(
+              'Allow team members to upload project and task files.',
+              style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+            ),
             value: _staffCanUpload,
             activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _staffCanUpload = val),
           ),
           const Divider(height: 1),
           SwitchListTile(
-            title: Text('Require completion notes', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
-            subtitle: Text('Require descriptive remarks before moving a task to complete.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
+            title: Text(
+              'Require completion notes',
+              style: AppTheme.body(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.deepSlate,
+              ),
+            ),
+            subtitle: Text(
+              'Require descriptive remarks before moving a task to complete.',
+              style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+            ),
             value: _requireCompletionNotes,
             activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _requireCompletionNotes = val),
@@ -730,12 +824,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            Text('Company Holidays', style: AppTheme.heading(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.deepSlate)),
+            Text(
+              'Company Holidays',
+              style: AppTheme.heading(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.deepSlate,
+              ),
+            ),
             FilledButton.icon(
               onPressed: _showAddHolidayDialog,
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Add Holiday'),
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.royalBlue),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.royalBlue,
+              ),
             ),
           ],
         ),
@@ -749,50 +852,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
               border: Border.all(color: AppTheme.borderSubtle),
             ),
             child: Center(
-              child: Text('No company holidays configured.', style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate)),
+              child: Text(
+                'No company holidays configured.',
+                style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+              ),
             ),
           )
         else
-          ..._holidays.map((h) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.pureWhite,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFCCFBF1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        h['holiday_date']?.toString() ?? '',
-                        style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF0F766E)),
+          ..._holidays.map(
+            (h) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCCFBF1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      h['holiday_date']?.toString() ?? '',
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F766E),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        h['name']?.toString() ?? '',
-                        style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      h['name']?.toString() ?? '',
+                      style: AppTheme.body(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18, color: AppTheme.dangerText),
-                      onPressed: () {
-                        final id = h['id'];
-                        if (id != null) {
-                          _handleDeleteHoliday(id is int ? id : int.parse(id.toString()), h['name']?.toString() ?? 'Holiday');
-                        }
-                      },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: AppTheme.dangerText,
                     ),
-                  ],
-                ),
-              )),
+                    onPressed: () {
+                      final id = h['id'];
+                      if (id != null) {
+                        _handleDeleteHoliday(
+                          id is int ? id : int.parse(id.toString()),
+                          h['name']?.toString() ?? 'Holiday',
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -801,7 +927,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTheme.body(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
+        Text(
+          label,
+          style: AppTheme.body(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.deepSlate,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/module_app_bar.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../../models/employee_detail_model.dart';
 import '../../services/directory_service.dart';
 import 'employee_form_screen.dart';
@@ -48,7 +50,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
       _errorMessage = null;
     });
     try {
-      final detail = await _directoryService.getEmployeeDetail(widget.employeeId);
+      final detail = await _directoryService.getEmployeeDetail(
+        widget.employeeId,
+      );
       if (mounted) {
         setState(() {
           _employee = detail;
@@ -63,14 +67,6 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
         });
       }
     }
-  }
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : 'U';
   }
 
   Future<void> _onToggleStatus() async {
@@ -107,8 +103,12 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isActivating ? AppTheme.successText : AppTheme.dangerText,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: isActivating
+                  ? AppTheme.successText
+                  : AppTheme.dangerText,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: Text(isActivating ? 'Activate' : 'Deactivate'),
           ),
@@ -124,8 +124,12 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
       if (mounted) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(res['message']?.toString() ?? 'Status updated successfully.'),
-            backgroundColor: isActivating ? AppTheme.successText : AppTheme.dangerText,
+            content: Text(
+              res['message']?.toString() ?? 'Status updated successfully.',
+            ),
+            backgroundColor: isActivating
+                ? AppTheme.successText
+                : AppTheme.dangerText,
           ),
         );
         _loadDetails();
@@ -162,13 +166,18 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: AppTheme.body(color: AppTheme.mutedSlate)),
+            child: Text(
+              'Cancel',
+              style: AppTheme.body(color: AppTheme.mutedSlate),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.navyBlue,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Generate Link'),
           ),
@@ -189,7 +198,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: AppTheme.pureWhite,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(
               'Password Reset Link',
               style: AppTheme.heading(fontSize: 16, color: AppTheme.deepSlate),
@@ -200,7 +211,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
               children: [
                 Text(
                   'Share this one-time link with the employee (expires in 60 minutes):',
-                  style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+                  style: AppTheme.body(
+                    fontSize: 13,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -212,7 +226,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                   ),
                   child: SelectableText(
                     link,
-                    style: AppTheme.mono(fontSize: 12, color: AppTheme.royalBlue),
+                    style: AppTheme.mono(
+                      fontSize: 12,
+                      color: AppTheme.royalBlue,
+                    ),
                   ),
                 ),
               ],
@@ -233,7 +250,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.navyBlue),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.navyBlue,
+                ),
                 child: const Text('Done'),
               ),
             ],
@@ -242,7 +261,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
       } else {
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(res['message']?.toString() ?? 'Password reset link sent.'),
+            content: Text(
+              res['message']?.toString() ?? 'Password reset link sent.',
+            ),
             backgroundColor: AppTheme.successText,
           ),
         );
@@ -280,84 +301,65 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.pureWhite,
-            border: Border(bottom: BorderSide(color: AppTheme.borderSubtle)),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Employee Profile',
-                      style: AppTheme.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                  if (_employee != null && _employee!.canManage) ...[
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: AppTheme.royalBlue),
-                      tooltip: 'Edit Profile',
-                      onPressed: _onEdit,
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: AppTheme.deepSlate),
-                      onSelected: (val) {
-                        if (val == 'toggle') _onToggleStatus();
-                        if (val == 'reset') _onResetPassword();
-                      },
-                      itemBuilder: (_) => [
-                        PopupMenuItem(
-                          value: 'toggle',
-                          child: Row(
-                            children: [
-                              Icon(
-                                _employee!.isActive ? Icons.block : Icons.check_circle_outline,
-                                size: 18,
-                                color: _employee!.isActive ? AppTheme.dangerText : AppTheme.successText,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                _employee!.isActive ? 'Deactivate' : 'Activate',
-                                style: AppTheme.body(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'reset',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.lock_reset, size: 18, color: AppTheme.royalBlue),
-                              const SizedBox(width: 10),
-                              Text('Reset Password', style: AppTheme.body(fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
+      appBar: ModuleAppBar(
+        title: 'Employee Profile',
+        subtitle: _employee?.fullName,
+        actions: [
+          if (_employee != null && _employee!.canManage) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppTheme.royalBlue),
+              tooltip: 'Edit Profile',
+              onPressed: _onEdit,
             ),
-          ),
-        ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: AppTheme.deepSlate),
+              onSelected: (val) {
+                if (val == 'toggle') _onToggleStatus();
+                if (val == 'reset') _onResetPassword();
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'toggle',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _employee!.isActive
+                            ? Icons.block
+                            : Icons.check_circle_outline,
+                        size: 18,
+                        color: _employee!.isActive
+                            ? AppTheme.dangerText
+                            : AppTheme.successText,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _employee!.isActive ? 'Deactivate' : 'Activate',
+                        style: AppTheme.body(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'reset',
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.lock_reset,
+                        size: 18,
+                        color: AppTheme.royalBlue,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Reset Password',
+                        style: AppTheme.body(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
       body: _isLoading
           ? const Center(
@@ -370,7 +372,11 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: AppTheme.dangerText, size: 40),
+                    const Icon(
+                      Icons.error_outline,
+                      color: AppTheme.dangerText,
+                      size: 40,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       _errorMessage!,
@@ -380,7 +386,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _loadDetails,
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.navyBlue),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.navyBlue,
+                      ),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -427,26 +435,16 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppTheme.navyBlue,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.royalBlue.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    _getInitials(emp.fullName),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.pureWhite,
-                    ),
-                  ),
+              UserAvatar(
+                name: emp.fullName,
+                photoUrl: emp.profilePhotoUrl,
+                size: 60,
+                backgroundColor: AppTheme.navyBlue,
+                textColor: AppTheme.pureWhite,
+                fontSize: 22,
+                border: Border.all(
+                  color: AppTheme.royalBlue.withValues(alpha: 0.3),
+                  width: 2,
                 ),
               ),
               const SizedBox(width: 14),
@@ -476,9 +474,13 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        if (emp.departmentName != null && emp.departmentName!.isNotEmpty)
+                        if (emp.departmentName != null &&
+                            emp.departmentName!.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(6),
@@ -493,7 +495,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                             ),
                           ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: emp.role == 'super_admin'
                                 ? const Color(0xFFEDE9FE)
@@ -516,9 +521,14 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: emp.isActive ? AppTheme.successBg : AppTheme.dangerBg,
+                            color: emp.isActive
+                                ? AppTheme.successBg
+                                : AppTheme.dangerBg,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -526,7 +536,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                             style: AppTheme.mono(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: emp.isActive ? AppTheme.successText : AppTheme.dangerText,
+                              color: emp.isActive
+                                  ? AppTheme.successText
+                                  : AppTheme.dangerText,
                             ),
                           ),
                         ),
@@ -543,11 +555,24 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
           if (emp.phone != null && emp.phone!.isNotEmpty)
             _buildMetaRow(Icons.phone_outlined, 'Phone', emp.phone!),
           if (emp.employeeCode != null && emp.employeeCode!.isNotEmpty)
-            _buildMetaRow(Icons.badge_outlined, 'Employee Code', emp.employeeCode!),
-          if (emp.reportingManagerName != null && emp.reportingManagerName!.isNotEmpty)
-            _buildMetaRow(Icons.person_pin_outlined, 'Manager', emp.reportingManagerName!),
+            _buildMetaRow(
+              Icons.badge_outlined,
+              'Employee Code',
+              emp.employeeCode!,
+            ),
+          if (emp.reportingManagerName != null &&
+              emp.reportingManagerName!.isNotEmpty)
+            _buildMetaRow(
+              Icons.person_pin_outlined,
+              'Manager',
+              emp.reportingManagerName!,
+            ),
           if (emp.joiningDate != null && emp.joiningDate!.isNotEmpty)
-            _buildMetaRow(Icons.calendar_today_outlined, 'Joined', emp.joiningDate!),
+            _buildMetaRow(
+              Icons.calendar_today_outlined,
+              'Joined',
+              emp.joiningDate!,
+            ),
         ],
       ),
     );
@@ -644,15 +669,27 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
         children: [
           Text(
             label,
-            style: AppTheme.body(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.mutedSlate),
+            style: AppTheme.body(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.mutedSlate,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTheme.mono(fontSize: 15, fontWeight: FontWeight.w700, color: color),
-            maxLines: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTheme.mono(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+              maxLines: 1,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -669,13 +706,15 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      height: 38,
+      constraints: const BoxConstraints(minHeight: 38),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(10),
       ),
       child: TabBar(
         controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
         onTap: (_) => setState(() {}),
         indicator: BoxDecoration(
           color: AppTheme.navyBlue,
@@ -686,7 +725,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
         labelColor: AppTheme.pureWhite,
         unselectedLabelColor: AppTheme.mutedSlate,
         labelStyle: AppTheme.heading(fontSize: 11, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: AppTheme.heading(fontSize: 11, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: AppTheme.heading(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
         tabs: [
           Tab(text: 'Tasks (${_employee!.tasks.length})'),
           Tab(text: 'Projects (${_employee!.projects.length})'),
@@ -738,13 +780,22 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                 children: [
                   Text(
                     t.taskCode,
-                    style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.royalBlue),
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.royalBlue,
+                    ),
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: t.status == 'completed' ? AppTheme.successBg : AppTheme.infoBg,
+                      color: t.status == 'completed'
+                          ? AppTheme.successBg
+                          : AppTheme.infoBg,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -752,7 +803,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                       style: AppTheme.mono(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
-                        color: t.status == 'completed' ? AppTheme.successText : AppTheme.royalBlue,
+                        color: t.status == 'completed'
+                            ? AppTheme.successText
+                            : AppTheme.royalBlue,
                       ),
                     ),
                   ),
@@ -761,13 +814,20 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
               const SizedBox(height: 4),
               Text(
                 t.title,
-                style: AppTheme.heading(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate),
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
               ),
               if (t.projectName != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   t.projectName!,
-                  style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
               ],
               const SizedBox(height: 8),
@@ -781,7 +841,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                         minHeight: 4,
                         backgroundColor: const Color(0xFFE2E8F0),
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          t.progress == 100 ? AppTheme.successText : AppTheme.royalBlue,
+                          t.progress == 100
+                              ? AppTheme.successText
+                              : AppTheme.royalBlue,
                         ),
                       ),
                     ),
@@ -789,7 +851,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                   const SizedBox(width: 8),
                   Text(
                     '${t.progress}%',
-                    style: AppTheme.mono(fontSize: 10, color: AppTheme.mutedSlate),
+                    style: AppTheme.mono(
+                      fontSize: 10,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ],
               ),
@@ -826,13 +891,22 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                 children: [
                   Text(
                     p.projectCode,
-                    style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.royalBlue),
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.royalBlue,
+                    ),
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: p.status == 'active' ? AppTheme.successBg : const Color(0xFFF1F5F9),
+                      color: p.status == 'active'
+                          ? AppTheme.successBg
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -840,7 +914,9 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                       style: AppTheme.mono(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
-                        color: p.status == 'active' ? AppTheme.successText : AppTheme.mutedSlate,
+                        color: p.status == 'active'
+                            ? AppTheme.successText
+                            : AppTheme.mutedSlate,
                       ),
                     ),
                   ),
@@ -849,13 +925,20 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
               const SizedBox(height: 4),
               Text(
                 p.name,
-                style: AppTheme.heading(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate),
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
               ),
               if (p.memberRole != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   'Role: ${p.memberRole}',
-                  style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+                  style: AppTheme.body(
+                    fontSize: 11,
+                    color: AppTheme.mutedSlate,
+                  ),
                 ),
               ],
             ],
@@ -891,25 +974,40 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
                 children: [
                   Text(
                     r.reportDate,
-                    style: AppTheme.heading(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.deepSlate),
+                    style: AppTheme.heading(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   if (r.isLate)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.warningBg,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         'LATE',
-                        style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.warningText),
+                        style: AppTheme.mono(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.warningText,
+                        ),
                       ),
                     ),
                   const Spacer(),
                   Text(
                     '${r.minutesSpent ~/ 60}h ${r.minutesSpent % 60}m',
-                    style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.mutedSlate),
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ],
               ),
@@ -952,20 +1050,31 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.infoBg,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       (ex.reasonType ?? 'LEAVE').toUpperCase(),
-                      style: AppTheme.mono(fontSize: 9, fontWeight: FontWeight.w700, color: AppTheme.royalBlue),
+                      style: AppTheme.mono(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.royalBlue,
+                      ),
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '${ex.startDate} → ${ex.endDate}',
-                    style: AppTheme.mono(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.mutedSlate),
+                    style: AppTheme.mono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mutedSlate,
+                    ),
                   ),
                 ],
               ),
@@ -1001,4 +1110,3 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen>
     );
   }
 }
-

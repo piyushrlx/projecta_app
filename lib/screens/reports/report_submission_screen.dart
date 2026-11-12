@@ -433,14 +433,19 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Task Progress After Today',
-                            style: AppTheme.heading(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.deepSlate,
+                          Expanded(
+                            child: Text(
+                              'Task Progress After Today',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTheme.heading(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.deepSlate,
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             '${_progressAfter.round()}%',
                             style: AppTheme.mono(

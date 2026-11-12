@@ -165,7 +165,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.deepSlate),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppTheme.deepSlate,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Expanded(
@@ -213,7 +216,9 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                                   },
                                 )
                               : null,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                          ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
@@ -247,7 +252,11 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: AppTheme.dangerText, size: 40),
+              const Icon(
+                Icons.error_outline,
+                color: AppTheme.dangerText,
+                size: 40,
+              ),
               const SizedBox(height: 12),
               Text(
                 _errorMessage!,
@@ -265,7 +274,11 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.manage_search, size: 54, color: AppTheme.lightSlate),
+            const Icon(
+              Icons.manage_search,
+              size: 54,
+              color: AppTheme.lightSlate,
+            ),
             const SizedBox(height: 12),
             Text(
               'Search WorkDesk',
@@ -323,21 +336,33 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
 
         // 1. Projects Section
         if (_projects.isNotEmpty) ...[
-          _buildCategoryHeader('PROJECTS', _projects.length, Icons.folder_outlined),
+          _buildCategoryHeader(
+            'PROJECTS',
+            _projects.length,
+            Icons.folder_outlined,
+          ),
           ..._projects.map(_buildProjectItem),
           const SizedBox(height: 16),
         ],
 
         // 2. Tasks Section
         if (_tasks.isNotEmpty) ...[
-          _buildCategoryHeader('TASKS', _tasks.length, Icons.check_box_outlined),
+          _buildCategoryHeader(
+            'TASKS',
+            _tasks.length,
+            Icons.check_box_outlined,
+          ),
           ..._tasks.map(_buildTaskItem),
           const SizedBox(height: 16),
         ],
 
         // 3. Employees Section (Admin only)
         if (_employees.isNotEmpty) ...[
-          _buildCategoryHeader('EMPLOYEES', _employees.length, Icons.people_outline),
+          _buildCategoryHeader(
+            'EMPLOYEES',
+            _employees.length,
+            Icons.people_outline,
+          ),
           ..._employees.map(_buildEmployeeItem),
           const SizedBox(height: 16),
         ],
@@ -429,7 +454,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: _statusBgColor(status),
                       borderRadius: BorderRadius.circular(6),
@@ -458,16 +486,23 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   ),
                   if (client.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    Text(
-                      '• $client',
-                      style: AppTheme.body(
-                        fontSize: 11,
-                        color: AppTheme.mutedSlate,
+                    Expanded(
+                      child: Text(
+                        '• $client',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: AppTheme.mutedSlate,
+                        ),
                       ),
                     ),
                   ],
                   if (deadline != null && deadline.isNotEmpty) ...[
-                    const Spacer(),
+                    if (client.isEmpty)
+                      const Spacer()
+                    else
+                      const SizedBox(width: 8),
                     Text(
                       'Due $deadline',
                       style: AppTheme.body(
@@ -506,9 +541,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => TaskDetailScreen(taskId: id),
-            ),
+            MaterialPageRoute(builder: (_) => TaskDetailScreen(taskId: id)),
           );
         },
         child: Padding(
@@ -533,7 +566,10 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: _statusBgColor(status),
                       borderRadius: BorderRadius.circular(6),
@@ -662,18 +698,26 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                 ),
               ),
               if (department.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    department,
-                    style: AppTheme.body(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.deepSlate,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      department,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.body(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.deepSlate,
+                      ),
                     ),
                   ),
                 ),
@@ -685,8 +729,8 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   color: role == 'super_admin'
                       ? const Color(0xFFEDE9FE)
                       : role == 'admin'
-                          ? AppTheme.infoBg
-                          : const Color(0xFFF1F5F9),
+                      ? AppTheme.infoBg
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -697,8 +741,8 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                     color: role == 'super_admin'
                         ? const Color(0xFF6D28D9)
                         : role == 'admin'
-                            ? AppTheme.royalBlue
-                            : AppTheme.mutedSlate,
+                        ? AppTheme.royalBlue
+                        : AppTheme.mutedSlate,
                   ),
                 ),
               ),
@@ -709,4 +753,3 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     );
   }
 }
-
