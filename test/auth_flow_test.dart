@@ -343,5 +343,19 @@ void main() {
       // Icon should switch to visibility_off
       expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
     });
+
+    test('AppTheme.setDeferGoogleFonts swaps lightweight and full themes', () {
+      addTearDown(() => AppTheme.setDeferGoogleFonts(false));
+
+      AppTheme.setDeferGoogleFonts(true);
+      final deferredTheme = AppTheme.themeData;
+      expect(AppTheme.heading().fontFamily, isNull);
+      expect(AppTheme.mono().fontFamily, equals('monospace'));
+
+      AppTheme.setDeferGoogleFonts(false);
+      final fullTheme = AppTheme.themeData;
+      expect(identical(deferredTheme, fullTheme), isFalse);
+      expect(AppTheme.heading().fontFamily, isNotNull);
+    });
   });
 }

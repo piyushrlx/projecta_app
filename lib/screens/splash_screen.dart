@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/theme.dart';
@@ -18,11 +19,27 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final AuthService _authService = AuthService();
   final ApiClient _apiClient = ApiClient();
+  Timer? _bootTimer;
 
   @override
   void initState() {
     super.initState();
-    _checkSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Yield back to the Android Looper so WindowManager grants focus to
+      // MainActivity before checking session and pushing DashboardScreen.
+      _bootTimer = Timer(const Duration(milliseconds: 550), () {
+        if (mounted) {
+          _checkSession();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _bootTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkSession() async {

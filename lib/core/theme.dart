@@ -117,6 +117,23 @@ class AppTheme {
     );
   }
 
+  static final Map<FontWeight, TextStyle> _headingCache = {};
+  static final Map<FontWeight, TextStyle> _bodyCache = {};
+  static final Map<FontWeight, TextStyle> _monoCache = {};
+  static bool _deferGoogleFonts = false;
+  static ThemeData? _themeData;
+
+  /// Defers GoogleFonts initialization during the first startup frame so
+  /// asset manifest parsing and font loading do not block window focus.
+  static void setDeferGoogleFonts(bool defer) {
+    if (_deferGoogleFonts == defer) return;
+    _deferGoogleFonts = defer;
+    _headingCache.clear();
+    _bodyCache.clear();
+    _monoCache.clear();
+    _themeData = null;
+  }
+
   // Typography Getters
   // Headings & Titles: Plus Jakarta Sans (600 / 700)
   static TextStyle heading({
@@ -126,9 +143,14 @@ class AppTheme {
     double? letterSpacing,
     double? height,
   }) {
-    return GoogleFonts.plusJakartaSans(
+    final base = _deferGoogleFonts
+        ? TextStyle(fontWeight: fontWeight)
+        : _headingCache.putIfAbsent(
+            fontWeight,
+            () => GoogleFonts.plusJakartaSans(fontWeight: fontWeight),
+          );
+    return base.copyWith(
       fontSize: fontSize,
-      fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing ?? -0.3,
       height: height,
@@ -143,9 +165,14 @@ class AppTheme {
     double? letterSpacing,
     double? height,
   }) {
-    return GoogleFonts.inter(
+    final base = _deferGoogleFonts
+        ? TextStyle(fontWeight: fontWeight)
+        : _bodyCache.putIfAbsent(
+            fontWeight,
+            () => GoogleFonts.inter(fontWeight: fontWeight),
+          );
+    return base.copyWith(
       fontSize: fontSize,
-      fontWeight: fontWeight,
       color: color,
       letterSpacing: letterSpacing,
       height: height,
@@ -158,81 +185,87 @@ class AppTheme {
     FontWeight fontWeight = FontWeight.w600,
     Color color = deepSlate,
   }) {
-    return GoogleFonts.jetBrainsMono(
+    final base = _deferGoogleFonts
+        ? TextStyle(fontWeight: fontWeight, fontFamily: 'monospace')
+        : _monoCache.putIfAbsent(
+            fontWeight,
+            () => GoogleFonts.jetBrainsMono(fontWeight: fontWeight),
+          );
+    return base.copyWith(
       fontSize: fontSize,
-      fontWeight: fontWeight,
       color: color,
     );
   }
 
   // Global Enterprise ThemeData
-  static ThemeData get themeData {
+  static ThemeData get themeData => _themeData ??= _buildThemeData();
+  static ThemeData _buildThemeData() {
     final textTheme = TextTheme(
-      displayLarge: GoogleFonts.plusJakartaSans(
+      displayLarge: heading(
         fontSize: 32,
         fontWeight: FontWeight.w700,
         color: deepSlate,
         letterSpacing: -0.8,
       ),
-      displayMedium: GoogleFonts.plusJakartaSans(
+      displayMedium: heading(
         fontSize: 26,
         fontWeight: FontWeight.w700,
         color: deepSlate,
         letterSpacing: -0.5,
       ),
-      displaySmall: GoogleFonts.plusJakartaSans(
+      displaySmall: heading(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: deepSlate,
         letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.plusJakartaSans(
+      headlineMedium: heading(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: deepSlate,
         letterSpacing: -0.3,
       ),
-      headlineSmall: GoogleFonts.plusJakartaSans(
+      headlineSmall: heading(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: deepSlate,
       ),
-      titleLarge: GoogleFonts.plusJakartaSans(
+      titleLarge: heading(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         color: deepSlate,
       ),
-      titleMedium: GoogleFonts.plusJakartaSans(
+      titleMedium: heading(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: deepSlate,
       ),
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: body(
         fontSize: 15,
         fontWeight: FontWeight.w500,
         color: deepSlate,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: body(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: deepSlate,
       ),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: body(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: mutedSlate,
       ),
-      labelLarge: GoogleFonts.plusJakartaSans(
+      labelLarge: heading(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: deepSlate,
       ),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: body(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: mutedSlate,
       ),
-      labelSmall: GoogleFonts.jetBrainsMono(
+      labelSmall: mono(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: mutedSlate,
@@ -262,7 +295,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         toolbarHeight: 64,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: heading(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: deepSlate,
@@ -287,7 +320,7 @@ class AppTheme {
           foregroundColor: pureWhite,
           elevation: 0,
           shadowColor: Colors.transparent,
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: heading(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -302,7 +335,7 @@ class AppTheme {
           foregroundColor: deepSlate,
           backgroundColor: pureWhite,
           elevation: 0,
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: heading(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -316,7 +349,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: royalBlue,
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: heading(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -326,11 +359,11 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scaffoldBg,
-        labelStyle: GoogleFonts.inter(
+        labelStyle: body(
           color: mutedSlate,
           fontWeight: FontWeight.w500,
         ),
-        hintStyle: GoogleFonts.inter(
+        hintStyle: body(
           color: lightSlate,
           fontWeight: FontWeight.w400,
         ),
@@ -356,7 +389,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: dangerText, width: 1.5),
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: body(
           color: dangerText,
           fontWeight: FontWeight.w500,
           fontSize: 12,
@@ -369,7 +402,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: deepSlate,
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: body(
           color: pureWhite,
           fontWeight: FontWeight.w500,
         ),
