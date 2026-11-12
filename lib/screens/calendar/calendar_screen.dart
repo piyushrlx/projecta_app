@@ -732,7 +732,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _upcoming.length > 5 ? 5 : _upcoming.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: AppTheme.borderSubtle),
+              separatorBuilder: (_, _) => const Divider(height: 1, color: AppTheme.borderSubtle),
               itemBuilder: (context, idx) {
                 final item = _upcoming[idx];
                 final deadline = item['deadline']?.toString() ?? '';

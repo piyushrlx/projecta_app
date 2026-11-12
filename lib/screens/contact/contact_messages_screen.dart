@@ -283,7 +283,7 @@ class _ContactMessagesScreenState extends State<ContactMessagesScreen> {
                                       color: isRead ? AppTheme.pureWhite : const Color(0xFFEFF6FF),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: isRead ? AppTheme.borderSubtle : AppTheme.royalBlue.withOpacity(0.4),
+                                        color: isRead ? AppTheme.borderSubtle : AppTheme.royalBlue.withValues(alpha: 0.4),
                                         width: isRead ? 1.0 : 1.5,
                                       ),
                                     ),

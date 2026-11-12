@@ -29,7 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isSaving = false;
   String? _errorMessage;
 
-  Map<String, dynamic> _settings = {};
   List<dynamic> _holidays = [];
 
   // Controllers
@@ -84,7 +83,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (mounted) {
         setState(() {
-          _settings = s;
           _holidays = h;
 
           _companyNameController.text = (s['company_name'] ?? 'Rank First Technologies').toString();
@@ -699,7 +697,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text('Staff can set progress', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
             subtitle: Text('Allow staff members to update task completion percentages.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
             value: _staffCanSetProgress,
-            activeColor: AppTheme.royalBlue,
+            activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _staffCanSetProgress = val),
           ),
           const Divider(height: 1),
@@ -707,7 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text('Staff can upload attachments', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
             subtitle: Text('Allow team members to upload project and task files.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
             value: _staffCanUpload,
-            activeColor: AppTheme.royalBlue,
+            activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _staffCanUpload = val),
           ),
           const Divider(height: 1),
@@ -715,7 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text('Require completion notes', style: AppTheme.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.deepSlate)),
             subtitle: Text('Require descriptive remarks before moving a task to complete.', style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate)),
             value: _requireCompletionNotes,
-            activeColor: AppTheme.royalBlue,
+            activeThumbColor: AppTheme.royalBlue,
             onChanged: (val) => setState(() => _requireCompletionNotes = val),
           ),
         ],

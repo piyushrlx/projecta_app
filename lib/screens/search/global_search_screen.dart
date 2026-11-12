@@ -387,7 +387,6 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     final code = (project['project_code'] ?? '').toString();
     final client = (project['client_name'] ?? '').toString();
     final status = (project['status'] ?? 'active').toString();
-    final priority = (project['priority'] ?? 'medium').toString();
     final deadline = project['deadline']?.toString();
 
     return Card(
@@ -492,7 +491,6 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
     final code = (task['task_code'] ?? '').toString();
     final projectName = (task['project_name'] ?? '').toString();
     final status = (task['status'] ?? 'pending').toString();
-    final priority = (task['priority'] ?? 'medium').toString();
     final deadline = task['deadline']?.toString();
 
     return Card(

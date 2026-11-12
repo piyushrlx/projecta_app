@@ -255,11 +255,9 @@ class AuthService {
       );
     }
 
-    final dynamic rawUser = (decoded is Map<String, dynamic>)
-        ? (decoded['data'] is Map<String, dynamic>
-              ? decoded['data']['user']
-              : decoded['user'])
-        : null;
+    final dynamic rawUser = (decoded['data'] is Map<String, dynamic>)
+        ? decoded['data']['user']
+        : decoded['user'];
 
     if (_currentUser != null) {
       final updatedPhotoUrl =

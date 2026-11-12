@@ -194,8 +194,9 @@ class DashboardService {
     final queryParams = <String, String>{};
     if (userId != null) queryParams['user_id'] = userId.toString();
     if (action != null && action.isNotEmpty) queryParams['action'] = action;
-    if (entityType != null && entityType.isNotEmpty)
+    if (entityType != null && entityType.isNotEmpty) {
       queryParams['entity_type'] = entityType;
+    }
     if (from != null && from.isNotEmpty) queryParams['from'] = from;
     if (to != null && to.isNotEmpty) queryParams['to'] = to;
 
