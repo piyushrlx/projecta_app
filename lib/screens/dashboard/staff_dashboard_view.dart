@@ -699,7 +699,7 @@ class StaffDashboardView extends StatelessWidget {
           const SizedBox(height: 14),
           // Update Status button
           SizedBox(
-            height: 38,
+            height: 44,
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: taskId != null
@@ -712,16 +712,19 @@ class StaffDashboardView extends StatelessWidget {
                       );
                     }
                   : null,
-              icon: const Icon(Icons.edit_note, size: 16),
+              icon: const Icon(Icons.edit_note_rounded, size: 18),
               label: const Text('Update Status'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.navyBlue,
                 foregroundColor: AppTheme.pureWhite,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                alignment: Alignment.center,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 textStyle: AppTheme.heading(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
