@@ -125,7 +125,7 @@ class TaskService {
   }
 
   Future<TaskDetailModel> getTaskDetails(int id) async {
-    final response = await _client.get('/tasks/$id');
+    final response = await _client.getWithCache('/tasks/$id');
     final dynamic data = _client.decodeJson(response);
 
     if (data is Map<String, dynamic>) {
