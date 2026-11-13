@@ -285,8 +285,7 @@ void main() {
         ),
       );
 
-      // Verify app bar displays brand logo (menu trigger), title/subtitle, actions, and circular profile avatar
-      expect(find.byIcon(Icons.menu_rounded), findsNothing);
+      // Verify app bar displays brand logo, title/subtitle, actions, and circular profile avatar
       expect(find.byType(ProjeqtaIcon), findsOneWidget);
       expect(find.text('Admin Executive Control'), findsWidgets);
       expect(find.text('Dashboard'), findsOneWidget);
@@ -294,6 +293,7 @@ void main() {
       expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_down), findsNothing);
       expect(find.byType(UserAvatar), findsOneWidget);
+      expect(find.text('MENU'), findsOneWidget);
 
       // Verify tapping profile avatar displays options (My profile, Notifications, Log out)
       await tester.tap(find.byType(UserAvatar));
@@ -301,10 +301,17 @@ void main() {
       expect(find.text('My profile'), findsOneWidget);
       expect(find.byIcon(Icons.logout), findsOneWidget);
 
-      // Close popup menu and verify tapping brand logo opens the side drawer
+      // Close popup menu
       await tester.tapAt(const Offset(200, 300));
       await tester.pumpAndSettle();
+
+      // 1. Verify tapping the decoupled brand logo does NOT open the side drawer
       await tester.tap(find.byType(ProjeqtaIcon));
+      await tester.pumpAndSettle();
+      expect(find.byType(Drawer), findsNothing);
+
+      // 2. Verify tapping the bottom MENU tab DOES open the side drawer
+      await tester.tap(find.text('MENU'));
       await tester.pumpAndSettle();
       expect(find.byType(Drawer), findsOneWidget);
     });
@@ -535,6 +542,7 @@ void main() {
 
         // Dashboard shows its own header + bottom nav
         expect(find.text('Dashboard'), findsOneWidget);
+        expect(find.text('MENU'), findsOneWidget);
         expect(find.text('PULSE'), findsOneWidget);
         expect(find.text('TASKS'), findsOneWidget);
         expect(find.text('PROJECTS'), findsOneWidget);
@@ -547,6 +555,7 @@ void main() {
 
         expect(find.byType(ModuleAppBar), findsOneWidget);
         expect(find.text('Tasks & Kanban'), findsOneWidget);
+        expect(find.text('MENU'), findsNothing);
         expect(find.text('PULSE'), findsNothing);
         expect(find.text('Dashboard'), findsNothing);
 

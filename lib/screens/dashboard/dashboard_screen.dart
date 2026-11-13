@@ -279,18 +279,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   children: [
-                    // Brand Logo acts as Side Menu Trigger
-                    Tooltip(
-                      message: 'Menu',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(9),
-                          onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                          child: const ProjeqtaIcon(size: 34, borderRadius: 9),
-                        ),
-                      ),
-                    ),
+                    // Static Brand Logo
+                    const ProjeqtaIcon(size: 34, borderRadius: 9),
                     const SizedBox(width: 12),
                     Container(
                       width: 1,
@@ -595,7 +585,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       body: _buildDashboardTab(),
-      // Persistent 4-Tab Bottom Navigation Bar (Dashboard-only; modules open full-screen)
+      // Persistent 5-Tab Bottom Navigation Bar (Menu trigger on far-left + 4 Dashboard/Module tabs)
       bottomNavigationBar: Container(
         height: 68,
         decoration: const BoxDecoration(
@@ -613,34 +603,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Row(
           children: [
-            _buildNavTab(0, 'Pulse', Icons.speed),
-            _buildNavTab(1, 'Tasks', Icons.check_box_outlined),
-            _buildNavTab(2, 'Projects', Icons.folder_outlined),
-            _buildNavTab(3, 'Reports', Icons.bar_chart_rounded),
+            _buildNavTab(
+              label: 'Menu',
+              icon: Icons.menu_rounded,
+              onTap: () => _scaffoldKey.currentState?.openDrawer(),
+              isSelected: false,
+            ),
+            _buildNavTab(
+              label: 'Pulse',
+              icon: Icons.speed,
+              onTap: _loadDashboard,
+              isSelected: true,
+            ),
+            _buildNavTab(
+              label: 'Tasks',
+              icon: Icons.check_box_outlined,
+              onTap: () => _openModule(const TasksScreen()),
+            ),
+            _buildNavTab(
+              label: 'Projects',
+              icon: Icons.folder_outlined,
+              onTap: () => _openModule(const ProjectsListScreen()),
+            ),
+            _buildNavTab(
+              label: 'Reports',
+              icon: Icons.bar_chart_rounded,
+              onTap: () => _openModule(ReportsListScreen(user: _currentUser)),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavTab(int index, String label, IconData icon) {
-    final isSelected = index == 0;
+  Widget _buildNavTab({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isSelected = false,
+  }) {
     final color = isSelected ? AppTheme.royalBlue : AppTheme.mutedSlate;
 
     return Expanded(
       child: InkWell(
-        onTap: () {
-          switch (index) {
-            case 0:
-              _loadDashboard();
-            case 1:
-              _openModule(const TasksScreen());
-            case 2:
-              _openModule(const ProjectsListScreen());
-            case 3:
-              _openModule(ReportsListScreen(user: _currentUser));
-          }
-        },
+        onTap: onTap,
         child: Column(
           children: [
             // 4px top indicator bar in royal blue on active tab
