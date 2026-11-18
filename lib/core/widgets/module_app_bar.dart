@@ -9,6 +9,8 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final VoidCallback? onBack;
   final bool showBackButton;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const ModuleAppBar({
     super.key,
@@ -18,6 +20,8 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.showBackButton = true,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   @override
@@ -25,12 +29,16 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bg = backgroundColor ?? AppTheme.pureWhite;
+    final fg = foregroundColor ?? AppTheme.deepSlate;
+    final borderColor = AppTheme.borderSubtle;
+
     return Material(
-      color: AppTheme.pureWhite,
+      color: bg,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+            bottom: BorderSide(color: borderColor, width: 1.0),
           ),
         ),
         child: SafeArea(
@@ -38,7 +46,7 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: SizedBox(
             height: 64,
             child: IconTheme(
-              data: const IconThemeData(color: AppTheme.deepSlate, size: 22),
+              data: IconThemeData(color: fg, size: 22),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6.0),
                 child: Row(
@@ -53,9 +61,9 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
                         style: IconButton.styleFrom(
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_back,
-                          color: AppTheme.deepSlate,
+                          color: fg,
                         ),
                         tooltip: 'Back',
                         onPressed: onBack ?? () => Navigator.maybePop(context),
@@ -77,7 +85,7 @@ class ModuleAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 AppTheme.heading(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.deepSlate,
+                                  color: fg,
                                 ),
                           ),
                           if (subtitle != null && subtitle!.isNotEmpty) ...[

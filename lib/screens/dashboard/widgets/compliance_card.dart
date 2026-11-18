@@ -27,11 +27,7 @@ class ComplianceCard extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isPending ? const Color(0xFFFDE68A) : AppTheme.borderSubtle,
-          width: 1.0,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
@@ -110,9 +106,8 @@ class ComplianceCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.scaffoldBg,
+                    color: AppTheme.softGreyFill,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.borderSubtle),
                   ),
                   child: Text(
                     'Due $deadline',
@@ -121,7 +116,7 @@ class ComplianceCard extends StatelessWidget {
                     style: AppTheme.mono(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.mutedSlate,
+                      color: AppTheme.deepSlate,
                     ),
                   ),
                 ),
@@ -131,16 +126,16 @@ class ComplianceCard extends StatelessWidget {
           if (isPending) ...[
             const SizedBox(height: 14),
             SizedBox(
-              height: 42,
+              height: 44,
               child: ElevatedButton.icon(
                 onPressed: onSubmitReport,
                 icon: const Icon(Icons.send_rounded, size: 16),
                 label: const Text('Submit Daily Report'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.navyBlue,
+                  backgroundColor: AppTheme.electricBlue,
                   foregroundColor: AppTheme.pureWhite,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                 ),
               ),

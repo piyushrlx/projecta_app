@@ -436,8 +436,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {},
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.pop(context, _hasChanges);
+      },
       child: Scaffold(
         backgroundColor: AppTheme.scaffoldBg,
         appBar: ModuleAppBar(
@@ -454,7 +457,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               IconButton(
                 icon: const Icon(
                   Icons.edit_outlined,
-                  color: AppTheme.royalBlue,
+                  color: AppTheme.deepSlate,
                 ),
                 tooltip: 'Edit Task',
                 onPressed: () async {

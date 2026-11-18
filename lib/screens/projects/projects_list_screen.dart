@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/offline_cache_banner.dart';
+import '../../core/widgets/server_config_dialog.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../../models/project_model.dart';
 import '../../services/auth_service.dart';
@@ -467,7 +467,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: AppTheme.royalBlue,
+                      color: AppTheme.electricIndigo,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -485,7 +485,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
           ? FloatingActionButton(
               heroTag: 'projects_list_fab',
               onPressed: _navigateToCreateProject,
-              backgroundColor: AppTheme.royalBlue,
+              backgroundColor: AppTheme.electricIndigo,
               shape: const CircleBorder(),
               tooltip: 'New Project',
               child: const Icon(Icons.add, color: AppTheme.pureWhite),
@@ -494,7 +494,16 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       body: Column(
         children: [
           // Offline Banner
-          if (_isOfflineCached) OfflineCacheBanner(onRetry: _loadProjects),
+          if (_isOfflineCached)
+            OfflineCacheBanner(
+              onRetry: _loadProjects,
+              onServerConfig: () {
+                showServerConfigDialog(
+                  context: context,
+                  onSaved: _loadProjects,
+                );
+              },
+            ),
 
           // Search Bar
           _buildSearchBar(),
@@ -538,7 +547,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      color: AppTheme.pureWhite,
+      color: AppTheme.scaffoldBg,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
       child: TextField(
         controller: _searchController,
@@ -547,7 +556,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
         style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
         decoration: InputDecoration(
           hintText: 'Search by project name, code, or client...',
-          hintStyle: AppTheme.body(fontSize: 13, color: AppTheme.lightSlate),
+          hintStyle: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
           prefixIcon: const Icon(
             Icons.search,
             size: 20,
@@ -567,22 +576,25 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                 )
               : null,
           filled: true,
-          fillColor: const Color(0xFFF8FAFC),
+          fillColor: AppTheme.pureWhite,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 10,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppTheme.borderSubtle),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppTheme.borderSubtle),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppTheme.navyBlue, width: 1.5),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: AppTheme.electricIndigo,
+              width: 1.5,
+            ),
           ),
         ),
       ),
@@ -605,7 +617,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: AppTheme.pureWhite,
+        color: AppTheme.scaffoldBg,
         border: Border(
           bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
@@ -634,16 +646,16 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                               ? AppTheme.dangerBg
                               : isArchived
                               ? const Color(0xFF475569)
-                              : AppTheme.navyBlue)
-                        : const Color(0xFFF1F5F9),
+                              : AppTheme.electricIndigo)
+                        : AppTheme.pureWhite,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? (isAtRisk
                                 ? const Color(0xFFFECACA)
                                 : isArchived
-                                ? const Color(0xFF475569)
-                                : AppTheme.navyBlue)
+                                ? const Color(0xFF94A3B8)
+                                : AppTheme.electricIndigo)
                           : AppTheme.borderSubtle,
                     ),
                   ),
@@ -656,7 +668,7 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
                           ? (isAtRisk
                                 ? AppTheme.dangerText
                                 : AppTheme.pureWhite)
-                          : AppTheme.mutedSlate,
+                          : AppTheme.textSecondaryNavy,
                     ),
                   ),
                 ),
@@ -715,250 +727,265 @@ class _ProjectsListScreenState extends State<ProjectsListScreen> {
       subtitleParts.add(project.departmentName!);
     }
 
-    return BrutalistPressable(
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProjectDetailScreen(projectId: project.id),
-          ),
-        );
-        _loadProjects();
-      },
-      backgroundColor: AppTheme.pureWhite,
-      borderColor: project.isAtRisk
-          ? const Color(0xFFFECACA)
-          : AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Top Row: Status Badge + Priority Tag + Quick Actions
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  _buildStatusBadge(
-                    project.status,
-                    project.isAtRisk,
-                    project.isArchived,
-                  ),
-                  const SizedBox(width: 6),
-                  _buildPriorityTag(project.priority),
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProjectDetailScreen(projectId: project.id),
+            ),
+          );
+          _loadProjects();
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(18),
+            border: project.isAtRisk
+                ? Border.all(color: const Color(0xFFFECACA), width: 1.5)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 3),
               ),
-              if (canManage)
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: AppTheme.mutedSlate,
-                  ),
-                  tooltip: 'Edit Project',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () => _navigateToEditProject(project),
-                ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // 2. Project Title
-          Text(
-            project.name,
-            style: AppTheme.heading(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.deepSlate,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // 3. Subtitle Triad: Code · Client · Department
-          Text(
-            subtitleParts.join(' · '),
-            style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
-          ),
-          const SizedBox(height: 14),
-
-          // 4. Dates & Manager Row (Matching Web Table Columns)
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Timeline',
-                      style: AppTheme.body(
-                        fontSize: 10,
-                        color: AppTheme.mutedSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      project.startDate != null &&
-                              project.startDate!.trim().isNotEmpty
-                          ? 'Start ${AppDateUtils.fmtDate(project.startDate)}'
-                          : 'Start —',
-                      style: AppTheme.mono(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      project.deadline != null &&
-                              project.deadline!.trim().isNotEmpty
-                          ? 'Due   ${AppDateUtils.fmtDate(project.deadline)}${project.isOverdue ? ' (${project.daysOverdue}d late)' : ''}'
-                          : 'Due   —',
-                      style: AppTheme.mono(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: project.isOverdue
-                            ? AppTheme.dangerText
-                            : AppTheme.deepSlate,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (project.managerName != null &&
-                  project.managerName!.isNotEmpty)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              // 1. Top Row: Status Badge + Priority Tag + Quick Actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        'Manager',
-                        style: AppTheme.body(
-                          fontSize: 10,
-                          color: AppTheme.mutedSlate,
-                        ),
+                      _buildStatusBadge(
+                        project.status,
+                        project.isAtRisk,
+                        project.isArchived,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        project.managerName!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.body(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.deepSlate,
-                        ),
-                      ),
+                      const SizedBox(width: 6),
+                      _buildPriorityTag(project.priority),
                     ],
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // 5. Team Avatar Stack
-          if (project.teamMembers.isNotEmpty) ...[
-            Row(
-              children: [
-                _buildAvatarStack(project.teamMembers, project.memberCount),
-                const SizedBox(width: 8),
-                Text(
-                  '${project.memberCount} member${project.memberCount == 1 ? '' : 's'}',
-                  style: AppTheme.body(
-                    fontSize: 11,
-                    color: AppTheme.mutedSlate,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // 6. Progress Bar with calculation methodology
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  'Progress (${project.isWeighted ? 'weighted' : 'average'})',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.heading(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.mutedSlate,
-                  ),
-                ),
+                  if (canManage)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: AppTheme.mutedSlate,
+                      ),
+                      tooltip: 'Edit Project',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _navigateToEditProject(project),
+                    ),
+                ],
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 10),
+
+              // 2. Project Title
               Text(
-                '${project.completionPercent.toStringAsFixed(0)}%',
-                style: AppTheme.mono(
-                  fontSize: 12,
+                project.name,
+                style: AppTheme.heading(
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.deepSlate,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: completionClamped,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                project.isAtRisk ? AppTheme.dangerText : AppTheme.royalBlue,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
+              const SizedBox(height: 4),
 
-          // 7. Task Triad Badges: Done, Pending, Overdue (Matching Web Table Columns)
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+              // 3. Subtitle Triad: Code · Client · Department
+              Text(
+                subtitleParts.join(' · '),
+                style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+              ),
+              const SizedBox(height: 14),
+
+              // 4. Dates & Manager Row (Matching Web Table Columns)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Timeline',
+                          style: AppTheme.body(
+                            fontSize: 10,
+                            color: AppTheme.mutedSlate,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          project.startDate != null &&
+                                  project.startDate!.trim().isNotEmpty
+                              ? 'Start ${AppDateUtils.fmtDate(project.startDate)}'
+                              : 'Start —',
+                          style: AppTheme.mono(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.deepSlate,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          project.deadline != null &&
+                                  project.deadline!.trim().isNotEmpty
+                              ? 'Due   ${AppDateUtils.fmtDate(project.deadline)}${project.isOverdue ? ' (${project.daysOverdue}d late)' : ''}'
+                              : 'Due   —',
+                          style: AppTheme.mono(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: project.isOverdue
+                                ? AppTheme.dangerText
+                                : AppTheme.deepSlate,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (project.managerName != null &&
+                      project.managerName!.isNotEmpty)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Manager',
+                            style: AppTheme.body(
+                              fontSize: 10,
+                              color: AppTheme.mutedSlate,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            project.managerName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.body(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.deepSlate,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 5. Team Avatar Stack
+              if (project.teamMembers.isNotEmpty) ...[
+                Row(
                   children: [
-                    _buildTaskBadge(
-                      'Done',
-                      project.doneTasks,
-                      const Color(0xFFDEF7EC),
-                      const Color(0xFF03543F),
-                    ),
-                    _buildTaskBadge(
-                      'Pending',
-                      project.pendingTasks,
-                      const Color(0xFFF1F5F9),
-                      AppTheme.mutedSlate,
-                    ),
-                    _buildTaskBadge(
-                      'Overdue',
-                      project.overdueTasks,
-                      project.overdueTasks > 0
-                          ? AppTheme.dangerBg
-                          : const Color(0xFFF1F5F9),
-                      project.overdueTasks > 0
-                          ? AppTheme.dangerText
-                          : AppTheme.mutedSlate,
+                    _buildAvatarStack(project.teamMembers, project.memberCount),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${project.memberCount} member${project.memberCount == 1 ? '' : 's'}',
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+              ],
+
+              // 6. Progress Bar with calculation methodology
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Progress (${project.isWeighted ? 'weighted' : 'average'})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.mutedSlate,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${project.completionPercent.toStringAsFixed(0)}%',
+                    style: AppTheme.mono(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.deepSlate,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 12,
-                color: AppTheme.lightSlate,
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: completionClamped,
+                  minHeight: 6,
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    project.isAtRisk ? AppTheme.dangerText : AppTheme.royalBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // 7. Task Triad Badges: Done, Pending, Overdue (Matching Web Table Columns)
+              Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildTaskBadge(
+                          'Done',
+                          project.doneTasks,
+                          const Color(0xFFDEF7EC),
+                          const Color(0xFF03543F),
+                        ),
+                        _buildTaskBadge(
+                          'Pending',
+                          project.pendingTasks,
+                          const Color(0xFFF1F5F9),
+                          AppTheme.mutedSlate,
+                        ),
+                        _buildTaskBadge(
+                          'Overdue',
+                          project.overdueTasks,
+                          project.overdueTasks > 0
+                              ? AppTheme.dangerBg
+                              : const Color(0xFFF1F5F9),
+                          project.overdueTasks > 0
+                              ? AppTheme.dangerText
+                              : AppTheme.mutedSlate,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: AppTheme.lightSlate,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

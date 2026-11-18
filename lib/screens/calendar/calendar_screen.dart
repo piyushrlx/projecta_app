@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/async_server_discovery.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
 import '../../core/widgets/module_app_bar.dart';
+import '../../core/widgets/server_config_dialog.dart';
 import '../../models/user_model.dart';
 import '../../services/dashboard_service.dart';
 import '../tasks/task_detail_screen.dart';
@@ -43,11 +45,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _fetchCalendarData() async {
+  Future<void> _fetchCalendarData({bool retryDiscovery = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    if (retryDiscovery) {
+      try {
+        await AsyncServerDiscovery.probeAndSelectFastest();
+      } catch (_) {}
+    }
 
     try {
       final data = await _dashboardService.getCalendarData(
@@ -195,9 +203,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: _fetchCalendarData,
-                      child: const Text('Try Again'),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 10,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              _fetchCalendarData(retryDiscovery: true),
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('Try Again'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            showServerConfigDialog(
+                              context: context,
+                              onSaved: () =>
+                                  _fetchCalendarData(retryDiscovery: true),
+                            );
+                          },
+                          icon: const Icon(Icons.settings_ethernet, size: 16),
+                          label: const Text('Server Config'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

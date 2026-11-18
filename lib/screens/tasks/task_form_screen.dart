@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brutalist_pressable.dart';
+import '../../core/widgets/user_avatar.dart';
+import '../../models/project_model.dart';
 import '../../models/task_model.dart';
 import '../../services/project_service.dart';
 import '../../services/task_service.dart';
@@ -50,6 +52,36 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   DateTime? _selectedDeadline;
   int? _selectedOwnerId;
   final Set<int> _selectedContributorIds = {};
+
+  // Assignees search / filter
+  String _memberSearchQuery = '';
+  final TextEditingController _memberSearchController = TextEditingController();
+
+  // ── Milestone ──────────────────────────────────────────────────────────────
+  List<ProjectMilestoneModel> _milestones = [];
+  int? _selectedMilestoneId;
+  bool _milestoneExpanded = false;
+
+  // ── Parent Task ────────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> _projectTasks = [];
+  int? _selectedParentTaskId;
+  bool _isLoadingTasks = false;
+  bool _parentTaskExpanded = false;
+
+  // ── Dependencies ───────────────────────────────────────────────────────────
+  final Set<int> _selectedDependencyIds = {};
+  bool _dependenciesExpanded = false;
+
+  List<Map<String, dynamic>> get _filteredMembers {
+    if (_memberSearchQuery.trim().isEmpty) return _projectMembers;
+    final q = _memberSearchQuery.trim().toLowerCase();
+    return _projectMembers.where((m) {
+      final name = (m['full_name'] ?? '').toString().toLowerCase();
+      final dept = (m['department'] ?? '').toString().toLowerCase();
+      final desig = (m['designation'] ?? '').toString().toLowerCase();
+      return name.contains(q) || dept.contains(q) || desig.contains(q);
+    }).toList();
+  }
 
   bool get isEdit => widget.task != null || widget.detail != null;
   bool get isSubtask =>
@@ -103,6 +135,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           _selectedContributorIds.add(a.userId);
         }
       }
+
+      // Pre-fill milestone, parent task, dependencies
+      _selectedMilestoneId = widget.detail?.task.milestoneId ?? widget.task?.milestoneId;
+      _selectedParentTaskId = widget.detail?.task.parentTaskId ?? widget.task?.parentTaskId;
+      for (final dep in widget.detail?.dependsOn ?? []) {
+        _selectedDependencyIds.add(dep.id);
+      }
     } else {
       _selectedProjectId = widget.initialProjectId;
       _selectedDeadline = DateTime.now().add(const Duration(days: 7));
@@ -117,6 +156,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     _descriptionController.dispose();
     _instructionsController.dispose();
     _estimatedHoursController.dispose();
+    _memberSearchController.dispose();
     super.dispose();
   }
 
@@ -137,6 +177,19 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             _selectedProjectId = p0 is num
                 ? p0.toInt()
                 : (p0 is String ? int.tryParse(p0) : null);
+          } else if (_selectedProjectId != null &&
+              !_projects.any((p) {
+                final pid = p['id'] is num
+                    ? (p['id'] as num).toInt()
+                    : int.tryParse(p['id'].toString());
+                return pid == _selectedProjectId;
+              })) {
+            if (_projects.isNotEmpty) {
+              final p0 = _projects.first['id'];
+              _selectedProjectId = p0 is num
+                  ? p0.toInt()
+                  : (p0 is String ? int.tryParse(p0) : null);
+            }
           }
           _isLoadingLookups = false;
         });
@@ -163,6 +216,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     try {
       final detail = await _projectService.getProjectDetails(projectId);
+
+      // Capture milestones for this project
+      if (mounted) {
+        setState(() {
+          _milestones = detail.milestones;
+          // Reset milestone selection if previous value not in new list
+          if (_selectedMilestoneId != null &&
+              !detail.milestones.any((m) => m.id == _selectedMilestoneId)) {
+            _selectedMilestoneId = null;
+          }
+        });
+      }
+
+      // Load project tasks (for parent task picker + dependencies)
+      await _loadProjectTasks(projectId);
+
       final assignable = <Map<String, dynamic>>[];
 
       // Manager is always eligible for task assignment
@@ -172,36 +241,78 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           'full_name': detail.project.managerName ?? 'Project Manager',
           'designation': 'Project Manager',
           'role': 'manager',
+          'photo_url': null,
+          'department': 'Manager',
         });
       }
 
-      // Add project members who have memberRole == 'member'
+      // Add all project members (both members and viewers)
       for (final mem in detail.members) {
         final uid = mem.userId;
         if (!assignable.any((a) => a['id'] == uid)) {
-          if (mem.memberRole.toLowerCase() == 'member') {
+          final isViewer = mem.memberRole.toLowerCase() == 'viewer';
+          final badge = mem.designation != null && mem.designation!.isNotEmpty
+              ? mem.designation!
+              : (isViewer ? 'Team Member' : 'Member');
+          assignable.add({
+            'id': uid,
+            'full_name': mem.fullName,
+            'designation': badge,
+            'role': mem.memberRole,
+            'photo_url': mem.profilePhotoUrl,
+            'department': badge,
+          });
+        }
+      }
+
+      // Also include other active organization staff members
+      try {
+        final allEmps = await _taskService.getActiveEmployees();
+        for (final emp in allEmps) {
+          final eid = emp['id'] is num
+              ? (emp['id'] as num).toInt()
+              : int.tryParse(emp['id'].toString());
+          if (eid != null && !assignable.any((a) => a['id'] == eid)) {
             assignable.add({
-              'id': uid,
-              'full_name': mem.fullName,
-              'designation': mem.designation ?? 'Member',
-              'role': mem.memberRole,
+              'id': eid,
+              'full_name': emp['full_name']?.toString() ?? 'User #$eid',
+              'designation': emp['designation']?.toString() ?? 'Staff',
+              'role': 'employee',
+              'photo_url': emp['profile_photo_url']?.toString(),
+              'department': emp['department_name']?.toString() ??
+                  emp['designation']?.toString() ??
+                  'Staff',
             });
           }
         }
-      }
+      } catch (_) {}
 
       if (mounted) {
         setState(() {
           _projectMembers = assignable;
           if (_selectedOwnerId == null ||
-              !assignable.any((a) => a['id'] == _selectedOwnerId)) {
+              !assignable.any((a) {
+                final aid = a['id'] is num
+                    ? (a['id'] as num).toInt()
+                    : int.tryParse(a['id'].toString());
+                return aid == _selectedOwnerId;
+              })) {
             _selectedOwnerId = assignable.isNotEmpty
-                ? assignable.first['id'] as int?
+                ? (assignable.first['id'] is num
+                    ? (assignable.first['id'] as num).toInt()
+                    : int.tryParse(assignable.first['id'].toString()))
                 : null;
           }
           _selectedContributorIds.removeWhere(
-            (id) => !assignable.any((a) => a['id'] == id),
+            (id) => !assignable.any((a) {
+              final aid = a['id'] is num
+                  ? (a['id'] as num).toInt()
+                  : int.tryParse(a['id'].toString());
+              return aid == id;
+            }),
           );
+          _memberSearchQuery = '';
+          _memberSearchController.clear();
           _isLoadingMembers = false;
         });
       }
@@ -211,6 +322,46 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           _isLoadingMembers = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadProjectTasks(int projectId) async {
+    if (mounted) setState(() => _isLoadingTasks = true);
+    try {
+      final result = await _taskService.getTasks(projectId: projectId, limit: 500);
+      final allTasks = (result['tasks'] as List<TaskModel>?) ?? [];
+      final selfId = currentTaskId;
+      final excludeIds = <int>{};
+      if (selfId != null) {
+        excludeIds.add(selfId);
+        for (final sub in widget.detail?.subtasks ?? []) {
+          excludeIds.add(sub.id);
+        }
+      }
+      final taskMaps = allTasks
+          .where((t) => !excludeIds.contains(t.id))
+          .map((t) => <String, dynamic>{
+                'id': t.id,
+                'task_code': t.taskCode,
+                'title': t.title,
+                'status': t.status,
+              })
+          .toList();
+      if (mounted) {
+        setState(() {
+          _projectTasks = taskMaps;
+          if (_selectedParentTaskId != null &&
+              !taskMaps.any((t) => t['id'] == _selectedParentTaskId)) {
+            _selectedParentTaskId = null;
+          }
+          _selectedDependencyIds.removeWhere(
+            (id) => !taskMaps.any((t) => t['id'] == id),
+          );
+          _isLoadingTasks = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingTasks = false);
     }
   }
 
@@ -321,6 +472,23 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         payload['parent_task_id'] = widget.parentTaskId;
       }
 
+      // Milestone
+      if (_selectedMilestoneId != null && _selectedMilestoneId! > 0) {
+        payload['milestone_id'] = _selectedMilestoneId;
+      }
+
+      // Parent task from UI picker (only when not already a fixed subtask)
+      if (!(isSubtask && widget.parentTaskId != null) &&
+          _selectedParentTaskId != null &&
+          _selectedParentTaskId! > 0) {
+        payload['parent_task_id'] = _selectedParentTaskId;
+      }
+
+      // Dependencies
+      if (_selectedDependencyIds.isNotEmpty) {
+        payload['dependencies'] = _selectedDependencyIds.toList();
+      }
+
       if (isEdit) {
         await _taskService.updateTask(currentTaskId!, payload);
       } else {
@@ -367,12 +535,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: Text(titleText, style: AppTheme.heading(fontSize: 18)),
+        title: Text(
+          titleText,
+          style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
+        ),
+        backgroundColor: AppTheme.pureWhite,
+        iconTheme: const IconThemeData(color: AppTheme.deepSlate),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
+        ),
       ),
       body: _isLoadingLookups
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(
-                color: AppTheme.royalBlue,
+                color: AppTheme.electricIndigo,
                 strokeWidth: 2.5,
               ),
             )
@@ -386,12 +564,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.borderSubtle,
-                      width: 1.0,
-                    ),
-                    boxShadow: const [AppTheme.softShadow],
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 18,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,35 +814,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
                       const SizedBox(height: 20),
 
-                      // 6. Assignees: Primary Owner & Contributors
-                      Text(
-                        'Primary Owner (Required)',
-                        style: AppTheme.heading(
-                          fontSize: 13,
-                          color: AppTheme.deepSlate,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      // 6. Assignees: Unified section with photos
                       _isLoadingMembers
                           ? const LinearProgressIndicator(
                               color: AppTheme.royalBlue,
                               backgroundColor: AppTheme.scaffoldBg,
                             )
-                          : _buildOwnerDropdown(),
-
-                      const SizedBox(height: 20),
-
-                      Text(
-                        'Contributors (Optional)',
-                        style: AppTheme.heading(
-                          fontSize: 13,
-                          color: AppTheme.deepSlate,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _isLoadingMembers
-                          ? const SizedBox.shrink()
-                          : _buildContributorsSelector(),
+                          : _buildAssigneesSection(),
 
                       const SizedBox(height: 20),
 
@@ -763,42 +921,51 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
                       const SizedBox(height: 28),
 
-                      // 9. Submit Button
+                      // 9. Milestone / Parent Task / Dependencies (collapsible)
+                      _buildMilestoneSection(),
+                      const SizedBox(height: 10),
+                      _buildParentTaskSection(),
+                      const SizedBox(height: 10),
+                      _buildDependenciesSection(),
+
+                      const SizedBox(height: 28),
+
+                      // 10. Submit Button
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
-                        child: BrutalistPressable(
-                          onTap: _isSubmitting ? null : _submitTask,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: _isSubmitting
-                                  ? AppTheme.mutedSlate
-                                  : AppTheme.royalBlue,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [AppTheme.softShadow],
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _submitTask,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.deepInk,
+                            foregroundColor: AppTheme.pureWhite,
+                            disabledBackgroundColor: AppTheme.mutedSlate,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                            alignment: Alignment.center,
-                            child: _isSubmitting
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: AppTheme.pureWhite,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    isEdit
-                                        ? 'Save Changes'
-                                        : (isSubtask
-                                              ? 'Create Subtask'
-                                              : 'Assign Task'),
-                                    style: AppTheme.heading(
-                                      fontSize: 15,
-                                      color: AppTheme.pureWhite,
-                                    ),
-                                  ),
+                            elevation: 0,
                           ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: AppTheme.pureWhite,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  isEdit
+                                      ? 'Save Changes'
+                                      : (isSubtask
+                                            ? 'Create Subtask'
+                                            : 'Assign Task'),
+                                  style: AppTheme.heading(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.pureWhite,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -873,12 +1040,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         ),
       ),
       items: _projects.map((p) {
-        final id = p['id'] as int;
+        final id = p['id'] is num
+            ? (p['id'] as num).toInt()
+            : int.tryParse(p['id'].toString()) ?? 0;
         final name = p['name']?.toString() ?? 'Project #$id';
+        final code = p['project_code']?.toString();
+        final label = code != null && code.isNotEmpty ? '$name ($code)' : name;
         return DropdownMenuItem<int>(
           value: id,
           child: Text(
-            name,
+            label,
             style: AppTheme.body(fontSize: 14, color: AppTheme.deepSlate),
             overflow: TextOverflow.ellipsis,
           ),
@@ -890,6 +1061,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             _selectedProjectId = val;
             _selectedOwnerId = null;
             _selectedContributorIds.clear();
+            // Reset project-dependent fields
+            _milestones = [];
+            _selectedMilestoneId = null;
+            _milestoneExpanded = false;
+            _projectTasks = [];
+            _selectedParentTaskId = null;
+            _parentTaskExpanded = false;
+            _selectedDependencyIds.clear();
+            _dependenciesExpanded = false;
           });
           _loadProjectMembers(val);
         }
@@ -1004,114 +1184,695 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     );
   }
 
-  Widget _buildOwnerDropdown() {
-    if (_projectMembers.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.scaffoldBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppTheme.borderSubtle),
-        ),
-        child: Text(
-          'No members found for this project.',
-          style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
-        ),
-      );
-    }
+  // ─── Unified Assignees Section ────────────────────────────────────────────
 
-    return DropdownButtonFormField<int>(
-      initialValue: _selectedOwnerId,
-      isExpanded: true,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: AppTheme.scaffoldBg,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppTheme.borderSubtle),
+  void _toggleMemberSelection(int id) {
+    setState(() {
+      final isOwner = _selectedOwnerId == id;
+      final isContributor = _selectedContributorIds.contains(id);
+
+      if (isOwner) {
+        // De-select current owner
+        _selectedOwnerId = null;
+      } else if (isContributor) {
+        // De-select contributor
+        _selectedContributorIds.remove(id);
+      } else {
+        // Select new person: first selected becomes owner, rest become contributors
+        if (_selectedOwnerId == null) {
+          _selectedOwnerId = id;
+        } else {
+          _selectedContributorIds.add(id);
+        }
+      }
+    });
+  }
+
+  void _setRoleOwner(int id) {
+    setState(() {
+      // Demote previous owner to contributor (if different)
+      if (_selectedOwnerId != null && _selectedOwnerId != id) {
+        _selectedContributorIds.add(_selectedOwnerId!);
+      }
+      _selectedOwnerId = id;
+      _selectedContributorIds.remove(id);
+    });
+  }
+
+  void _setRoleContributor(int id) {
+    setState(() {
+      if (_selectedOwnerId == id) {
+        _selectedOwnerId = null;
+        _selectedContributorIds.add(id);
+      }
+    });
+  }
+
+  int _parseId(dynamic raw) {
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw.toString()) ?? 0;
+  }
+
+  Widget _buildAssigneesSection() {
+    final selectedCount =
+        (_selectedOwnerId != null ? 1 : 0) + _selectedContributorIds.length;
+    final filtered = _filteredMembers;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Header row: label + count badge ──
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Assignees',
+              style: AppTheme.heading(fontSize: 13, color: AppTheme.deepSlate),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                selectedCount == 0
+                    ? '0 selected · owner = responsible, contributor = shared'
+                    : '$selectedCount selected · owner = responsible, contributor = shared',
+                style: AppTheme.body(
+                  fontSize: 10,
+                  color: AppTheme.mutedSlate,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppTheme.borderSubtle),
+        const SizedBox(height: 8),
+
+        // ── Search / filter field ──
+        TextField(
+          controller: _memberSearchController,
+          onChanged: (val) => setState(() => _memberSearchQuery = val),
+          style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+          decoration: InputDecoration(
+            hintText: 'Filter by name, department or designation...',
+            hintStyle: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+            prefixIcon: const Icon(
+              Icons.search,
+              size: 18,
+              color: AppTheme.mutedSlate,
+            ),
+            filled: true,
+            fillColor: AppTheme.scaffoldBg,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.borderSubtle),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppTheme.borderSubtle),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(
+                color: AppTheme.royalBlue,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // ── Members list ──
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            border: Border.all(color: AppTheme.borderSubtle),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: filtered.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Text(
+                    _projectMembers.isEmpty
+                        ? 'No members found for this project.'
+                        : 'No members match your search.',
+                    style: AppTheme.body(
+                      fontSize: 13,
+                      color: AppTheme.mutedSlate,
+                    ),
+                  ),
+                )
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 340),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppTheme.borderSubtle,
+                    ),
+                    itemBuilder: (context, i) =>
+                        _buildMemberTile(filtered[i]),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Project members are listed first. Assigned users are added to the project automatically.',
+          style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMemberTile(Map<String, dynamic> m) {
+    final id = _parseId(m['id']);
+    final name = m['full_name']?.toString() ?? 'User #$id';
+    final dept = (m['department'] ?? m['designation'] ?? '').toString();
+    final photoUrl = m['photo_url']?.toString();
+    final isOwner = _selectedOwnerId == id;
+    final isContributor = _selectedContributorIds.contains(id);
+    final isSelected = isOwner || isContributor;
+
+    return Material(
+      color: isSelected
+          ? AppTheme.infoBg.withValues(alpha: 0.5)
+          : AppTheme.pureWhite,
+      child: InkWell(
+        onTap: () => _toggleMemberSelection(id),
+        borderRadius: BorderRadius.circular(0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Checkbox
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isSelected,
+                  activeColor: AppTheme.royalBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  onChanged: (_) => _toggleMemberSelection(id),
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Avatar with photo or initials fallback
+              UserAvatar(
+                name: name,
+                photoUrl: photoUrl,
+                size: 36,
+                backgroundColor: const Color(0xFFE0E7FF),
+                textColor: AppTheme.royalBlue,
+              ),
+              const SizedBox(width: 10),
+
+              // Name + department
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      style: AppTheme.body(
+                        fontSize: 13,
+                        color: AppTheme.deepSlate,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (dept.isNotEmpty)
+                      Text(
+                        dept,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: AppTheme.mutedSlate,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+
+              // Role toggle (only when selected)
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                _buildRoleToggle(id, isOwner: isOwner),
+              ],
+            ],
+          ),
         ),
       ),
-      items: _projectMembers.map((m) {
-        final id = m['id'] as int;
-        final name = m['full_name']?.toString() ?? 'User #$id';
-        final desig = m['designation']?.toString() ?? '';
-        return DropdownMenuItem<int>(
-          value: id,
-          child: Text(
-            '$name ($desig)',
-            style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      }).toList(),
-      onChanged: (val) {
-        if (val != null) {
-          setState(() {
-            _selectedOwnerId = val;
-            _selectedContributorIds.remove(val);
-          });
-        }
-      },
     );
   }
 
-  Widget _buildContributorsSelector() {
-    final eligibleContributors = _projectMembers
-        .where((m) => m['id'] != _selectedOwnerId)
-        .toList();
+  Widget _buildRoleToggle(int id, {required bool isOwner}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.scaffoldBg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.borderSubtle),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _roleBtn(label: 'Owner', isActive: isOwner, onTap: () => _setRoleOwner(id)),
+          Container(width: 1, height: 24, color: AppTheme.borderSubtle),
+          _roleBtn(label: 'Contrib.', isActive: !isOwner, onTap: () => _setRoleContributor(id)),
+        ],
+      ),
+    );
+  }
 
-    if (eligibleContributors.isEmpty) {
-      return Text(
-        'No additional contributors available in this project.',
-        style: AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+  Widget _roleBtn({
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: isActive ? AppTheme.royalBlue : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(
+          label,
+          style: AppTheme.body(
+            fontSize: 10,
+            color: isActive ? AppTheme.pureWhite : AppTheme.mutedSlate,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Collapsible Card wrapper ─────────────────────────────────────────────
+
+  Widget _buildCollapsibleCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool expanded,
+    required VoidCallback onToggle,
+    required Widget body,
+    bool disabled = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.pureWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderSubtle),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: disabled ? null : onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: disabled ? AppTheme.mutedSlate : AppTheme.royalBlue,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTheme.heading(
+                            fontSize: 13,
+                            color: AppTheme.deepSlate,
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: AppTheme.body(
+                            fontSize: 11,
+                            color: AppTheme.mutedSlate,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!disabled)
+                    Icon(
+                      expanded ? Icons.expand_less : Icons.expand_more,
+                      color: AppTheme.mutedSlate,
+                      size: 20,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded && !disabled) ...[
+            Divider(height: 1, thickness: 1, color: AppTheme.borderSubtle),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: body,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Milestone Section ────────────────────────────────────────────────────
+
+  Widget _buildMilestoneSection() {
+    final projectSelected = (_selectedProjectId ?? effectiveProjectId) != null;
+
+    String subtitle;
+    if (!projectSelected) {
+      subtitle = 'Select a project first';
+    } else if (_milestones.isEmpty) {
+      subtitle = _isLoadingTasks ? 'Loading milestones…' : 'No milestones in this project';
+    } else if (_selectedMilestoneId != null) {
+      final m = _milestones.firstWhere(
+        (m) => m.id == _selectedMilestoneId,
+        orElse: () => _milestones.first,
+      );
+      subtitle = m.title;
+    } else {
+      subtitle = '— None —';
+    }
+
+    return _buildCollapsibleCard(
+      icon: Icons.flag_outlined,
+      title: 'Milestone',
+      subtitle: subtitle,
+      expanded: _milestoneExpanded,
+      disabled: !projectSelected || _milestones.isEmpty,
+      onToggle: () => setState(() => _milestoneExpanded = !_milestoneExpanded),
+      body: DropdownButtonFormField<int?>(
+        initialValue: _selectedMilestoneId,
+        isExpanded: true,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: AppTheme.scaffoldBg,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderSubtle),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.borderSubtle),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppTheme.royalBlue, width: 1.5),
+          ),
+        ),
+        items: [
+          DropdownMenuItem<int?>(
+            value: null,
+            child: Text(
+              '— None —',
+              style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+            ),
+          ),
+          ..._milestones.map((m) {
+            final label = m.dueDate != null && m.dueDate!.isNotEmpty
+                ? '${m.title}  ·  Due ${AppDateUtils.fmtDate(m.dueDate!)}'
+                : m.title;
+            return DropdownMenuItem<int?>(
+              value: m.id,
+              child: Text(
+                label,
+                style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }),
+        ],
+        onChanged: (val) => setState(() => _selectedMilestoneId = val),
+      ),
+    );
+  }
+
+  // ─── Parent Task Section ──────────────────────────────────────────────────
+
+  Widget _buildParentTaskSection() {
+    if (isSubtask && widget.parentTaskId != null) {
+      return _buildCollapsibleCard(
+        icon: Icons.account_tree_outlined,
+        title: 'Parent task (makes this a subtask)',
+        subtitle: widget.parentTaskTitle != null
+            ? widget.parentTaskTitle!
+            : 'Task #${widget.parentTaskId}',
+        expanded: false,
+        disabled: true,
+        onToggle: () {},
+        body: const SizedBox.shrink(),
       );
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: eligibleContributors.map((m) {
-        final id = m['id'] as int;
-        final name = m['full_name']?.toString() ?? 'User #$id';
-        final isChecked = _selectedContributorIds.contains(id);
+    final projectSelected = (_selectedProjectId ?? effectiveProjectId) != null;
 
-        return FilterChip(
-          label: Text(
-            name,
-            style: AppTheme.body(
-              fontSize: 12,
-              color: isChecked ? AppTheme.royalBlue : AppTheme.deepSlate,
-              fontWeight: isChecked ? FontWeight.w700 : FontWeight.w500,
+    String subtitle;
+    if (!projectSelected) {
+      subtitle = 'Select a project first';
+    } else if (_isLoadingTasks) {
+      subtitle = 'Loading tasks…';
+    } else if (_projectTasks.isEmpty) {
+      subtitle = 'No other tasks in this project';
+    } else if (_selectedParentTaskId != null) {
+      final t = _projectTasks.firstWhere(
+        (t) => t['id'] == _selectedParentTaskId,
+        orElse: () => <String, dynamic>{},
+      );
+      subtitle = t.isNotEmpty ? '${t['task_code']} · ${t['title']}' : '— None —';
+    } else {
+      subtitle = '— None —';
+    }
+
+    return _buildCollapsibleCard(
+      icon: Icons.account_tree_outlined,
+      title: 'Parent task (makes this a subtask)',
+      subtitle: subtitle,
+      expanded: _parentTaskExpanded,
+      disabled: !projectSelected || (_projectTasks.isEmpty && !_isLoadingTasks),
+      onToggle: () => setState(() => _parentTaskExpanded = !_parentTaskExpanded),
+      body: _isLoadingTasks
+          ? const LinearProgressIndicator(
+              color: AppTheme.royalBlue,
+              backgroundColor: AppTheme.scaffoldBg,
+            )
+          : DropdownButtonFormField<int?>(
+              initialValue: _selectedParentTaskId,
+              isExpanded: true,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppTheme.scaffoldBg,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppTheme.borderSubtle),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppTheme.borderSubtle),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppTheme.royalBlue, width: 1.5),
+                ),
+              ),
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(
+                    '— None —',
+                    style: AppTheme.body(fontSize: 13, color: AppTheme.mutedSlate),
+                  ),
+                ),
+                ..._projectTasks.map((t) {
+                  final id = t['id'] as int;
+                  final label = '${t['task_code']} · ${t['title']}';
+                  return DropdownMenuItem<int?>(
+                    value: id,
+                    child: Text(
+                      label,
+                      style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }),
+              ],
+              onChanged: (val) => setState(() => _selectedParentTaskId = val),
             ),
-          ),
-          selected: isChecked,
-          selectedColor: AppTheme.infoBg,
-          checkmarkColor: AppTheme.royalBlue,
-          backgroundColor: AppTheme.scaffoldBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isChecked ? AppTheme.royalBlue : AppTheme.borderSubtle,
-            ),
-          ),
-          onSelected: (selected) {
-            setState(() {
-              if (selected) {
-                _selectedContributorIds.add(id);
-              } else {
-                _selectedContributorIds.remove(id);
-              }
-            });
-          },
-        );
-      }).toList(),
     );
   }
 
+  // ─── Dependencies Section ─────────────────────────────────────────────────
+
+  Widget _buildDependenciesSection() {
+    final projectSelected = (_selectedProjectId ?? effectiveProjectId) != null;
+    final count = _selectedDependencyIds.length;
+
+    String subtitle;
+    if (!projectSelected) {
+      subtitle = 'Select a project first';
+    } else if (_isLoadingTasks) {
+      subtitle = 'Loading tasks…';
+    } else if (_projectTasks.isEmpty) {
+      subtitle = 'No tasks available';
+    } else {
+      subtitle = count == 0
+          ? 'Tap to select blocking tasks'
+          : '$count task${count == 1 ? '' : 's'} selected';
+    }
+
+    return _buildCollapsibleCard(
+      icon: Icons.link_outlined,
+      title: 'Dependencies',
+      subtitle: subtitle,
+      expanded: _dependenciesExpanded,
+      disabled: !projectSelected || (_projectTasks.isEmpty && !_isLoadingTasks),
+      onToggle: () => setState(() => _dependenciesExpanded = !_dependenciesExpanded),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'This task cannot start until these tasks are completed:',
+            style: AppTheme.body(fontSize: 11, color: AppTheme.mutedSlate),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingTasks)
+            const LinearProgressIndicator(
+              color: AppTheme.royalBlue,
+              backgroundColor: AppTheme.scaffoldBg,
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _projectTasks.length,
+                itemBuilder: (context, i) {
+                  final t = _projectTasks[i];
+                  final id = t['id'] as int;
+                  final isChecked = _selectedDependencyIds.contains(id);
+                  final status = t['status']?.toString() ?? 'not_started';
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isChecked) {
+                          _selectedDependencyIds.remove(id);
+                        } else {
+                          _selectedDependencyIds.add(id);
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: isChecked,
+                              activeColor: AppTheme.royalBlue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              onChanged: (_) {
+                                setState(() {
+                                  if (isChecked) {
+                                    _selectedDependencyIds.remove(id);
+                                  } else {
+                                    _selectedDependencyIds.add(id);
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${t['task_code']} · ${t['title']}',
+                              style: AppTheme.body(fontSize: 12, color: AppTheme.deepSlate),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildStatusPill(status),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 6),
+          Text(
+            'Only tasks of the same project are listed.',
+            style: AppTheme.body(fontSize: 10, color: AppTheme.mutedSlate),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Status Pill ──────────────────────────────────────────────────────────
+
+  Widget _buildStatusPill(String status) {
+    final label = status.replaceAll('_', ' ');
+    Color color;
+    switch (status) {
+      case 'completed':
+        color = AppTheme.successText;
+        break;
+      case 'in_progress':
+        color = AppTheme.royalBlue;
+        break;
+      case 'blocked':
+        color = AppTheme.dangerText;
+        break;
+      case 'pending_review':
+        color = AppTheme.warningText;
+        break;
+      default:
+        color = AppTheme.mutedSlate;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: AppTheme.body(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  // ─── Error View ───────────────────────────────────────────────────────────
   Widget _buildErrorView() {
     return Center(
       child: Padding(

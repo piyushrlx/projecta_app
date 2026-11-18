@@ -121,6 +121,8 @@ class TaskService {
     return {
       'columns': result,
       'is_cached': isCached,
+      'total': data is Map<String, dynamic> ? data['total'] : null,
+      'limit': data is Map<String, dynamic> ? data['limit'] : null,
     };
   }
 
@@ -153,6 +155,7 @@ class TaskService {
     }
 
     final response = await _client.post('/tasks/$id/status', body: body);
+    await _client.clearCache();
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
       return data;
@@ -162,6 +165,7 @@ class TaskService {
 
   Future<void> updateProgress(int id, int progress) async {
     await _client.post('/tasks/$id/progress', body: {'progress': progress});
+    await _client.clearCache();
   }
 
   Future<void> requestExtension(
@@ -191,10 +195,12 @@ class TaskService {
     }
 
     await _client.post('/tasks/$taskId/extension-decide', body: body);
+    await _client.clearCache();
   }
 
   Future<Map<String, dynamic>> createTask(Map<String, dynamic> payload) async {
     final response = await _client.post('/tasks', body: payload);
+    await _client.clearCache();
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
       return data;
@@ -207,6 +213,7 @@ class TaskService {
     Map<String, dynamic> payload,
   ) async {
     final response = await _client.post('/tasks/$id', body: payload);
+    await _client.clearCache();
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
       return data;
@@ -232,14 +239,31 @@ class TaskService {
     return [];
   }
 
-  Future<List<Map<String, dynamic>>> getActiveProjects() async {
+  Future<List<Map<String, dynamic>>> getActiveProjects({String? status, int? limit}) async {
+    final query = <String, dynamic>{'all': '1'};
+    if (limit != null && limit > 0) {
+      query['limit'] = limit.toString();
+      query.remove('all');
+    }
+    if (status != null && status.isNotEmpty) {
+      query['status'] = status.toLowerCase();
+    }
     final response = await _client.get(
       '/projects',
-      queryParameters: {'limit': '100', 'status': 'active'},
+      queryParameters: query,
     );
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic> && data['projects'] is List) {
-      return (data['projects'] as List).cast<Map<String, dynamic>>();
+      final list = (data['projects'] as List).cast<Map<String, dynamic>>();
+      if (status == null || status.isEmpty) {
+        // By default, include all assignable projects (planned, active, on_hold, etc.)
+        // and filter out completed or cancelled projects
+        return list.where((p) {
+          final st = p['status']?.toString().toLowerCase();
+          return st != 'completed' && st != 'cancelled';
+        }).toList();
+      }
+      return list;
     }
     return [];
   }

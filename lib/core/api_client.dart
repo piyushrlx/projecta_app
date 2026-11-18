@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform, SocketException;
-import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/foundation.dart'
+    show ValueNotifier, kIsWeb, visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'async_server_discovery.dart';
 import 'company_settings.dart';
 
 class ApiException implements Exception {
@@ -25,12 +27,12 @@ class ApiClient {
     _initializeBaseUrl();
   }
 
-  static const String defaultLanIp = '192.168.1.2';
-  static const String _defaultAdbTunnelUrl =
+  static const String liveProductionUrl = 'https://projeqta.com/api/v1';
+  static const String defaultLanIp = '192.168.1.3';
+  static const String defaultAdbTunnelUrl =
       'http://localhost:8080/projecta/api/v1';
-  static const String _defaultAndroidUrl =
-      'http://$defaultLanIp/projecta/api/v1';
-  static const String _defaultLocalhostUrl = 'http://localhost/projecta/api/v1';
+  static const String _defaultAndroidUrl = liveProductionUrl;
+  static const String _defaultLocalhostUrl = liveProductionUrl;
   static const String _tokenPrefKey = 'auth_token';
   static const String _baseUrlPrefKey = 'api_base_url';
 
@@ -44,6 +46,9 @@ class ApiClient {
   }
 
   String _baseUrl = _defaultLocalhostUrl;
+  final ValueNotifier<String> baseUrlNotifier = ValueNotifier<String>(
+    _defaultLocalhostUrl,
+  );
   String? _cachedToken;
   http.Client _httpClient = http.Client();
 
@@ -60,6 +65,7 @@ class ApiClient {
       try {
         if (Platform.isAndroid) {
           _baseUrl = _defaultAndroidUrl;
+          baseUrlNotifier.value = _baseUrl;
           return;
         }
       } catch (_) {
@@ -67,13 +73,35 @@ class ApiClient {
       }
     }
     _baseUrl = _defaultLocalhostUrl;
+    baseUrlNotifier.value = _baseUrl;
   }
 
   Future<void> loadSavedBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_baseUrlPrefKey);
     if (saved != null && saved.trim().isNotEmpty) {
-      _baseUrl = saved.trim();
+      final trimmed = saved.trim();
+      // If previously saved address was a local dev address, purge it so live production is used
+      if (trimmed.contains('localhost') ||
+          trimmed.contains('127.0.0.1') ||
+          trimmed.contains('192.168.') ||
+          trimmed.contains('10.0.2.2')) {
+        await prefs.remove(_baseUrlPrefKey);
+        _baseUrl = liveProductionUrl;
+      } else {
+        _baseUrl = trimmed;
+      }
+      baseUrlNotifier.value = _baseUrl;
+    }
+    // Prune excessive cache keys to prevent SharedPreferences XML bloat & cold start stalls
+    final cacheKeys = prefs
+        .getKeys()
+        .where((k) => k.startsWith('cache_'))
+        .toList();
+    if (cacheKeys.length > 5) {
+      for (int i = 0; i < cacheKeys.length - 5; i++) {
+        await prefs.remove(cacheKeys[i]);
+      }
     }
   }
 
@@ -82,10 +110,22 @@ class ApiClient {
     if (cleanUrl.endsWith('/')) {
       cleanUrl = cleanUrl.substring(0, cleanUrl.length - 1);
     }
+    if (_baseUrl == cleanUrl) return;
     _baseUrl = cleanUrl;
+    baseUrlNotifier.value = cleanUrl;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlPrefKey, _baseUrl);
     unawaited(CompanySettings.instance.fetchFromApi());
+  }
+
+  /// Public entry point for manual or UI-triggered server discovery & fallback.
+  Future<String?> autoDetectServer() async {
+    final fastest = await AsyncServerDiscovery.probeAndSelectFastest();
+    if (fastest != null && fastest.isNotEmpty) {
+      resetHttpClient();
+      return fastest;
+    }
+    return null;
   }
 
   /// Resolves relative or localhost media/avatar URLs to point to the active host and port
@@ -193,32 +233,19 @@ class ApiClient {
     return headers;
   }
 
-  /// Automatically tests alternative local endpoints (USB ADB tunnel, Wi-Fi LAN IP, Emulator)
-  /// when the current baseUrl experiences connection timeout.
+  /// Automatically tests alternative local endpoints (USB ADB tunnel, Wi-Fi LAN IP, Emulator, IPv6)
+  /// in parallel when the current baseUrl experiences connection timeout.
   Future<bool> _tryAutoFallback() async {
     if (kIsWeb) return false;
-    final candidates = <String>[
-      _defaultAdbTunnelUrl,
-      'http://$defaultLanIp/projecta/api/v1',
-      'http://10.0.2.2/projecta/api/v1',
-      'http://localhost/projecta/api/v1',
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate == _baseUrl) continue;
-      try {
-        final healthUri = Uri.parse('$candidate/health');
-        final res = await _httpClient
-            .get(healthUri)
-            .timeout(const Duration(milliseconds: 1500));
-        if (res.statusCode == 200) {
-          await setBaseUrl(candidate);
-          return true;
-        }
-      } catch (_) {
-        // Try next candidate
+    // Never hijack live production by falling back to local PC
+    if (_baseUrl == liveProductionUrl) return false;
+    try {
+      final fastest = await AsyncServerDiscovery.probeAndSelectFastest();
+      if (fastest != null && fastest.isNotEmpty) {
+        resetHttpClient();
+        return true;
       }
-    }
+    } catch (_) {}
     return false;
   }
 
@@ -307,6 +334,15 @@ class ApiClient {
         try {
           jsonDecode(response.body);
           final prefs = await SharedPreferences.getInstance();
+          final cacheKeys = prefs
+              .getKeys()
+              .where((k) => k.startsWith('cache_'))
+              .toList();
+          if (cacheKeys.length >= 8) {
+            for (int i = 0; i <= cacheKeys.length - 8; i++) {
+              await prefs.remove(cacheKeys[i]);
+            }
+          }
           await prefs.setString(key, response.body);
         } catch (_) {
           // If response body is not valid JSON (e.g. captive portal HTML error), do not cache

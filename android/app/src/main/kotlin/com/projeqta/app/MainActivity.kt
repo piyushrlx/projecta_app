@@ -1,4 +1,4 @@
-package com.example.projecta_app
+package com.projeqta.app
 
 import io.flutter.embedding.android.FlutterActivity
 

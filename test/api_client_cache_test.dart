@@ -198,6 +198,74 @@ void main() {
       expect(client.resolveMediaUrl(''), isNull);
       expect(client.resolveMediaUrl('   '), isNull);
     });
+    testWidgets('OfflineCacheBanner renders Server config button and invokes callback', (tester) async {
+      bool serverConfigTapped = false;
+      bool retried = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OfflineCacheBanner(
+              onRetry: () => retried = true,
+              onServerConfig: () => serverConfigTapped = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Server'), findsOneWidget);
+      expect(find.byIcon(Icons.settings_ethernet), findsOneWidget);
+
+      await tester.tap(find.text('Server'));
+      await tester.pump();
+      expect(serverConfigTapped, isTrue);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      expect(retried, isTrue);
+    });
+
+    test('AsyncServerDiscovery buildCandidates deduplicates and prioritizes endpoints', () {
+      final candidates = AsyncServerDiscovery.buildCandidates('http://192.168.1.50/projecta/api/v1/');
+      expect(candidates.first, 'http://localhost:8080/projecta/api/v1');
+      expect(candidates.contains('http://192.168.1.50/projecta/api/v1'), isTrue);
+      expect(candidates.contains('http://${ApiClient.defaultLanIp}/projecta/api/v1'), isTrue);
+      expect(candidates.contains(AsyncServerDiscovery.ipv6Candidate), isTrue);
+    });
+
+    test('AsyncServerDiscovery testEndpoint verifies 200 response', () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.toString().contains('healthy')) {
+          return http.Response(jsonEncode({'ok': true}), 200);
+        }
+        return http.Response('Error', 500);
+      });
+
+      final isHealthy = await AsyncServerDiscovery.testEndpoint(
+        'http://test.local/healthy',
+        client: mockClient,
+      );
+      final isUnhealthy = await AsyncServerDiscovery.testEndpoint(
+        'http://test.local/bad',
+        client: mockClient,
+      );
+
+      expect(isHealthy, isTrue);
+      expect(isUnhealthy, isFalse);
+    });
+
+    test('ApiClient baseUrlNotifier fires on setBaseUrl', () async {
+      final client = ApiClient();
+      String? notifiedUrl;
+      void listener() => notifiedUrl = client.baseUrlNotifier.value;
+      client.baseUrlNotifier.addListener(listener);
+
+      await client.setBaseUrl('http://192.168.1.88/projecta/api/v1');
+      expect(notifiedUrl, 'http://192.168.1.88/projecta/api/v1');
+      expect(client.baseUrl, 'http://192.168.1.88/projecta/api/v1');
+
+      client.baseUrlNotifier.removeListener(listener);
+    });
   });
 }
 

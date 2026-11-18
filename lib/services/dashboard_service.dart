@@ -76,8 +76,10 @@ class DashboardService {
       queryParams['user_id'] = userId.toString();
     }
 
-    final uri = Uri(path: '/calendar', queryParameters: queryParams);
-    final response = await _client.get('${uri.path}?${uri.query}');
+    final response = await _client.getWithCache(
+      '/calendar',
+      queryParameters: queryParams,
+    );
     final dynamic decoded = _client.decodeJson(response);
 
     if (decoded is Map<String, dynamic>) {

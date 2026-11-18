@@ -4,6 +4,7 @@ import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/offline_cache_banner.dart';
+import '../../core/widgets/server_config_dialog.dart';
 import '../../models/project_model.dart';
 import '../../services/directory_service.dart';
 import '../../services/project_service.dart';
@@ -993,7 +994,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           if (detail.isFromCache)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: OfflineCacheBanner(onRetry: _loadProjectDetail),
+              child: OfflineCacheBanner(
+                onRetry: _loadProjectDetail,
+                onServerConfig: () {
+                  showServerConfigDialog(
+                    context: context,
+                    onSaved: _loadProjectDetail,
+                  );
+                },
+              ),
             ),
 
           // 1. Header Summary Card

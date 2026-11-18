@@ -160,6 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 runSpacing: 8,
                 children: [
                   _presetChip(
+                    'Live Production',
+                    ApiClient.liveProductionUrl,
+                    serverController,
+                  ),
+                  _presetChip(
                     'USB (localhost:8080)',
                     'http://localhost:8080/projecta/api/v1',
                     serverController,
@@ -249,18 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEEF2FF), // Soft indigo/blue top tint
-              AppTheme.scaffoldBg,
-              AppTheme.scaffoldBg,
-            ],
-            stops: [0.0, 0.38, 1.0],
-          ),
-        ),
+        color: AppTheme.scaffoldBg,
         child: SafeArea(
           child: Stack(
             children: [
@@ -282,6 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             iconSize: 44,
                             fontSize: 28,
                             spacing: 10,
+                            isDark: false,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -294,15 +289,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.pureWhite,
+                              color: AppTheme.primary50,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: AppTheme.borderSubtle,
+                                color: AppTheme.primary100,
                                 width: 1.0,
                               ),
                               boxShadow: const [
                                 BoxShadow(
-                                  color: Color(0x080F172A),
+                                  color: Color(0x0A101828),
                                   blurRadius: 6,
                                   offset: Offset(0, 2),
                                 ),
@@ -315,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 6,
                                   height: 6,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFFF59E0B),
+                                    color: AppTheme.amber,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -325,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: AppTheme.mono(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.mutedSlate,
+                                    color: AppTheme.electricBlue,
                                   ),
                                 ),
                               ],
@@ -358,20 +353,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // Refined White Card (20px rounded corners, 1px #E2E8F0 border, soft diffused shadow)
+                        // Unified White Form Card (24px rounded corners, pure white, soft shadow)
                         Container(
                           padding: const EdgeInsets.all(24.0),
                           decoration: BoxDecoration(
                             color: AppTheme.pureWhite,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppTheme.borderSubtle,
-                              width: 1.0,
-                            ),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: const [
                               BoxShadow(
-                                color: Color(0x0D0F172A),
-                                blurRadius: 24,
+                                color: Color(0x26000000),
+                                blurRadius: 32,
                                 offset: Offset(0, 8),
                               ),
                             ],
@@ -388,7 +379,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppTheme.dangerBg,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: AppTheme.dangerText.withValues(
                                         alpha: 0.3,
@@ -579,14 +570,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 28),
 
-                              // Full-width 52px-tall Crisp Royal Blue button with soft blue glow
+                              // Full-width 54px-tall Solid Pill Submit Button
                               Container(
-                                height: 52,
+                                height: 54,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(999),
                                   boxShadow: const [
                                     BoxShadow(
-                                      color: Color(0x332563EB),
+                                      color: Color(0x332D3FE3),
                                       blurRadius: 16,
                                       offset: Offset(0, 6),
                                     ),
@@ -595,11 +586,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: ElevatedButton(
                                   onPressed: _isLoading ? null : _handleLogin,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.royalBlue,
+                                    backgroundColor: AppTheme.electricBlue,
                                     foregroundColor: AppTheme.pureWhite,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
                                   child: _isLoading
@@ -688,7 +679,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // Top-right Server Settings icon button (placed AFTER SingleChildScrollView to ensure top z-index and reliable tap gestures)
+              // Top-right Server Settings icon button
               Positioned(
                 top: 12,
                 right: 16,
@@ -699,7 +690,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: IconButton(
                     icon: const Icon(
                       Icons.settings_outlined,
-                      color: AppTheme.mutedSlate,
+                      color: AppTheme.pureWhite,
                       size: 22,
                     ),
                     tooltip: 'Configure Server URL',

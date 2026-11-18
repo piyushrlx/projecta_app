@@ -29,30 +29,35 @@ class KanbanBoardView extends StatelessWidget {
     {
       'key': 'not_started',
       'label': 'Not Started',
+      'shortLabel': 'Not Started',
       'bg': Color(0xFFF1F5F9),
       'fg': AppTheme.mutedSlate,
     },
     {
       'key': 'in_progress',
       'label': 'In Progress',
+      'shortLabel': 'In Progress',
       'bg': AppTheme.infoBg,
       'fg': AppTheme.infoText,
     },
     {
       'key': 'blocked',
       'label': 'Blocked',
+      'shortLabel': 'Blocked',
       'bg': AppTheme.dangerBg,
       'fg': AppTheme.dangerText,
     },
     {
       'key': 'pending_review',
       'label': 'Pending Review',
+      'shortLabel': 'Review',
       'bg': AppTheme.warningBg,
       'fg': AppTheme.warningText,
     },
     {
       'key': 'completed',
       'label': 'Completed',
+      'shortLabel': 'Done',
       'bg': AppTheme.successBg,
       'fg': AppTheme.successText,
     },
@@ -62,29 +67,33 @@ class KanbanBoardView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Horizontal Column Indicators & Status Tabs (accepts drops too!)
+        // Horizontal Column Indicators & Status Tabs (accepts drops too! 100% visible on 360-390dp)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: AppTheme.pureWhite,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(columnDefs.length, (idx) {
-                final def = columnDefs[idx];
-                final colKey = def['key'] as String;
-                final list = kanbanColumns[colKey] ?? [];
-                final isCurrent = activePage == idx;
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          color: AppTheme.scaffoldBg,
+          child: Row(
+            children: List.generate(columnDefs.length, (idx) {
+              final def = columnDefs[idx];
+              final colKey = def['key'] as String;
+              final list = kanbanColumns[colKey] ?? [];
+              final isCurrent = activePage == idx;
+              final label = (def['shortLabel'] ?? def['label']) as String;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: idx == columnDefs.length - 1 ? 0 : 4,
+                  ),
                   child: DragTarget<TaskModel>(
                     onWillAcceptWithDetails: (details) =>
-                        details.data.status != colKey,
+                        details.data.status != colKey &&
+                        details.data.isStatusAllowed(colKey),
                     onAcceptWithDetails: (details) {
                       onTaskMove(details.data, colKey);
                     },
                     builder: (context, candidateData, rejectedData) {
                       final isHovered = candidateData.isNotEmpty;
+                      final isRejected = rejectedData.isNotEmpty;
 
                       return InkWell(
                         onTap: () {
@@ -94,44 +103,56 @@ class KanbanBoardView extends StatelessWidget {
                             curve: Curves.easeInOut,
                           );
                         },
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(12),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 4,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
                             color: isHovered
-                                ? AppTheme.royalBlue.withValues(alpha: 0.2)
-                                : isCurrent
-                                    ? AppTheme.navyBlue
-                                    : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(6),
-                            border: isHovered
-                                ? Border.all(
-                                    color: AppTheme.royalBlue,
-                                    width: 1.5,
-                                  )
-                                : null,
+                                ? AppTheme.electricIndigo.withValues(alpha: 0.15)
+                                : isRejected
+                                    ? AppTheme.dangerBg
+                                    : isCurrent
+                                        ? AppTheme.electricIndigo
+                                        : AppTheme.pureWhite,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isHovered
+                                  ? AppTheme.electricIndigo
+                                  : isRejected
+                                      ? AppTheme.dangerText
+                                      : isCurrent
+                                          ? AppTheme.electricIndigo
+                                          : AppTheme.borderSubtle,
+                              width: (isHovered || isRejected) ? 1.5 : 1.0,
+                            ),
                           ),
-                          child: Text(
-                            '${def['label']} (${list.length})',
-                            style: AppTheme.heading(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isCurrent
-                                  ? AppTheme.pureWhite
-                                  : AppTheme.mutedSlate,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '$label (${list.length})',
+                              maxLines: 1,
+                              style: AppTheme.heading(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isCurrent
+                                    ? AppTheme.pureWhite
+                                    : isRejected
+                                        ? AppTheme.dangerText
+                                        : AppTheme.textSecondaryNavy,
+                              ),
                             ),
                           ),
                         ),
                       );
                     },
                   ),
-                );
-              }),
-            ),
+                ),
+              );
+            }),
           ),
         ),
 
@@ -153,24 +174,30 @@ class KanbanBoardView extends StatelessWidget {
                 ),
                 child: DragTarget<TaskModel>(
                   onWillAcceptWithDetails: (details) =>
-                      details.data.status != colKey,
+                      details.data.status != colKey &&
+                      details.data.isStatusAllowed(colKey),
                   onAcceptWithDetails: (details) {
                     onTaskMove(details.data, colKey);
                   },
                   builder: (context, candidateData, rejectedData) {
                     final isTargetHovered = candidateData.isNotEmpty;
+                    final isTargetRejected = rejectedData.isNotEmpty;
 
                     return Container(
                       decoration: BoxDecoration(
                         color: isTargetHovered
-                            ? const Color(0xFFEFF6FF)
-                            : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
+                            ? const Color(0xFFEEF0FF)
+                            : isTargetRejected
+                                ? const Color(0xFFFEF2F2)
+                                : const Color(0xFFEEF1F6),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isTargetHovered
-                              ? AppTheme.royalBlue
-                              : AppTheme.borderSubtle,
-                          width: isTargetHovered ? 2.0 : 1.0,
+                              ? AppTheme.electricIndigo
+                              : isTargetRejected
+                                  ? AppTheme.dangerText
+                                  : AppTheme.borderSubtle,
+                          width: (isTargetHovered || isTargetRejected) ? 1.5 : 1.0,
                         ),
                       ),
                       child: Column(
@@ -182,9 +209,9 @@ class KanbanBoardView extends StatelessWidget {
                               vertical: 12,
                             ),
                             decoration: const BoxDecoration(
-                              color: AppTheme.pureWhite,
+                              color: Color(0xFFEEF1F6),
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(12),
+                                top: Radius.circular(18),
                               ),
                               border: Border(
                                 bottom: BorderSide(

@@ -18,11 +18,14 @@ class KanbanStatusMoveSheet extends StatefulWidget {
 
 class _KanbanStatusMoveSheetState extends State<KanbanStatusMoveSheet> {
   String? _selectedTarget;
+  String? _noteError;
   final TextEditingController _noteController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
     _noteController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -73,6 +76,7 @@ class _KanbanStatusMoveSheetState extends State<KanbanStatusMoveSheet> {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +162,19 @@ class _KanbanStatusMoveSheetState extends State<KanbanStatusMoveSheet> {
                         ? null
                         : () {
                             if (key == 'completed' || key == 'pending_review') {
-                              setState(() => _selectedTarget = key);
+                              setState(() {
+                                _selectedTarget = key;
+                                _noteError = null;
+                              });
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (_scrollController.hasClients) {
+                                  _scrollController.animateTo(
+                                    _scrollController.position.maxScrollExtent,
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeOut,
+                                  );
+                                }
+                              });
                             } else {
                               widget.onSelectStatus(key, null);
                             }
@@ -292,11 +308,17 @@ class _KanbanStatusMoveSheetState extends State<KanbanStatusMoveSheet> {
                         controller: _noteController,
                         autofocus: true,
                         maxLines: 2,
-                        decoration: const InputDecoration(
+                        onChanged: (_) {
+                          if (_noteError != null) {
+                            setState(() => _noteError = null);
+                          }
+                        },
+                        decoration: InputDecoration(
                           hintText: 'What was delivered?',
-                          border: OutlineInputBorder(),
+                          errorText: _noteError,
+                          border: const OutlineInputBorder(),
                           isDense: true,
-                          contentPadding: EdgeInsets.all(8),
+                          contentPadding: const EdgeInsets.all(8),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -304,12 +326,17 @@ class _KanbanStatusMoveSheetState extends State<KanbanStatusMoveSheet> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            if (_noteController.text.trim().isNotEmpty) {
-                              widget.onSelectStatus(
-                                _selectedTarget!,
-                                _noteController.text.trim(),
-                              );
+                            final text = _noteController.text.trim();
+                            if (text.isEmpty) {
+                              setState(() {
+                                _noteError = 'Notes are required before moving.';
+                              });
+                              return;
                             }
+                            widget.onSelectStatus(
+                              _selectedTarget!,
+                              text,
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.royalBlue,

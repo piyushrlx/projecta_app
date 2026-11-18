@@ -48,28 +48,47 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final token = await _apiClient.getToken();
       if (token != null && token.isNotEmpty) {
-        final UserModel user = await _authService.getMe();
-        if (!mounted) return;
+        UserModel? user;
+        try {
+          user = await _authService.getMe();
+        } on ApiException catch (e) {
+          if (e.statusCode == 401 || e.statusCode == 403) {
+            // Authentication explicitly rejected by server
+            await _apiClient.clearToken();
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            );
+            return;
+          }
+          // On network failure or offline, retrieve cached user profile
+          user = await _authService.getCurrentUser();
+        } catch (_) {
+          user = await _authService.getCurrentUser();
+        }
 
-        if (user.mustChangePassword) {
+        if (user != null) {
+          if (!mounted) return;
+          if (user.mustChangePassword) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MustChangePasswordScreen(user: user!),
+              ),
+            );
+            return;
+          }
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (_) => MustChangePasswordScreen(user: user),
-            ),
+            MaterialPageRoute(builder: (_) => DashboardScreen(user: user!)),
           );
           return;
         }
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => DashboardScreen(user: user)),
-        );
-        return;
       }
     } catch (_) {
-      // Invalid/expired token or connection issue on splash
-      await _apiClient.clearToken();
+      // General failure fallback
     }
 
     if (!mounted) return;
@@ -82,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Brand dark background
+      backgroundColor: AppTheme.scaffoldBg, // Deep Midnight Navy #0B0F29
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -94,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const ProjeqtaLogo(
                   iconSize: 52,
                   fontSize: 34,
-                  isDark: true,
+                  isDark: false,
                   spacing: 14,
                 ),
                 const SizedBox(height: 32),
@@ -104,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   style: AppTheme.heading(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppTheme.deepSlate,
                     letterSpacing: -0.4,
                   ),
                 ),
@@ -115,7 +134,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   style: AppTheme.body(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF94A3B8),
+                    color: AppTheme.mutedSlate,
                     height: 1.45,
                   ),
                 ),
@@ -125,7 +144,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Color(0xFF3B82F6),
+                    color: AppTheme.electricBlue,
                   ),
                 ),
               ],

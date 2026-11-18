@@ -67,7 +67,7 @@ class StaffDashboardView extends StatelessWidget {
             Text(
               'My Metrics',
               style: AppTheme.heading(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.deepSlate,
               ),
@@ -100,13 +100,13 @@ class StaffDashboardView extends StatelessWidget {
         else ...[
           _buildHeroTaskCard(context, heroTask),
           if (remainingTasks.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             Text(
               'Upcoming in Queue',
               style: AppTheme.heading(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.mutedSlate,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.deepSlate,
               ),
             ),
             const SizedBox(height: 8),
@@ -213,13 +213,13 @@ class StaffDashboardView extends StatelessWidget {
               backgroundColor: AppTheme.royalBlue,
               foregroundColor: AppTheme.pureWhite,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               textStyle: AppTheme.heading(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
           ),
@@ -405,7 +405,7 @@ class StaffDashboardView extends StatelessWidget {
       },
       backgroundColor: bgColor,
       borderColor: borderColor,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -503,8 +503,7 @@ class StaffDashboardView extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderSubtle),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: const [AppTheme.softShadow],
       ),
       child: Column(
@@ -558,7 +557,7 @@ class StaffDashboardView extends StatelessWidget {
       borderColor: isOverdue
           ? const Color(0xFFFECACA)
           : const Color(0xFFBFDBFE),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,9 +611,8 @@ class StaffDashboardView extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.scaffoldBg,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: AppTheme.borderSubtle),
+                        color: AppTheme.softGreyFill,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         '$progress%',
@@ -673,7 +671,7 @@ class StaffDashboardView extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: isOverdue ? AppTheme.dangerBg : AppTheme.scaffoldBg,
+                      color: isOverdue ? AppTheme.dangerBg : AppTheme.softGreyFill,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -705,7 +703,7 @@ class StaffDashboardView extends StatelessWidget {
           const SizedBox(height: 14),
           // Update Status button
           SizedBox(
-            height: 44,
+            height: 46,
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: taskId != null
@@ -721,17 +719,17 @@ class StaffDashboardView extends StatelessWidget {
               icon: const Icon(Icons.edit_note_rounded, size: 18),
               label: const Text('Update Status'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.navyBlue,
+                backgroundColor: AppTheme.pitchBlack,
                 foregroundColor: AppTheme.pureWhite,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 alignment: Alignment.center,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 textStyle: AppTheme.heading(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -763,7 +761,7 @@ class StaffDashboardView extends StatelessWidget {
           : null,
       backgroundColor: AppTheme.pureWhite,
       borderColor: isOverdue ? const Color(0xFFFECACA) : AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
       margin: const EdgeInsets.only(bottom: 8.0),
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -837,14 +835,30 @@ class StaffDashboardView extends StatelessWidget {
       children: [
         _buildSectionHeader(
           'My tasks',
-          action: TextButton(
-            onPressed: () {
+          action: InkWell(
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TasksScreen()),
               );
             },
-            child: const Text('View all →'),
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Text(
+                'View all →',
+                style: AppTheme.heading(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.navyBlue,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -853,8 +867,8 @@ class StaffDashboardView extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderSubtle),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [AppTheme.softShadow],
             ),
             child: Center(
               child: Text(
@@ -889,7 +903,7 @@ class StaffDashboardView extends StatelessWidget {
               borderColor: isOverdue
                   ? const Color(0xFFFECACA)
                   : AppTheme.borderSubtle,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
               margin: const EdgeInsets.only(bottom: 8.0),
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -1233,8 +1247,8 @@ class StaffDashboardView extends StatelessWidget {
       children: [
         _buildSectionHeader(
           "Today's submitted reports",
-          action: TextButton(
-            onPressed: () {
+          action: InkWell(
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1242,7 +1256,23 @@ class StaffDashboardView extends StatelessWidget {
                 ),
               );
             },
-            child: const Text('History →'),
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.pureWhite,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Text(
+                'History →',
+                style: AppTheme.heading(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.navyBlue,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -1251,8 +1281,8 @@ class StaffDashboardView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderSubtle),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [AppTheme.softShadow],
             ),
             child: Row(
               children: [
@@ -1424,8 +1454,9 @@ class StaffDashboardView extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderSubtle),
+              boxShadow: const [AppTheme.softShadow],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1497,8 +1528,9 @@ class StaffDashboardView extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.pureWhite,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderSubtle),
+            boxShadow: const [AppTheme.softShadow],
           ),
           child: Column(
             children: myProjects.map((p) {

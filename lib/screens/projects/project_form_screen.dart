@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_date_utils.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../models/project_model.dart';
 import '../../services/directory_service.dart';
 import '../../services/project_service.dart';
@@ -274,13 +273,20 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
       appBar: AppBar(
         title: Text(
           isEdit ? 'Edit Project' : 'New Project',
-          style: AppTheme.heading(fontSize: 18),
+          style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
+        ),
+        backgroundColor: AppTheme.pureWhite,
+        iconTheme: const IconThemeData(color: AppTheme.deepSlate),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
       ),
       body: _isInitLoading
           ? const Center(
               child: CircularProgressIndicator(
-                color: AppTheme.royalBlue,
+                color: AppTheme.electricIndigo,
                 strokeWidth: 2.5,
               ),
             )
@@ -288,323 +294,342 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
               padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.dangerBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFFECACA)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: AppTheme.dangerText,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: AppTheme.body(
-                                  color: AppTheme.dangerText,
-                                  fontSize: 13,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 18,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dangerBg,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: AppTheme.dangerText,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: AppTheme.body(
+                                    color: AppTheme.dangerText,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      _buildSectionHeader('Project Identity'),
+                      const SizedBox(height: 10),
+                      _buildTextField(
+                        controller: _nameController,
+                        label: 'Project Name *',
+                        hint: 'e.g. Mobile App Optimization',
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Project name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _clientController,
+                              label: 'Client Name',
+                              hint: 'e.g. Acme Corporation',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Department',
+                              value: _selectedDepartmentId,
+                              items: [
+                                const DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text('— None —'),
+                                ),
+                                ..._departments.map((d) {
+                                  return DropdownMenuItem<int?>(
+                                    value: d['id'] as int?,
+                                    child: Text(d['name']?.toString() ?? ''),
+                                  );
+                                }),
+                              ],
+                              onChanged: (val) =>
+                                  setState(() => _selectedDepartmentId = val),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildSectionHeader('Team'),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.pureWhite,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.borderSubtle),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDropdown(
+                              label: 'Project manager *',
+                              value: _selectedManagerId,
+                              items: _managers.map((m) {
+                                return DropdownMenuItem<int>(
+                                  value: m['id'] as int?,
+                                  child: Text(m['full_name']?.toString() ?? ''),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedManagerId = val;
+                                  if (val != null) {
+                                    _selectedMemberIds.add(val);
+                                    _selectedViewerIds.remove(val);
+                                  }
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTeamMultiSelectSection(
+                              label: 'Members',
+                              subtitle: '(can be assigned tasks)',
+                              helperText:
+                                  'Tap to toggle. The manager is always a member.',
+                              selectedIds: _selectedMemberIds,
+                              filterText: _memberFilterText,
+                              onFilterChanged: (q) =>
+                                  setState(() => _memberFilterText = q),
+                              onToggle: (id, selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedMemberIds.add(id);
+                                    _selectedViewerIds.remove(id);
+                                  } else {
+                                    if (id != _selectedManagerId) {
+                                      _selectedMemberIds.remove(id);
+                                    }
+                                  }
+                                });
+                              },
+                              lockedId: _selectedManagerId,
+                              lockedBadge: 'Manager',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTeamMultiSelectSection(
+                              label: 'Viewers',
+                              subtitle: '(read-only access)',
+                              helperText:
+                                  'A user selected in both lists becomes a member.',
+                              selectedIds: _selectedViewerIds,
+                              filterText: _viewerFilterText,
+                              onFilterChanged: (q) =>
+                                  setState(() => _viewerFilterText = q),
+                              onToggle: (id, selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedViewerIds.add(id);
+                                    _selectedMemberIds.remove(id);
+                                  } else {
+                                    _selectedViewerIds.remove(id);
+                                  }
+                                });
+                              },
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                    ],
 
-                    _buildSectionHeader('Project Identity'),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _nameController,
-                      label: 'Project Name *',
-                      hint: 'e.g. Mobile App Optimization',
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Project name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField(
-                            controller: _clientController,
-                            label: 'Client Name',
-                            hint: 'e.g. Acme Corporation',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildDropdown(
-                            label: 'Department',
-                            value: _selectedDepartmentId,
-                            items: [
-                              const DropdownMenuItem<int?>(
-                                value: null,
-                                child: Text('— None —'),
-                              ),
-                              ..._departments.map((d) {
-                                return DropdownMenuItem<int?>(
-                                  value: d['id'] as int?,
-                                  child: Text(d['name']?.toString() ?? ''),
-                                );
-                              }),
-                            ],
-                            onChanged: (val) =>
-                                setState(() => _selectedDepartmentId = val),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSectionHeader('Team'),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.pureWhite,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.borderSubtle),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      _buildSectionHeader('Status & Priority'),
+                      const SizedBox(height: 10),
+                      Row(
                         children: [
-                          _buildDropdown(
-                            label: 'Project manager *',
-                            value: _selectedManagerId,
-                            items: _managers.map((m) {
-                              return DropdownMenuItem<int>(
-                                value: m['id'] as int?,
-                                child: Text(m['full_name']?.toString() ?? ''),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedManagerId = val;
-                                if (val != null) {
-                                  _selectedMemberIds.add(val);
-                                  _selectedViewerIds.remove(val);
-                                }
-                              });
-                            },
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Status',
+                              value: _selectedStatus,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'draft',
+                                  child: Text('Draft'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'planned',
+                                  child: Text('Planned'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'active',
+                                  child: Text('Active'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'on_hold',
+                                  child: Text('On Hold'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'completed',
+                                  child: Text('Completed'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'cancelled',
+                                  child: Text('Cancelled'),
+                                ),
+                              ],
+                              onChanged: (val) => setState(
+                                () => _selectedStatus = val ?? 'planned',
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          _buildTeamMultiSelectSection(
-                            label: 'Members',
-                            subtitle: '(can be assigned tasks)',
-                            helperText:
-                                'Tap to toggle. The manager is always a member.',
-                            selectedIds: _selectedMemberIds,
-                            filterText: _memberFilterText,
-                            onFilterChanged: (q) =>
-                                setState(() => _memberFilterText = q),
-                            onToggle: (id, selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedMemberIds.add(id);
-                                  _selectedViewerIds.remove(id);
-                                } else {
-                                  if (id != _selectedManagerId) {
-                                    _selectedMemberIds.remove(id);
-                                  }
-                                }
-                              });
-                            },
-                            lockedId: _selectedManagerId,
-                            lockedBadge: 'Manager',
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTeamMultiSelectSection(
-                            label: 'Viewers',
-                            subtitle: '(read-only access)',
-                            helperText:
-                                'A user selected in both lists becomes a member.',
-                            selectedIds: _selectedViewerIds,
-                            filterText: _viewerFilterText,
-                            onFilterChanged: (q) =>
-                                setState(() => _viewerFilterText = q),
-                            onToggle: (id, selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedViewerIds.add(id);
-                                  _selectedMemberIds.remove(id);
-                                } else {
-                                  _selectedViewerIds.remove(id);
-                                }
-                              });
-                            },
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDropdown(
+                              label: 'Priority',
+                              value: _selectedPriority,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'low',
+                                  child: Text('Low'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'medium',
+                                  child: Text('Medium'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'high',
+                                  child: Text('High'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'critical',
+                                  child: Text('Critical'),
+                                ),
+                              ],
+                              onChanged: (val) => setState(
+                                () => _selectedPriority = val ?? 'medium',
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    _buildSectionHeader('Status & Priority'),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildDropdown(
-                            label: 'Status',
-                            value: _selectedStatus,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'draft',
-                                child: Text('Draft'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'planned',
-                                child: Text('Planned'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'active',
-                                child: Text('Active'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'on_hold',
-                                child: Text('On Hold'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'completed',
-                                child: Text('Completed'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'cancelled',
-                                child: Text('Cancelled'),
-                              ),
-                            ],
-                            onChanged: (val) => setState(
-                              () => _selectedStatus = val ?? 'planned',
+                      _buildSectionHeader('Timeline & Budget'),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDatePickerTile(
+                              label: 'Start Date',
+                              date: _startDate,
+                              onTap: () => _pickDate(isStart: true),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildDropdown(
-                            label: 'Priority',
-                            value: _selectedPriority,
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'low',
-                                child: Text('Low'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'medium',
-                                child: Text('Medium'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'high',
-                                child: Text('High'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'critical',
-                                child: Text('Critical'),
-                              ),
-                            ],
-                            onChanged: (val) => setState(
-                              () => _selectedPriority = val ?? 'medium',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildDatePickerTile(
+                              label: 'Deadline',
+                              date: _deadline,
+                              onTap: () => _pickDate(isStart: false),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSectionHeader('Timeline & Budget'),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildDatePickerTile(
-                            label: 'Start Date',
-                            date: _startDate,
-                            onTap: () => _pickDate(isStart: true),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildDatePickerTile(
-                            label: 'Deadline',
-                            date: _deadline,
-                            onTap: () => _pickDate(isStart: false),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _budgetController,
-                      label: 'Budget (₹ / USD)',
-                      hint: 'e.g. 50000.00',
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    _buildSectionHeader('Scope & Deliverables'),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _scopeController,
-                      label: 'Scope of Work',
-                      hint:
-                          'Describe technical scope, background, and goals...',
-                      maxLines: 4,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      controller: _deliverablesController,
-                      label: 'Deliverables',
-                      hint: 'Key outputs, modules, or features to deliver...',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: BrutalistPressable(
-                        onTap: _isLoading ? () {} : _submitForm,
-                        backgroundColor: AppTheme.navyBlue,
-                        borderColor: AppTheme.navyBlue,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Center(
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: AppTheme.pureWhite,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text(
-                                  isEdit ? 'Save Changes' : 'Create Project',
-                                  style: AppTheme.heading(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.pureWhite,
-                                  ),
-                                ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        controller: _budgetController,
+                        label: 'Budget (₹ / USD)',
+                        hint: 'e.g. 50000.00',
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                      const SizedBox(height: 16),
+
+                      _buildSectionHeader('Scope & Deliverables'),
+                      const SizedBox(height: 10),
+                      _buildTextField(
+                        controller: _scopeController,
+                        label: 'Scope of Work',
+                        hint:
+                            'Describe technical scope, background, and goals...',
+                        maxLines: 4,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        controller: _deliverablesController,
+                        label: 'Deliverables',
+                        hint: 'Key outputs, modules, or features to deliver...',
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.deepInk,
+                            foregroundColor: AppTheme.pureWhite,
+                            disabledBackgroundColor: AppTheme.mutedSlate,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Center(
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: AppTheme.pureWhite,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    isEdit ? 'Save Changes' : 'Create Project',
+                                    style: AppTheme.heading(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.pureWhite,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

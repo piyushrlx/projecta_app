@@ -15,7 +15,7 @@ void main() {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     // Allow MainActivity's first frame, window focus, and starting-window
     // removal to complete before loading GoogleFonts and background services.
-    Future<void>.delayed(const Duration(milliseconds: 520), () {
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
       AppTheme.setDeferGoogleFonts(false);
       _themeEpoch.value++;
       unawaited(_initAppServices());
@@ -28,7 +28,9 @@ Future<void> _initAppServices() async {
   await CompanySettings.instance.loadFromPrefs();
   // Defer background network probes slightly past the first Dashboard frame.
   await Future<void>.delayed(const Duration(milliseconds: 400));
-  unawaited(AsyncServerDiscovery.probeAndSelectFastest());
+  if (ApiClient().baseUrl != ApiClient.liveProductionUrl) {
+    unawaited(AsyncServerDiscovery.probeAndSelectFastest());
+  }
   unawaited(CompanySettings.instance.fetchFromApi());
 }
 

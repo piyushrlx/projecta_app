@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../core/widgets/module_app_bar.dart';
 import '../../models/report_model.dart';
 import '../../models/user_model.dart';
@@ -390,7 +389,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                   _loadReports();
                 }
               },
-              backgroundColor: AppTheme.royalBlue,
+              backgroundColor: AppTheme.electricIndigo,
               shape: const CircleBorder(),
               tooltip: 'Submit Daily Report',
               child: const Icon(
@@ -451,7 +450,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
-        color: AppTheme.pureWhite,
+        color: AppTheme.scaffoldBg,
         border: Border(
           bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
@@ -459,7 +458,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: AppTheme.pureWhite,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppTheme.borderSubtle),
         ),
@@ -477,18 +476,9 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: _selectedTabIndex == 0
-                        ? AppTheme.navyBlue
+                        ? AppTheme.electricIndigo
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: _selectedTabIndex == 0
-                        ? const [
-                            BoxShadow(
-                              color: Color(0x140F172A),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ]
-                        : null,
                   ),
                   alignment: Alignment.center,
                   child: Row(
@@ -499,7 +489,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                         size: 15,
                         color: _selectedTabIndex == 0
                             ? AppTheme.pureWhite
-                            : AppTheme.mutedSlate,
+                            : AppTheme.textSecondaryNavy,
                       ),
                       const SizedBox(width: 5),
                       Flexible(
@@ -510,7 +500,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                             fontWeight: FontWeight.w600,
                             color: _selectedTabIndex == 0
                                 ? AppTheme.pureWhite
-                                : AppTheme.mutedSlate,
+                                : AppTheme.textSecondaryNavy,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -534,18 +524,9 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: _selectedTabIndex == 1
-                        ? AppTheme.navyBlue
+                        ? AppTheme.electricIndigo
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: _selectedTabIndex == 1
-                        ? const [
-                            BoxShadow(
-                              color: Color(0x140F172A),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ]
-                        : null,
                   ),
                   alignment: Alignment.center,
                   child: Row(
@@ -556,7 +537,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                         size: 15,
                         color: _selectedTabIndex == 1
                             ? AppTheme.pureWhite
-                            : AppTheme.mutedSlate,
+                            : AppTheme.textSecondaryNavy,
                       ),
                       const SizedBox(width: 5),
                       Flexible(
@@ -567,7 +548,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                             fontWeight: FontWeight.w600,
                             color: _selectedTabIndex == 1
                                 ? AppTheme.pureWhite
-                                : AppTheme.mutedSlate,
+                                : AppTheme.textSecondaryNavy,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -596,7 +577,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: AppTheme.pureWhite,
+        color: AppTheme.scaffoldBg,
         border: Border(
           bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
@@ -622,14 +603,16 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? (isAlert ? AppTheme.dangerBg : AppTheme.navyBlue)
-                        : const Color(0xFFF1F5F9),
+                        ? (isAlert
+                              ? AppTheme.dangerBg
+                              : AppTheme.electricIndigo)
+                        : AppTheme.pureWhite,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? (isAlert
                                 ? const Color(0xFFFECACA)
-                                : AppTheme.navyBlue)
+                                : AppTheme.electricIndigo)
                           : AppTheme.borderSubtle,
                     ),
                   ),
@@ -640,7 +623,7 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? (isAlert ? AppTheme.dangerText : AppTheme.pureWhite)
-                          : AppTheme.mutedSlate,
+                          : AppTheme.textSecondaryNavy,
                     ),
                   ),
                 ),
@@ -653,175 +636,192 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   }
 
   Widget _buildReportCard(ReportModel report) {
-    return BrutalistPressable(
-      onTap: () => _onReportTapped(report),
-      backgroundColor: AppTheme.pureWhite,
-      borderColor: report.isLate
-          ? const Color(0xFFFECACA)
-          : AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Date + Status Badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.scaffoldBg,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: AppTheme.borderSubtle),
-                    ),
-                    child: Text(
-                      report.reportDate,
-                      style: AppTheme.mono(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.deepSlate,
-                      ),
-                    ),
-                  ),
-                  if (report.isLate) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.dangerBg,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Late',
-                        style: AppTheme.heading(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.dangerText,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onReportTapped(report),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(18),
+            border: report.isLate
+                ? Border.all(color: const Color(0xFFFECACA), width: 1.5)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 3),
               ),
-              _buildStatusPill(report.status),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // Employee name & project
-          if (widget.user.isAdmin && report.employeeName != null) ...[
-            Text(
-              report.employeeName!,
-              style: AppTheme.heading(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.deepSlate,
-              ),
-            ),
-            const SizedBox(height: 2),
-          ],
-          Text(
-            report.projectName ?? 'General Project',
-            style: AppTheme.body(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.mutedSlate,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Summary text
-          Text(
-            report.workSummary,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.body(fontSize: 13, color: AppTheme.deepSlate),
-          ),
-          const SizedBox(height: 12),
-
-          // Footer meta: Hours + Progress After + Review button
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.access_time_outlined,
-                size: 14,
-                color: AppTheme.mutedSlate,
+              // Header: Date + Status Badge
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.softGreyFill,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          report.reportDate,
+                          style: AppTheme.mono(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.deepInk,
+                          ),
+                        ),
+                      ),
+                      if (report.isLate) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dangerBg,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Late',
+                            style: AppTheme.heading(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.dangerText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  _buildStatusPill(report.status),
+                ],
               ),
-              const SizedBox(width: 4),
+              const SizedBox(height: 10),
+
+              // Employee name & project
+              if (widget.user.isAdmin && report.employeeName != null) ...[
+                Text(
+                  report.employeeName!,
+                  style: AppTheme.heading(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.deepInk,
+                  ),
+                ),
+                const SizedBox(height: 2),
+              ],
               Text(
-                report.hoursFormatted,
-                style: AppTheme.mono(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                report.projectName ?? 'General Project',
+                style: AppTheme.body(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                   color: AppTheme.mutedSlate,
                 ),
               ),
-              if (report.progressAfter != null) ...[
-                const SizedBox(width: 10),
-                Text('Â·', style: TextStyle(color: AppTheme.mutedSlate)),
-                const SizedBox(width: 10),
-                Text(
-                  'Progress: ${report.progressAfter}%',
-                  style: AppTheme.body(
-                    fontSize: 11,
+              const SizedBox(height: 8),
+
+              // Summary text
+              Text(
+                report.workSummary,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.body(fontSize: 13, color: AppTheme.deepInk),
+              ),
+              const SizedBox(height: 12),
+
+              // Footer meta: Hours + Progress After + Review button
+              Row(
+                children: [
+                  const Icon(
+                    Icons.access_time_outlined,
+                    size: 14,
                     color: AppTheme.mutedSlate,
                   ),
-                ),
-              ],
-              const Spacer(),
-              if (widget.user.isAdmin &&
-                  (report.status == 'submitted' ||
-                      report.status == 'submitted_late'))
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.infoBg,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Review',
-                    style: AppTheme.heading(
+                  const SizedBox(width: 4),
+                  Text(
+                    report.hoursFormatted,
+                    style: AppTheme.mono(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.infoText,
+                      color: AppTheme.mutedSlate,
                     ),
                   ),
-                )
-              else if (!widget.user.isAdmin &&
-                  (report.isRejected || report.isClarificationRequested))
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.warningBg,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Revise',
-                    style: AppTheme.heading(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.warningText,
+                  if (report.progressAfter != null) ...[
+                    const SizedBox(width: 8),
+                    const Text(
+                      '·',
+                      style: TextStyle(color: AppTheme.mutedSlate),
                     ),
-                  ),
-                ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Progress: ${report.progressAfter}%',
+                      style: AppTheme.body(
+                        fontSize: 11,
+                        color: AppTheme.mutedSlate,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  if (widget.user.isAdmin &&
+                      (report.status == 'submitted' ||
+                          report.status == 'submitted_late'))
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.deepInk,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Review',
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.pureWhite,
+                        ),
+                      ),
+                    )
+                  else if (!widget.user.isAdmin &&
+                      (report.isRejected || report.isClarificationRequested))
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD97706),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Revise',
+                        style: AppTheme.heading(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.pureWhite,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

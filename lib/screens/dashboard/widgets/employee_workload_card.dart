@@ -29,10 +29,11 @@ class EmployeeWorkloadCard extends StatelessWidget {
     return BrutalistPressable(
       onTap: onTap,
       backgroundColor: AppTheme.pureWhite,
-      borderColor: AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(12),
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      borderColor: Colors.transparent,
+      borderWidth: 0,
+      borderRadius: BorderRadius.circular(18),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -79,9 +80,8 @@ class EmployeeWorkloadCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
             decoration: BoxDecoration(
-              color: AppTheme.scaffoldBg,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.borderSubtle),
+              color: AppTheme.softGreyFill,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [

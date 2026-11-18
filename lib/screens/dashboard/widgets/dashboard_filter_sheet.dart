@@ -52,7 +52,7 @@ class _DashboardFilterSheetState extends State<DashboardFilterSheet> {
       ),
       decoration: const BoxDecoration(
         color: AppTheme.pureWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -62,12 +62,12 @@ class _DashboardFilterSheetState extends State<DashboardFilterSheet> {
             // Grab handle
             Center(
               child: Container(
-                width: 40,
+                width: 44,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
                   color: AppTheme.borderSubtle,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
             ),
@@ -171,7 +171,7 @@ class _DashboardFilterSheetState extends State<DashboardFilterSheet> {
                       side: const BorderSide(color: AppTheme.borderSubtle),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                     child: const Text('Cancel'),
@@ -189,7 +189,7 @@ class _DashboardFilterSheetState extends State<DashboardFilterSheet> {
                       foregroundColor: AppTheme.pureWhite,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(999),
                       ),
                       elevation: 0,
                     ),
@@ -224,16 +224,18 @@ class _DashboardFilterSheetState extends State<DashboardFilterSheet> {
         ),
         const SizedBox(height: 6),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           decoration: BoxDecoration(
-            color: AppTheme.scaffoldBg,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppTheme.borderSubtle),
+            color: AppTheme.softGreyFill,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.transparent),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               isExpanded: true,
               value: value,
+              dropdownColor: AppTheme.pureWhite,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.mutedSlate),
               hint: Text(
                 hint,
                 style: AppTheme.body(fontSize: 13, color: AppTheme.lightSlate),

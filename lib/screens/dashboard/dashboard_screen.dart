@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/async_server_discovery.dart';
 import '../../core/company_settings.dart';
 import '../../core/theme.dart';
 import '../../models/user_model.dart';
@@ -13,6 +15,7 @@ import '../projects/projects_list_screen.dart';
 import '../reports/report_submission_screen.dart';
 import '../reports/reports_list_screen.dart';
 import '../search/global_search_screen.dart';
+import '../tasks/create_task_screen.dart';
 import '../tasks/tasks_screen.dart';
 import '../team/departments_screen.dart';
 import '../team/team_list_screen.dart';
@@ -28,8 +31,13 @@ import 'widgets/dashboard_filter_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
   final UserModel user;
+  final bool useIndexedStack;
 
-  const DashboardScreen({super.key, required this.user});
+  const DashboardScreen({
+    super.key,
+    required this.user,
+    this.useIndexedStack = false,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -49,17 +57,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int? _selectedDepartmentId;
   int? _selectedUserId;
   late UserModel _currentUser;
+  int _activeDockIndex = 0; // 0 = Pulse, 1 = Tasks, 2 = Projects, 3 = Reports
 
   @override
   void initState() {
     super.initState();
     _currentUser = widget.user;
+    ApiClient().baseUrlNotifier.addListener(_onBaseUrlChanged);
     if (!CompanySettings.instance.isLoaded) {
       unawaited(CompanySettings.instance.loadFromPrefs());
     }
     unawaited(CompanySettings.instance.fetchFromApi());
     _loadDashboard();
     _loadNotificationCount();
+  }
+
+  void _onBaseUrlChanged() {
+    if (mounted) {
+      unawaited(_loadDashboard(silent: true));
+      unawaited(_loadNotificationCount());
+    }
+  }
+
+  @override
+  void dispose() {
+    ApiClient().baseUrlNotifier.removeListener(_onBaseUrlChanged);
+    super.dispose();
   }
 
   Future<void> _openModule(Widget screen) async {
@@ -85,12 +108,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _loadDashboard({bool silent = false}) async {
+  Future<void> _loadDashboard({bool silent = false, bool retryDiscovery = false}) async {
     if (!silent) {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
+    }
+
+    if (retryDiscovery || _dashboardData?['is_cached'] == true) {
+      try {
+        await AsyncServerDiscovery.probeAndSelectFastest();
+      } catch (_) {}
     }
 
     try {
@@ -584,53 +613,131 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      body: _buildDashboardTab(),
-      // Persistent 5-Tab Bottom Navigation Bar (Menu trigger on far-left + 4 Dashboard/Module tabs)
+      floatingActionButton: user.isAdmin
+          ? FloatingActionButton(
+              heroTag: 'admin_dashboard_fab',
+              backgroundColor: AppTheme.electricBlue,
+              foregroundColor: AppTheme.pureWhite,
+              shape: const CircleBorder(),
+              tooltip: 'Create Task',
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+                );
+                if (created == true && mounted) {
+                  unawaited(_loadDashboard(silent: true));
+                }
+              },
+              child: const Icon(Icons.add, size: 28),
+            )
+          : FloatingActionButton(
+              heroTag: 'staff_dashboard_fab',
+              backgroundColor: AppTheme.amber,
+              foregroundColor: AppTheme.deepInk,
+              shape: const CircleBorder(),
+              tooltip: 'Submit Daily Report',
+              onPressed: () async {
+                final submitted = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ReportSubmissionScreen(),
+                  ),
+                );
+                if (submitted == true && mounted) {
+                  unawaited(_loadDashboard(silent: true));
+                }
+              },
+              child: const Icon(Icons.add_comment_outlined, size: 24),
+            ),
+      body: widget.useIndexedStack
+          ? IndexedStack(
+              index: _activeDockIndex,
+              children: [
+                _buildDashboardTab(),
+                const TasksScreen(),
+                const ProjectsListScreen(),
+                ReportsListScreen(user: _currentUser),
+              ],
+            )
+          : _buildDashboardTab(),
+      // 5-Tab Rounded Dock Footer (Pure White surface, 20px top radius, 1px top border)
       bottomNavigationBar: Container(
-        height: 68,
+        height: 72,
         decoration: const BoxDecoration(
           color: AppTheme.pureWhite,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           border: Border(
             top: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
           ),
           boxShadow: [
             BoxShadow(
-              color: Color(0x050F172A),
-              blurRadius: 8,
-              offset: Offset(0, -2),
+              color: Color(0x0F101828),
+              blurRadius: 12,
+              offset: Offset(0, -3),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            _buildNavTab(
-              label: 'Menu',
-              icon: Icons.menu_rounded,
-              onTap: () => _scaffoldKey.currentState?.openDrawer(),
-              isSelected: false,
-            ),
-            _buildNavTab(
-              label: 'Pulse',
-              icon: Icons.speed,
-              onTap: _loadDashboard,
-              isSelected: true,
-            ),
-            _buildNavTab(
-              label: 'Tasks',
-              icon: Icons.check_box_outlined,
-              onTap: () => _openModule(const TasksScreen()),
-            ),
-            _buildNavTab(
-              label: 'Projects',
-              icon: Icons.folder_outlined,
-              onTap: () => _openModule(const ProjectsListScreen()),
-            ),
-            _buildNavTab(
-              label: 'Reports',
-              icon: Icons.bar_chart_rounded,
-              onTap: () => _openModule(ReportsListScreen(user: _currentUser)),
-            ),
-          ],
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Row(
+            children: [
+              _buildNavTab(
+                label: 'Menu',
+                icon: Icons.menu_rounded,
+                onTap: () => _scaffoldKey.currentState?.openDrawer(),
+                isSelected: false,
+              ),
+              _buildNavTab(
+                label: 'Pulse',
+                icon: Icons.speed,
+                onTap: () {
+                  if (widget.useIndexedStack) {
+                    setState(() => _activeDockIndex = 0);
+                  } else {
+                    _loadDashboard();
+                  }
+                },
+                isSelected: _activeDockIndex == 0,
+              ),
+              _buildNavTab(
+                label: 'Tasks',
+                icon: Icons.check_box_outlined,
+                onTap: () {
+                  if (widget.useIndexedStack) {
+                    setState(() => _activeDockIndex = 1);
+                  } else {
+                    _openModule(const TasksScreen());
+                  }
+                },
+                isSelected: _activeDockIndex == 1,
+              ),
+              _buildNavTab(
+                label: 'Projects',
+                icon: Icons.folder_outlined,
+                onTap: () {
+                  if (widget.useIndexedStack) {
+                    setState(() => _activeDockIndex = 2);
+                  } else {
+                    _openModule(const ProjectsListScreen());
+                  }
+                },
+                isSelected: _activeDockIndex == 2,
+              ),
+              _buildNavTab(
+                label: 'Reports',
+                icon: Icons.bar_chart_rounded,
+                onTap: () {
+                  if (widget.useIndexedStack) {
+                    setState(() => _activeDockIndex = 3);
+                  } else {
+                    _openModule(ReportsListScreen(user: _currentUser));
+                  }
+                },
+                isSelected: _activeDockIndex == 3,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -642,18 +749,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required VoidCallback onTap,
     bool isSelected = false,
   }) {
-    final color = isSelected ? AppTheme.royalBlue : AppTheme.mutedSlate;
+    final color = isSelected ? AppTheme.electricBlue : AppTheme.mutedSlate;
 
     return Expanded(
       child: InkWell(
         onTap: onTap,
         child: Column(
           children: [
-            // 4px top indicator bar in royal blue on active tab
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              height: 4,
-              color: isSelected ? AppTheme.royalBlue : Colors.transparent,
+              height: 3,
+              margin: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected ? AppTheme.electricBlue : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             Expanded(
               child: Column(
@@ -800,7 +910,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: isCached
           ? Column(
               children: [
-                OfflineCacheBanner(onRetry: _loadDashboard),
+                OfflineCacheBanner(
+                  onRetry: () => _loadDashboard(retryDiscovery: true),
+                  onServerConfig: () {
+                    showServerConfigDialog(
+                      context: context,
+                      onSaved: () {
+                        _loadDashboard(retryDiscovery: true);
+                        _loadNotificationCount();
+                      },
+                    );
+                  },
+                ),
                 Expanded(child: view),
               ],
             )

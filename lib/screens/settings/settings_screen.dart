@@ -5,6 +5,7 @@ import '../../core/api_client.dart';
 import '../../core/company_settings.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/module_app_bar.dart';
+import '../../core/widgets/server_config_dialog.dart';
 import '../../models/user_model.dart';
 import '../../services/dashboard_service.dart';
 
@@ -503,6 +504,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildField('Company timezone', _timezoneController),
           const SizedBox(height: 12),
           _buildField('Currency code', _currencyController),
+          const SizedBox(height: 20),
+
+          // Server & Network Configuration Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderSubtle),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.dns_outlined,
+                      size: 18,
+                      color: AppTheme.royalBlue,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Server & Network',
+                      style: AppTheme.heading(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Connected backend endpoint for physical devices and local testing:',
+                  style:
+                      AppTheme.body(fontSize: 12, color: AppTheme.mutedSlate),
+                ),
+                const SizedBox(height: 8),
+                ValueListenableBuilder<String>(
+                  valueListenable: ApiClient().baseUrlNotifier,
+                  builder: (context, currentUrl, _) {
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.pureWhite,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.borderSubtle),
+                      ),
+                      child: Text(
+                        currentUrl,
+                        style: AppTheme.mono(
+                          fontSize: 12,
+                          color: AppTheme.deepSlate,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      showServerConfigDialog(
+                        context: context,
+                        onSaved: () {
+                          if (mounted) setState(() {});
+                        },
+                      );
+                    },
+                    icon: const Icon(Icons.settings_ethernet, size: 16),
+                    label: const Text('Configure / Auto-Detect Server'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.navyBlue,
+                      side: const BorderSide(color: AppTheme.borderSubtle),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

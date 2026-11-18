@@ -13,6 +13,7 @@ import '../../screens/reports/report_submission_screen.dart';
 import '../../screens/settings/settings_screen.dart';
 import '../../screens/team/departments_screen.dart';
 import 'projeqta_logo.dart';
+import 'server_config_dialog.dart';
 
 class AppSideDrawer extends StatelessWidget {
   final UserModel user;
@@ -529,6 +530,18 @@ class AppSideDrawer extends StatelessWidget {
                           );
                         },
                       ),
+                    _buildMenuItem(
+                      icon: Icons.dns_outlined,
+                      label: 'Server Configuration',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        showServerConfigDialog(
+                          context: context,
+                          onSaved: () => onTabSelected(0),
+                        );
+                      },
+                    ),
                   ],
                 ],
               ),

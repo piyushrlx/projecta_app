@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/notification_router.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../core/widgets/module_app_bar.dart';
 import '../../models/notification_model.dart';
 import '../../models/user_model.dart';
@@ -223,8 +222,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 'Mark all read',
                 style: AppTheme.heading(
                   fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.royalBlue,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.amber,
                 ),
               ),
             ),
@@ -281,7 +280,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildFilterBar() {
     return Container(
       width: double.infinity,
-      color: AppTheme.pureWhite,
+      color: AppTheme.scaffoldBg,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -293,72 +292,79 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             return Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: BrutalistPressable(
+              child: InkWell(
                 onTap: () {
                   setState(() {
                     _selectedFilter = filter;
                   });
                 },
-                backgroundColor: isSelected
-                    ? AppTheme.pitchBlack
-                    : AppTheme.pureWhite,
-                borderColor: isSelected
-                    ? AppTheme.pitchBlack
-                    : AppTheme.borderSubtle,
                 borderRadius: BorderRadius.circular(20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      filter,
-                      style: AppTheme.heading(
-                        fontSize: 12,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        color: isSelected
-                            ? AppTheme.pureWhite
-                            : AppTheme.mutedSlate,
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.electricIndigo
+                        : AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.electricIndigo
+                          : AppTheme.borderSubtle,
                     ),
-                    if (count > 0) ...[
-                      const SizedBox(width: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        filter,
+                        style: AppTheme.heading(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
                           color: isSelected
-                              ? (filter == 'UNREAD' && count > 0
-                                    ? AppTheme.dangerText
-                                    : AppTheme.pureWhite.withValues(
-                                        alpha: 0.25,
-                                      ))
-                              : (filter == 'UNREAD' && count > 0
-                                    ? AppTheme.dangerText
-                                    : const Color(0xFFF1F5F9)),
-                          borderRadius: BorderRadius.circular(10),
+                              ? AppTheme.pureWhite
+                              : AppTheme.textSecondaryNavy,
                         ),
-                        child: Text(
-                          count.toString(),
-                          style: AppTheme.mono(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      if (count > 0) ...[
+                        const SizedBox(width: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
                             color: isSelected
-                                ? AppTheme.pureWhite
+                                ? (filter == 'UNREAD' && count > 0
+                                      ? AppTheme.dangerText
+                                      : AppTheme.pureWhite.withValues(
+                                          alpha: 0.25,
+                                        ))
                                 : (filter == 'UNREAD' && count > 0
-                                      ? AppTheme.pureWhite
-                                      : AppTheme.deepSlate),
+                                      ? AppTheme.dangerBg
+                                      : const Color(0xFFEEF1F6)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            count.toString(),
+                            style: AppTheme.mono(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? AppTheme.pureWhite
+                                  : (filter == 'UNREAD'
+                                        ? AppTheme.dangerText
+                                        : AppTheme.deepSlate),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             );
@@ -373,159 +379,163 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final isNavigable = routeInfo.target != NotificationRouteTarget.none;
     final isUrgent = n.isUrgent;
 
-    // Background and border styling
-    Color bgColor;
-    Color borderColor;
-
-    if (!n.isRead) {
-      if (isUrgent) {
-        bgColor = const Color(0xFFFFF5F5);
-        borderColor = const Color(0xFFFECACA);
-      } else {
-        bgColor = const Color(0xFFF0F7FF);
-        borderColor = const Color(0xFFBFDBFE);
-      }
-    } else {
-      bgColor = AppTheme.pureWhite;
-      borderColor = AppTheme.borderSubtle;
-    }
-
-    return BrutalistPressable(
-      onTap: () => _handleNotificationTap(n),
-      backgroundColor: bgColor,
-      borderColor: borderColor,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Leading Type Icon
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: !n.isRead
-                  ? (isUrgent ? AppTheme.dangerBg : AppTheme.infoBg)
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              _getIconForType(n.type),
-              size: 18,
-              color: !n.isRead
-                  ? (isUrgent ? AppTheme.dangerText : AppTheme.infoText)
-                  : AppTheme.mutedSlate,
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleNotificationTap(n),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(18),
+            border: !n.isRead && isUrgent
+                ? Border.all(color: const Color(0xFFFECACA), width: 1.5)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Leading Type Icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: !n.isRead
+                      ? (isUrgent ? AppTheme.dangerBg : AppTheme.infoBg)
+                      : AppTheme.softGreyFill,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _getIconForType(n.type),
+                  size: 18,
+                  color: !n.isRead
+                      ? (isUrgent
+                            ? AppTheme.dangerText
+                            : AppTheme.electricIndigo)
+                      : AppTheme.mutedSlate,
+                ),
+              ),
+              const SizedBox(width: 12),
 
-          // Notification Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Notification Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        n.title,
-                        style: AppTheme.heading(
-                          fontSize: 14,
-                          fontWeight: n.isRead
-                              ? FontWeight.w600
-                              : FontWeight.w700,
-                          color: isUrgent && !n.isRead
-                              ? AppTheme.dangerText
-                              : AppTheme.deepSlate,
-                        ),
-                      ),
-                    ),
-                    if (!n.isRead) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isUrgent
-                              ? AppTheme.dangerText
-                              : AppTheme.royalBlue,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          isUrgent ? 'URGENT' : 'NEW',
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.pureWhite,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  n.message,
-                  style: AppTheme.body(
-                    fontSize: 13,
-                    color: n.isRead ? AppTheme.mutedSlate : AppTheme.deepSlate,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        n.createdAt,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.body(
-                          fontSize: 11,
-                          color: AppTheme.lightSlate,
-                        ),
-                      ),
-                    ),
-                    if (!n.isRead)
-                      InkWell(
-                        onTap: () => _handleMarkSingleRead(n),
-                        borderRadius: BorderRadius.circular(4),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
                           child: Text(
-                            'Mark read',
+                            n.title,
                             style: AppTheme.heading(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.royalBlue,
+                              fontSize: 14,
+                              fontWeight: n.isRead
+                                  ? FontWeight.w600
+                                  : FontWeight.w700,
+                              color: isUrgent && !n.isRead
+                                  ? AppTheme.dangerText
+                                  : AppTheme.deepInk,
                             ),
                           ),
                         ),
+                        if (!n.isRead) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isUrgent
+                                  ? AppTheme.dangerText
+                                  : AppTheme.electricIndigo,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              isUrgent ? 'URGENT' : 'NEW',
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.pureWhite,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      n.message,
+                      style: AppTheme.body(
+                        fontSize: 13,
+                        color: n.isRead
+                            ? AppTheme.mutedSlate
+                            : AppTheme.deepInk,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            n.createdAt,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.body(
+                              fontSize: 11,
+                              color: AppTheme.lightSlate,
+                            ),
+                          ),
+                        ),
+                        if (!n.isRead)
+                          InkWell(
+                            onTap: () => _handleMarkSingleRead(n),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              child: Text(
+                                'Mark read',
+                                style: AppTheme.heading(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.electricIndigo,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          // Trailing Deep Link Chevron Indicator
-          if (isNavigable) ...[
-            const SizedBox(width: 8),
-            const Padding(
-              padding: EdgeInsets.only(top: 8.0),
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: AppTheme.lightSlate,
               ),
-            ),
-          ],
-        ],
+
+              // Trailing Deep Link Chevron Indicator
+              if (isNavigable) ...[
+                const SizedBox(width: 8),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: AppTheme.lightSlate,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -185,13 +185,20 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
           widget.existingReport != null
               ? 'Edit Daily Report'
               : 'Submit Daily Report',
-          style: AppTheme.heading(fontSize: 18),
+          style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
+        ),
+        backgroundColor: AppTheme.pureWhite,
+        iconTheme: const IconThemeData(color: AppTheme.deepSlate),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1.0),
         ),
       ),
       body: _isLoadingContext
           ? const Center(
               child: CircularProgressIndicator(
-                color: AppTheme.royalBlue,
+                color: AppTheme.electricIndigo,
                 strokeWidth: 2.5,
               ),
             )
@@ -205,12 +212,14 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.borderSubtle,
-                      width: 1.0,
-                    ),
-                    boxShadow: const [AppTheme.softShadow],
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 18,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,12 +579,28 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
                         children: [
                           Expanded(
                             child: SizedBox(
-                              height: 48,
+                              height: 52,
                               child: OutlinedButton(
                                 onPressed: _isSubmitting
                                     ? null
                                     : () => _handleSubmit('draft'),
-                                child: const Text('Save Draft'),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: Color(0xFFCBD5E1),
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Save Draft',
+                                  style: AppTheme.heading(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.deepInk,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -583,17 +608,18 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
                           Expanded(
                             flex: 2,
                             child: SizedBox(
-                              height: 48,
+                              height: 52,
                               child: ElevatedButton(
                                 onPressed: _isSubmitting
                                     ? null
                                     : () => _handleSubmit('submit'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.navyBlue,
+                                  backgroundColor: AppTheme.deepInk,
                                   foregroundColor: AppTheme.pureWhite,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(999),
                                   ),
+                                  elevation: 0,
                                 ),
                                 child: _isSubmitting
                                     ? const SizedBox(
@@ -604,7 +630,14 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Text('Submit Report'),
+                                    : Text(
+                                        'Submit Report',
+                                        style: AppTheme.heading(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.pureWhite,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
@@ -623,23 +656,25 @@ class _ReportSubmissionScreenState extends State<ReportSubmissionScreen> {
     return Expanded(
       child: InkWell(
         onTap: () => _setTimeChip(minutes),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.navyBlue : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? AppTheme.electricIndigo : AppTheme.softGreyFill,
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? AppTheme.navyBlue : AppTheme.borderSubtle,
+              color: isSelected
+                  ? AppTheme.electricIndigo
+                  : const Color(0xFFE2E8F0),
             ),
           ),
           child: Center(
             child: Text(
               label,
               style: AppTheme.heading(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppTheme.pureWhite : AppTheme.mutedSlate,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? AppTheme.pureWhite : AppTheme.deepInk,
               ),
             ),
           ),

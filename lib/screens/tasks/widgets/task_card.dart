@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme.dart';
-import '../../../core/widgets/brutalist_pressable.dart';
 import '../../../models/task_model.dart';
 import 'task_avatar_stack.dart';
 import 'task_priority_badge.dart';
@@ -22,187 +21,207 @@ class TaskCard extends StatelessWidget {
   });
 
   Widget _buildCardContent(BuildContext context) {
-    return BrutalistPressable(
-      onTap: onTap,
-      backgroundColor: AppTheme.pureWhite,
-      borderColor: task.isLocked
-          ? const Color(0xFFFECACA)
-          : AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top Row: Code + Project + Priority Badge
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.scaffoldBg,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                ),
-                child: Text(
-                  task.taskCode,
-                  style: AppTheme.mono(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
-                  ),
-                ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(18),
+            border: task.isLocked
+                ? Border.all(color: const Color(0xFFFECACA), width: 1.5)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 3),
               ),
-              if (task.projectName != null) ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    task.projectName!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.body(
-                      fontSize: 11,
-                      color: AppTheme.mutedSlate,
-                    ),
-                  ),
-                ),
-              ] else
-                const Spacer(),
-              TaskPriorityBadge(priority: task.priority),
             ],
           ),
-          const SizedBox(height: 8),
-
-          // Title
-          Text(
-            task.title,
-            style: AppTheme.heading(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.deepSlate,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Dependency Lock Banner if locked
-          if (task.isLocked) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.dangerBg,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Code + Project + Priority Badge
+              Row(
                 children: [
-                  const Icon(
-                    Icons.lock_outline,
-                    size: 14,
-                    color: AppTheme.dangerText,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.softGreyFill,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                     child: Text(
-                      'Blocked by ${task.openDependenciesCount} dependenc${task.openDependenciesCount == 1 ? 'y' : 'ies'}',
-                      style: AppTheme.heading(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.dangerText,
+                      task.taskCode,
+                      style: AppTheme.mono(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepInk,
                       ),
                     ),
                   ),
+                  if (task.projectName != null) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        task.projectName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: AppTheme.mutedSlate,
+                        ),
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
+                  TaskPriorityBadge(priority: task.priority),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
 
-          // Progress Bar if in progress
-          if (task.status == 'in_progress' || task.progress > 0) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Progress',
-                  style: AppTheme.body(
-                    fontSize: 10,
-                    color: AppTheme.mutedSlate,
-                  ),
+              // Title
+              Text(
+                task.title,
+                style: AppTheme.heading(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.deepInk,
                 ),
-                Text(
-                  '${task.progress}%',
-                  style: AppTheme.mono(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
+              ),
+              const SizedBox(height: 10),
+
+              // Dependency Lock Banner if locked
+              if (task.isLocked) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.dangerBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: AppTheme.dangerText,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Blocked by ${task.openDependenciesCount} dependenc${task.openDependenciesCount == 1 ? 'y' : 'ies'}',
+                          style: AppTheme.heading(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.dangerText,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: (task.progress / 100).clamp(0.0, 1.0),
-                minHeight: 5,
-                backgroundColor: const Color(0xFFE2E8F0),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  task.isLocked ? AppTheme.dangerText : AppTheme.royalBlue,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
 
-          // Bottom Meta Row: Status tag, Avatar Stack, Deadline
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                TaskStatusPill(
-                  key: ValueKey('task_status_pill_${task.id}'),
-                  status: task.status,
-                  isInteractive: isKanban,
-                  onTap: onStatusPillTap,
-                ),
-                TaskAvatarStack(assignees: task.assignees),
+              // Progress Bar if in progress
+              if (task.status == 'in_progress' || task.progress > 0) ...[
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 12,
-                      color: task.isOverdue
-                          ? AppTheme.dangerText
-                          : AppTheme.lightSlate,
+                    Text(
+                      'Progress',
+                      style: AppTheme.body(
+                        fontSize: 10,
+                        color: AppTheme.mutedSlate,
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        task.isOverdue && task.overdueDays > 0
-                            ? '${task.formattedDeadline} (${task.overdueDays}d overdue)'
-                            : task.isOverdue
-                            ? '${task.formattedDeadline} (overdue)'
-                            : task.formattedDeadline,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.mono(
-                          fontSize: 10,
-                          color: task.isOverdue
-                              ? AppTheme.dangerText
-                              : AppTheme.mutedSlate,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      '${task.progress}%',
+                      style: AppTheme.mono(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: (task.progress / 100).clamp(0.0, 1.0),
+                    minHeight: 5,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      task.isLocked ? AppTheme.dangerText : AppTheme.royalBlue,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
-            ),
+
+              // Bottom Meta Row: Status tag, Avatar Stack, Deadline
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    TaskStatusPill(
+                      key: ValueKey('task_status_pill_${task.id}'),
+                      status: task.status,
+                      isInteractive: isKanban,
+                      onTap: onStatusPillTap,
+                    ),
+                    TaskAvatarStack(assignees: task.assignees),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: task.isOverdue
+                              ? AppTheme.dangerText
+                              : AppTheme.lightSlate,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            task.isOverdue && task.overdueDays > 0
+                                ? '${task.formattedDeadline} (${task.overdueDays}d overdue)'
+                                : task.isOverdue
+                                ? '${task.formattedDeadline} (overdue)'
+                                : task.formattedDeadline,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.mono(
+                              fontSize: 10,
+                              color: task.isOverdue
+                                  ? AppTheme.dangerText
+                                  : AppTheme.mutedSlate,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -211,7 +230,8 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = _buildCardContent(context);
 
-    if (!isKanban) {
+    final canMove = task.allowedStatuses.any((s) => s != task.status);
+    if (!isKanban || !canMove) {
       return content;
     }
 
@@ -224,9 +244,63 @@ class TaskCard extends StatelessWidget {
         color: Colors.transparent,
         elevation: 8,
         shadowColor: Colors.black26,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: Opacity(opacity: 0.95, child: content),
+        child: Container(
+          width: 280,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.royalBlue, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.scaffoldBg,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                    ),
+                    child: Text(
+                      task.taskCode,
+                      style: AppTheme.mono(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepSlate,
+                      ),
+                    ),
+                  ),
+                  TaskPriorityBadge(priority: task.priority),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                task.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.heading(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.deepSlate,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       childWhenDragging: Opacity(opacity: 0.35, child: content),

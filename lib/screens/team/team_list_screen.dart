@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/brutalist_pressable.dart';
 import '../../core/widgets/module_app_bar.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../../services/directory_service.dart';
@@ -207,24 +206,25 @@ class _TeamListScreenState extends State<TeamListScreen>
         children: [
           // Segmented Pill Sub-tabs (Matching Reference Step 5)
           Container(
-            color: AppTheme.pureWhite,
+            color: AppTheme.scaffoldBg,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: AppTheme.pureWhite,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderSubtle),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: AppTheme.royalBlue,
+                  color: AppTheme.electricIndigo,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 labelColor: AppTheme.pureWhite,
-                unselectedLabelColor: AppTheme.mutedSlate,
+                unselectedLabelColor: AppTheme.textSecondaryNavy,
                 labelStyle: AppTheme.heading(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -253,7 +253,7 @@ class _TeamListScreenState extends State<TeamListScreen>
           ),
         ],
       ),
-      // Circular Royal Blue FAB (Opens Add Employee)
+      // Circular Electric Indigo FAB (Opens Add Employee)
       floatingActionButton: FloatingActionButton(
         heroTag: 'team_list_fab',
         onPressed: () async {
@@ -269,7 +269,7 @@ class _TeamListScreenState extends State<TeamListScreen>
             _loadEmployees();
           }
         },
-        backgroundColor: AppTheme.royalBlue,
+        backgroundColor: AppTheme.electricIndigo,
         elevation: 4,
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: AppTheme.pureWhite, size: 26),
@@ -292,7 +292,7 @@ class _TeamListScreenState extends State<TeamListScreen>
                   height: 42,
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppTheme.borderSubtle),
                   ),
                   child: Row(
@@ -301,7 +301,7 @@ class _TeamListScreenState extends State<TeamListScreen>
                       const Icon(
                         Icons.search,
                         size: 18,
-                        color: AppTheme.mutedSlate,
+                        color: AppTheme.textSecondaryNavy,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -312,7 +312,7 @@ class _TeamListScreenState extends State<TeamListScreen>
                             hintText: 'Search team member...',
                             hintStyle: AppTheme.body(
                               fontSize: 13,
-                              color: AppTheme.lightSlate,
+                              color: AppTheme.textSecondaryNavy,
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -320,14 +320,14 @@ class _TeamListScreenState extends State<TeamListScreen>
                           ),
                           style: AppTheme.body(
                             fontSize: 13,
-                            color: AppTheme.deepSlate,
+                            color: AppTheme.pureWhite,
                           ),
                         ),
                       ),
                       if (_searchController.text.isNotEmpty)
                         IconButton(
                           icon: const Icon(Icons.clear, size: 16),
-                          color: AppTheme.mutedSlate,
+                          color: AppTheme.textSecondaryNavy,
                           onPressed: () {
                             _searchController.clear();
                             _applyFilter();
@@ -346,17 +346,21 @@ class _TeamListScreenState extends State<TeamListScreen>
                   width: 42,
                   decoration: BoxDecoration(
                     color: _statusFilter != 'ALL'
-                        ? AppTheme.navyBlue
+                        ? AppTheme.electricIndigo
                         : AppTheme.pureWhite,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _statusFilter != 'ALL'
+                          ? AppTheme.electricIndigo
+                          : AppTheme.borderSubtle,
+                    ),
                   ),
                   child: Icon(
                     Icons.tune_rounded,
                     size: 18,
                     color: _statusFilter != 'ALL'
                         ? AppTheme.pureWhite
-                        : AppTheme.mutedSlate,
+                        : AppTheme.textSecondaryNavy,
                   ),
                 ),
               ),
@@ -387,11 +391,13 @@ class _TeamListScreenState extends State<TeamListScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.navyBlue : AppTheme.pureWhite,
+                    color: isSelected
+                        ? AppTheme.electricIndigo
+                        : AppTheme.pureWhite,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? AppTheme.navyBlue
+                          ? AppTheme.electricIndigo
                           : AppTheme.borderSubtle,
                     ),
                   ),
@@ -402,7 +408,7 @@ class _TeamListScreenState extends State<TeamListScreen>
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? AppTheme.pureWhite
-                          : AppTheme.mutedSlate,
+                          : AppTheme.textSecondaryNavy,
                     ),
                   ),
                 ),
@@ -448,124 +454,143 @@ class _TeamListScreenState extends State<TeamListScreen>
     final department = (emp['department_name'] ?? '').toString();
     final email = (emp['email'] ?? '').toString();
 
-    return BrutalistPressable(
-      onTap: () => _onMemberTap(emp),
-      backgroundColor: AppTheme.pureWhite,
-      borderColor: AppTheme.borderSubtle,
-      borderRadius: BorderRadius.circular(12),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          // Avatar with initials fallback
-          UserAvatar(
-            name: name,
-            photoUrl: (emp['profile_photo_url'] ?? emp['profile_photo'])
-                ?.toString(),
-            size: 44,
-            backgroundColor: AppTheme.navyBlue,
-            textColor: AppTheme.pureWhite,
-            fontSize: 15,
-            border: Border.all(
-              color: AppTheme.royalBlue.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onMemberTap(emp),
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.pureWhite,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: AppTheme.heading(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.deepSlate,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  designation,
-                  style: AppTheme.body(
-                    fontSize: 12,
-                    color: AppTheme.mutedSlate,
-                  ),
-                ),
-                if (department.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    department,
-                    style: AppTheme.body(
-                      fontSize: 11,
-                      color: AppTheme.lightSlate,
-                    ),
-                  ),
-                ],
-                if (email.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    email,
-                    style: AppTheme.mono(
-                      fontSize: 11,
-                      color: AppTheme.lightSlate,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          // Status badge + menu
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _statusBgColor(status),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _statusLabel(status),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _statusColor(status),
-                  ),
+              // Avatar with initials fallback
+              UserAvatar(
+                name: name,
+                photoUrl: (emp['profile_photo_url'] ?? emp['profile_photo'])
+                    ?.toString(),
+                size: 44,
+                backgroundColor: AppTheme.navyBlue,
+                textColor: AppTheme.pureWhite,
+                fontSize: 15,
+                border: Border.all(
+                  color: AppTheme.royalBlue.withValues(alpha: 0.3),
+                  width: 1.5,
                 ),
               ),
-              const SizedBox(height: 4),
-              PopupMenuButton<String>(
-                icon: const Icon(
-                  Icons.more_vert,
-                  size: 20,
-                  color: AppTheme.mutedSlate,
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: AppTheme.heading(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.deepInk,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      designation,
+                      style: AppTheme.body(
+                        fontSize: 12,
+                        color: AppTheme.mutedSlate,
+                      ),
+                    ),
+                    if (department.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        department,
+                        style: AppTheme.body(
+                          fontSize: 11,
+                          color: AppTheme.lightSlate,
+                        ),
+                      ),
+                    ],
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        style: AppTheme.mono(
+                          fontSize: 11,
+                          color: AppTheme.lightSlate,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onSelected: (val) {
-                  if (val == 'view') _onMemberTap(emp);
-                  if (val == 'edit') _onMemberEdit(emp);
-                  if (val == 'toggle') _toggleEmployeeStatus(emp);
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'view',
-                    child: Text('View Profile'),
+              ),
+              // Status badge + menu
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _statusBgColor(status),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _statusLabel(status),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: _statusColor(status),
+                      ),
+                    ),
                   ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Edit Employee'),
-                  ),
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Text(status == 'active' ? 'Deactivate' : 'Activate'),
+                  const SizedBox(height: 4),
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: AppTheme.mutedSlate,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onSelected: (val) {
+                      if (val == 'view') _onMemberTap(emp);
+                      if (val == 'edit') _onMemberEdit(emp);
+                      if (val == 'toggle') _toggleEmployeeStatus(emp);
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Text('View Profile'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit Employee'),
+                      ),
+                      PopupMenuItem(
+                        value: 'toggle',
+                        child: Text(
+                          status == 'active' ? 'Deactivate' : 'Activate',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -817,9 +842,14 @@ class _TeamListScreenState extends State<TeamListScreen>
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.pureWhite,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                  boxShadow: const [AppTheme.softShadow],
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -922,9 +952,14 @@ class _TeamListScreenState extends State<TeamListScreen>
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.pureWhite,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderSubtle),
-                  boxShadow: const [AppTheme.softShadow],
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

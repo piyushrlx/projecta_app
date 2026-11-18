@@ -158,6 +158,7 @@ class ProjectService {
       '/projects/$projectId/status',
       body: {'status': status},
     );
+    await _client.clearCache();
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
       return data;
@@ -172,6 +173,7 @@ class ProjectService {
   }) async {
     final path = id != null && id > 0 ? '/projects/$id' : '/projects';
     final response = await _client.post(path, body: data);
+    await _client.clearCache();
     final dynamic dataRes = _client.decodeJson(response);
     if (dataRes is Map<String, dynamic>) {
       return dataRes;
@@ -201,6 +203,7 @@ class ProjectService {
       '/projects/$projectId/archive',
       body: {'action': unarchive ? 'unarchive' : 'archive'},
     );
+    await _client.clearCache();
     final dynamic data = _client.decodeJson(response);
     if (data is Map<String, dynamic>) {
       return data;

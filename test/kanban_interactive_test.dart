@@ -11,76 +11,73 @@ class MockInteractiveTaskService extends TaskService {
   String? lastNoteUpdated;
 
   MockInteractiveTaskService({Map<String, List<TaskModel>>? initialData})
-      : kanbanData = initialData ??
-            {
-              'not_started': [
-                const TaskModel(
-                  id: 101,
-                  taskCode: 'TSK-101',
-                  projectId: 1,
-                  projectName: 'Alpha Portal',
-                  title: 'Wireframe Kanban View',
-                  priority: 'critical',
-                  status: 'not_started',
-                  deadline: '2026-11-20',
-                  openDependenciesCount: 0,
-                  allowedStatuses: ['not_started', 'in_progress', 'blocked'],
-                  assignees: [
-                    TaskAssigneeModel(
-                      userId: 1,
-                      fullName: 'Alice Developer',
-                      responsibility: 'owner',
-                    ),
-                    TaskAssigneeModel(
-                      userId: 2,
-                      fullName: 'Bob Architect',
-                      responsibility: 'contributor',
-                    ),
-                  ],
-                ),
-              ],
-              'in_progress': [
-                const TaskModel(
-                  id: 102,
-                  taskCode: 'TSK-102',
-                  projectId: 1,
-                  projectName: 'Alpha Portal',
-                  title: 'Implement Touch Drag & Drop',
-                  priority: 'high',
-                  status: 'in_progress',
-                  deadline: '2026-11-25',
-                  progress: 60,
-                  allowedStatuses: [
-                    'in_progress',
-                    'pending_review',
-                    'blocked'
-                  ],
-                  assignees: [
-                    TaskAssigneeModel(
-                      userId: 1,
-                      fullName: 'Alice Developer',
-                      responsibility: 'owner',
-                    ),
-                  ],
-                ),
-              ],
-              'blocked': [
-                const TaskModel(
-                  id: 103,
-                  taskCode: 'TSK-103',
-                  projectId: 1,
-                  projectName: 'Alpha Portal',
-                  title: 'API Authentication Flow',
-                  priority: 'medium',
-                  status: 'blocked',
-                  openDependenciesCount: 2,
-                  allowedStatuses: ['blocked'],
-                  assignees: [],
-                ),
-              ],
-              'pending_review': [],
-              'completed': [],
-            };
+    : kanbanData =
+          initialData ??
+          {
+            'not_started': [
+              const TaskModel(
+                id: 101,
+                taskCode: 'TSK-101',
+                projectId: 1,
+                projectName: 'Alpha Portal',
+                title: 'Wireframe Kanban View',
+                priority: 'critical',
+                status: 'not_started',
+                deadline: '2026-11-20',
+                openDependenciesCount: 0,
+                allowedStatuses: ['not_started', 'in_progress', 'blocked'],
+                assignees: [
+                  TaskAssigneeModel(
+                    userId: 1,
+                    fullName: 'Alice Developer',
+                    responsibility: 'owner',
+                  ),
+                  TaskAssigneeModel(
+                    userId: 2,
+                    fullName: 'Bob Architect',
+                    responsibility: 'contributor',
+                  ),
+                ],
+              ),
+            ],
+            'in_progress': [
+              const TaskModel(
+                id: 102,
+                taskCode: 'TSK-102',
+                projectId: 1,
+                projectName: 'Alpha Portal',
+                title: 'Implement Touch Drag & Drop',
+                priority: 'high',
+                status: 'in_progress',
+                deadline: '2026-11-25',
+                progress: 60,
+                allowedStatuses: ['in_progress', 'pending_review', 'blocked'],
+                assignees: [
+                  TaskAssigneeModel(
+                    userId: 1,
+                    fullName: 'Alice Developer',
+                    responsibility: 'owner',
+                  ),
+                ],
+              ),
+            ],
+            'blocked': [
+              const TaskModel(
+                id: 103,
+                taskCode: 'TSK-103',
+                projectId: 1,
+                projectName: 'Alpha Portal',
+                title: 'API Authentication Flow',
+                priority: 'medium',
+                status: 'blocked',
+                openDependenciesCount: 2,
+                allowedStatuses: ['blocked'],
+                assignees: [],
+              ),
+            ],
+            'pending_review': [],
+            'completed': [],
+          };
 
   @override
   Future<Map<String, dynamic>> getKanban({
@@ -93,7 +90,9 @@ class MockInteractiveTaskService extends TaskService {
     }
     final filtered = <String, List<TaskModel>>{};
     kanbanData.forEach((k, list) {
-      filtered[k] = list.where((t) => t.priority.toLowerCase() == priority.toLowerCase()).toList();
+      filtered[k] = list
+          .where((t) => t.priority.toLowerCase() == priority.toLowerCase())
+          .toList();
     });
     return {'columns': filtered, 'is_cached': false};
   }
@@ -139,11 +138,7 @@ void main() {
         'open_dependencies_count': 1,
         'allowed_statuses': ['not_started', 'in_progress'],
         'assignees': [
-          {
-            'user_id': 10,
-            'full_name': 'Jane Doe',
-            'responsibility': 'owner',
-          },
+          {'user_id': 10, 'full_name': 'Jane Doe', 'responsibility': 'owner'},
           {
             'user_id': 11,
             'full_name': 'John Smith',
@@ -176,8 +171,48 @@ void main() {
       expect(model.assignees.first.isOwner, isTrue);
     });
 
-    testWidgets('TasksScreen switches to Kanban view and renders columns & pills',
-        (tester) async {
+    testWidgets(
+      'TasksScreen switches to Kanban view and renders columns & pills',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final mockService = MockInteractiveTaskService();
+
+        await tester.pumpWidget(
+          MaterialApp(home: TasksScreen(taskService: mockService)),
+        );
+        await tester.pumpAndSettle();
+
+        // Initially in List view
+        expect(find.text('List View'), findsOneWidget);
+        expect(find.text('Kanban Board'), findsOneWidget);
+
+        // Switch to Kanban view
+        await tester.tap(find.text('Kanban Board'));
+        await tester.pumpAndSettle();
+
+        // Verify Kanban priority filter pills
+        expect(find.text('All'), findsOneWidget);
+        expect(find.text('Critical'), findsWidgets);
+        expect(find.text('High'), findsWidgets);
+
+        // Verify Column tabs
+        expect(find.text('Not Started (1)'), findsOneWidget);
+        expect(find.text('In Progress (1)'), findsOneWidget);
+        expect(find.text('Blocked (1)'), findsOneWidget);
+
+        // Verify task card content
+        expect(find.text('Wireframe Kanban View'), findsOneWidget);
+        expect(find.text('TSK-101'), findsOneWidget);
+        expect(find.text('Critical'), findsWidgets);
+      },
+    );
+
+    testWidgets('Tapping status pill on Kanban card opens Status Move Sheet', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -185,48 +220,7 @@ void main() {
       final mockService = MockInteractiveTaskService();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: TasksScreen(taskService: mockService),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Initially in List view
-      expect(find.text('List View'), findsOneWidget);
-      expect(find.text('Kanban Board'), findsOneWidget);
-
-      // Switch to Kanban view
-      await tester.tap(find.text('Kanban Board'));
-      await tester.pumpAndSettle();
-
-      // Verify Kanban priority filter pills
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Critical'), findsWidgets);
-      expect(find.text('High'), findsWidgets);
-
-      // Verify Column tabs
-      expect(find.text('Not Started (1)'), findsOneWidget);
-      expect(find.text('In Progress (1)'), findsOneWidget);
-      expect(find.text('Blocked (1)'), findsOneWidget);
-
-      // Verify task card content
-      expect(find.text('Wireframe Kanban View'), findsOneWidget);
-      expect(find.text('TSK-101'), findsOneWidget);
-      expect(find.text('Critical'), findsWidgets);
-    });
-
-    testWidgets('Tapping status pill on Kanban card opens Status Move Sheet',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final mockService = MockInteractiveTaskService();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: TasksScreen(taskService: mockService),
-        ),
+        MaterialApp(home: TasksScreen(taskService: mockService)),
       );
       await tester.pumpAndSettle();
 
@@ -255,8 +249,9 @@ void main() {
       expect(mockService.lastStatusUpdated, 'in_progress');
     });
 
-    testWidgets('Blocked task displays open dependency lock banner',
-        (tester) async {
+    testWidgets('Blocked task displays open dependency lock banner', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -264,9 +259,7 @@ void main() {
       final mockService = MockInteractiveTaskService();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: TasksScreen(taskService: mockService),
-        ),
+        MaterialApp(home: TasksScreen(taskService: mockService)),
       );
       await tester.pumpAndSettle();
 
@@ -283,44 +276,49 @@ void main() {
       expect(find.text('Blocked by 2 dependencies'), findsOneWidget);
     });
 
-    test('TaskModel nextAllowedStatusesFor dynamically recalculates transitions for staff and manager', () {
-      // 1. Staff task in not_started
-      const staffTaskNotStarted = TaskModel(
-        id: 201,
-        taskCode: 'TSK-201',
-        projectId: 1,
-        title: 'Staff Task',
-        priority: 'medium',
-        status: 'not_started',
-        allowedStatuses: ['not_started', 'in_progress', 'blocked'],
-      );
+    test(
+      'TaskModel nextAllowedStatusesFor dynamically recalculates transitions for staff and manager',
+      () {
+        // 1. Staff task in not_started
+        const staffTaskNotStarted = TaskModel(
+          id: 201,
+          taskCode: 'TSK-201',
+          projectId: 1,
+          title: 'Staff Task',
+          priority: 'medium',
+          status: 'not_started',
+          allowedStatuses: ['not_started', 'in_progress', 'blocked'],
+        );
 
-      // Staff moving to in_progress should now be allowed to move to pending_review
-      final nextStatuses = staffTaskNotStarted.nextAllowedStatusesFor('in_progress');
-      expect(nextStatuses, contains('pending_review'));
-      expect(nextStatuses, isNot(contains('completed')));
-
-      // 2. Manager task in not_started
-      const managerTask = TaskModel(
-        id: 202,
-        taskCode: 'TSK-202',
-        projectId: 1,
-        title: 'Manager Task',
-        priority: 'critical',
-        status: 'not_started',
-        allowedStatuses: [
-          'not_started',
+        // Staff moving to in_progress should now be allowed to move to pending_review
+        final nextStatuses = staffTaskNotStarted.nextAllowedStatusesFor(
           'in_progress',
-          'blocked',
-          'pending_review',
-          'completed'
-        ],
-      );
+        );
+        expect(nextStatuses, contains('pending_review'));
+        expect(nextStatuses, isNot(contains('completed')));
 
-      // Manager moving to in_progress retains all permissions including completed
-      final managerNext = managerTask.nextAllowedStatusesFor('in_progress');
-      expect(managerNext, contains('completed'));
-      expect(managerNext, contains('pending_review'));
-    });
+        // 2. Manager task in not_started
+        const managerTask = TaskModel(
+          id: 202,
+          taskCode: 'TSK-202',
+          projectId: 1,
+          title: 'Manager Task',
+          priority: 'critical',
+          status: 'not_started',
+          allowedStatuses: [
+            'not_started',
+            'in_progress',
+            'blocked',
+            'pending_review',
+            'completed',
+          ],
+        );
+
+        // Manager moving to in_progress retains all permissions including completed
+        final managerNext = managerTask.nextAllowedStatusesFor('in_progress');
+        expect(managerNext, contains('completed'));
+        expect(managerNext, contains('pending_review'));
+      },
+    );
   });
 }

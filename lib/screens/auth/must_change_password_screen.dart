@@ -95,7 +95,14 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Security Compliance'),
+        backgroundColor: AppTheme.pureWhite,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'Security Compliance',
+          style: AppTheme.heading(fontSize: 18, color: AppTheme.deepSlate),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.deepSlate),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.deepSlate),
@@ -124,9 +131,9 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.warningBg,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.warningText.withValues(alpha: 0.3),
+                        color: AppTheme.amber.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
@@ -135,7 +142,7 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
                         const Icon(
                           Icons.lock_clock_outlined,
                           size: 18,
-                          color: AppTheme.warningText,
+                          color: AppTheme.amber,
                         ),
                         const SizedBox(width: 8),
                         Flexible(
@@ -145,7 +152,7 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
                             style: AppTheme.heading(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.warningText,
+                              color: AppTheme.amber,
                             ),
                           ),
                         ),
@@ -176,12 +183,15 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
                       color: AppTheme.pureWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppTheme.borderSubtle,
-                        width: 1.0,
-                      ),
-                      boxShadow: const [AppTheme.softShadow],
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppTheme.borderSubtle),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -357,14 +367,14 @@ class _MustChangePasswordScreenState extends State<MustChangePasswordScreen> {
 
                         // Submit Button
                         SizedBox(
-                          height: 52,
+                          height: 54,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _handleSubmit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.navyBlue,
+                              backgroundColor: AppTheme.electricBlue,
                               foregroundColor: AppTheme.pureWhite,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(999),
                               ),
                             ),
                             child: _isLoading
